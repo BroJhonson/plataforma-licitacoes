@@ -1,4 +1,4 @@
-# backend/database_setup.py
+# database_setup.py
 
 import sqlite3 # (Importa o módulo sqlite3 para interagir com bancos de dados SQLite)
 import os # (Importa o módulo os para manipulação de caminhos de arquivos e diretórios)
@@ -9,7 +9,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__)) # (Obtém o caminho absolu
 DATABASE_PATH = os.path.join(BASE_DIR, 'database.db') # (Cria o caminho 'backend/database.db')
 
 def create_connection(db_file):
-    """ Cria uma conexão com o banco de dados SQLite especificado por db_file """
+    """ Cria conexão com o banco de dados SQLite especificado por db_file """
     conn = None # (Inicializa a variável de conexão como None)
     try: 
         conn = sqlite3.connect(db_file) # (Tenta conectar ao banco. Se o arquivo não existir, ele será criado)
@@ -20,7 +20,7 @@ def create_connection(db_file):
     return conn # (Retorna o objeto de conexão)
 
 def create_table(conn, create_table_sql):
-    """ Cria uma tabela a partir da instrução create_table_sql """
+    """ Criarmos qualquer tabela a partir da instrução create_table_sql """
     try:
         c = conn.cursor() # (Cria um objeto cursor para executar comandos SQL)
         c.execute(create_table_sql) # (Executa o comando SQL para criar a tabela)
@@ -30,7 +30,7 @@ def create_table(conn, create_table_sql):
 def main():
     """ Função principal para criar o banco de dados e as tabelas """
 
-    # SQL para criar a tabela 'licitacoes'
+    # SQL para criar a tabela 'LICITA~ÇÕES
     sql_create_licitacoes_table = """
     CREATE TABLE IF NOT EXISTS licitacoes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,25 +72,59 @@ def main():
         unidadeOrgaoUfNome TEXT,
         usuarioNome TEXT,
         linkSistemaOrigem TEXT,
+        link_portal_pncp TEXT,
         justificativaPresencial TEXT
     );
     """
 
-    # SQL para criar a tabela 'itens_licitacao'
+    # SQL para criar a tabela 'TABELA DE ITENS" itens_licitacoes
     sql_create_itens_licitacao_table = """
     CREATE TABLE IF NOT EXISTS itens_licitacao (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        licitacao_id INTEGER NOT NULL, -- (Chave estrangeira)
+        licitacao_id INTEGER NOT NULL,                          -- FK para licitacoes.id
         numeroItem INTEGER,
-        categoriaItemNome TEXT,
-        classificacaoCatalogoId INTEGER,
-        nomeClassificacaoCatalogo TEXT,
-        quantidadeEstimada REAL,
-        valorUnitario REAL,
-        valorTotal REAL,
-        FOREIGN KEY (licitacao_id) REFERENCES licitacoes (id) ON DELETE CASCADE -- (Define a chave estrangeira e a ação ON DELETE CASCADE, que remove os itens se a licitação for removida)
+        descricao TEXT,                                         
+        materialOuServicoNome TEXT,                             
+        quantidade REAL,                                        -- RENOMEADO (era quantidadeEstimada)
+        unidadeMedida TEXT,                                     
+        valorUnitarioEstimado REAL,                             -- RENOMEADO (era valorUnitario)
+        valorTotal REAL,                                        
+        orcamentoSigiloso BOOLEAN,                              
+        itemCategoriaNome TEXT,                                 -- RENOMEADO (era categoriaItemNome)
+        categoriaItemCatalogo TEXT,                       
+        criterioJulgamentoNome TEXT,                            
+        situacaoCompraItemNome TEXT,                            
+        tipoBeneficioNome TEXT,                                 
+        incentivoProdutivoBasico BOOLEAN,                       
+        dataInclusao TEXT,                                 -- (formato ISO YYYY-MM-DD)
+        dataAtualizacao TEXT,                              -- (formato ISO YYYY-MM-DD)        
+        temResultado BOOLEAN,                                   
+        informacaoComplementar TEXT,                       
+        FOREIGN KEY (licitacao_id) REFERENCES licitacoes (id) ON DELETE CASCADE
     );
     """
+    # Manter índice em licitacao_id
+    sql_create_index_itens_licitacao_id = "CREATE INDEX IF NOT EXISTS idx_itens_licitacao_licitacao_id ON itens_licitacao (licitacao_id);"
+
+
+    #Criar tabela de "ARQUIVOS" arquivos_licitacoes
+    sql_create_arquivos_licitacao_table = """
+    CREATE TABLE IF NOT EXISTS arquivos_licitacao (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        licitacao_id INTEGER NOT NULL,      -- FK para licitacoes.id
+        titulo TEXT,                        -- Renomeei era nome_arquivo
+        link_download TEXT UNIQUE NOT NULL, -- O link de download montado, UNIQUE
+        dataPublicacaoPncp TEXT,
+        anoCompra INTEGER,
+        statusAtivo BOOLEAN,
+        FOREIGN KEY (licitacao_id) REFERENCES licitacoes (id) ON DELETE CASCADE
+    );
+    """
+
+    sql_create_index_arquivos_licitacao_id = "CREATE INDEX IF NOT EXISTS idx_arquivos_licitacao_licitacao_id ON arquivos_licitacao (licitacao_id);"
+    # O índice em link_arquivo é criado automaticamente por ser UNIQUE.
+
+
 
     # SQL para criar índices na tabela 'licitacoes'
     # (Índice em numeroControlePNCP é criado automaticamente por ser UNIQUE, mas podemos ser explícitos)
@@ -125,6 +159,12 @@ def main():
 
         print("Criando índices para 'itens_licitacao'...")
         create_table(conn, sql_create_index_itens_licitacao_id) # (Cria índice em licitacao_id)
+
+        print("Criando tabela 'arquivos_licitacao'...")
+        create_table(conn, sql_create_arquivos_licitacao_table) # Cria a tabela arquivos_licitacao
+
+        print("Criando índices para 'arquivos_licitacao'...")
+        create_table(conn, sql_create_index_arquivos_licitacao_id) # Cria índice em licitacao_id
 
         conn.commit() # (Salva (commit) as alterações no banco de dados)
         conn.close() # (Fecha a conexão com o banco de dados)
