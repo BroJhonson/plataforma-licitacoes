@@ -17,16 +17,16 @@ hoje = date.today()
 data_futura = hoje + timedelta(days=6*30) # Aproximação de 6 meses (180 dias)
 DATA_ATUAL_PARAM = data_futura.strftime('%Y%m%d')
 #print(f"INFO: Usando dataFinal calculada como: {DATA_ATUAL_PARAM}")
-TAMANHO_PAGINA = 10 # OBRIGATORIO
-LIMITE_PAGINAS_TESTE = 1 # OBRIGATORIO. Mudar para None para buscar todas.
-CODIGOS_MODALIDADE = [6] # (OBRIGATORIO. 5 = Concorrencia; 6 = Pregão Eletrônico)
+TAMANHO_PAGINA_SYNC  = 50 # OBRIGATORIO
+LIMITE_PAGINAS_TESTE_SYNC = 1 # OBRIGATORIO. Mudar para None para buscar todas.
+CODIGOS_MODALIDADE = [5, 6] # (OBRIGATORIO. 5 = Concorrencia; 6 = Pregão Eletrônico)
 API_BASE_URL = "https://pncp.gov.br/api/consulta" # (URL base da API do PNCP)      
 API_BASE_URL_PNCP_API = "https://pncp.gov.br/pncp-api"   # Para itens e arquivos    ## PARA TODOS OS LINKS DE ARQUIVOS E ITENS USAR PAGINAÇÃO SE NECESSARIO ##
 ENDPOINT_PROPOSTAS_ABERTAS = "/v1/contratacoes/proposta" # (Endpoint específico)
 
 
     ##CONFIGURAÇÃO DA API PARA ENCONTRAR OS ITENS/ARQUIVOS DAS LICITAÇÕES ##
-def fetch_itens_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina=1, tamanho_pagina=50):
+def fetch_itens_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina=1, tamanho_pagina=TAMANHO_PAGINA_SYNC):
     """Busca uma página de itens de uma licitação."""
     url = f"{API_BASE_URL_PNCP_API}/v1/orgaos/{cnpj_orgao}/compras/{ano_compra}/{sequencial_compra}/itens"
     params = {'pagina': pagina, 'tamanhoPagina': tamanho_pagina}
@@ -38,12 +38,12 @@ def fetch_itens_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina=1, ta
         if response.status_code == 204: return [] # Retorna lista vazia
         return response.json() 
     except Exception as e:
-        print(f"ITENS: Erro ao buscar itens para {cnpj_orgao}/{ano_compra}/{sequencial_compra}: {e}")
+        print(f"ITENS: Erro ao buscar itens para {cnpj_orgao}/{ano_compra}/{sequencial_compra} (Pag: {pagina}): {e}")
         if hasattr(e, 'response') and e.response is not None:
              print(f"ITENS: Status: {e.response.status_code}, Texto: {e.response.text[:200]}")
         return None # Indica erro
     
-def fetch_arquivos_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina=1, tamanho_pagina=50):
+def fetch_arquivos_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina=1, tamanho_pagina=TAMANHO_PAGINA_SYNC ):
     url = f"{API_BASE_URL_PNCP_API}/v1/orgaos/{cnpj_orgao}/compras/{ano_compra}/{sequencial_compra}/arquivos"
 
     params = {'pagina': pagina, 'tamanhoPagina': tamanho_pagina}
@@ -55,7 +55,7 @@ def fetch_arquivos_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina=1,
         if response.status_code == 204: return [] # Retorna lista vazia        
         return response.json() 
     except Exception as e:
-        print(f"ARQUIVOS: Erro ao buscar arquivoS para {cnpj_orgao}/{ano_compra}/{sequencial_compra}: {e}")
+        print(f"ARQUIVOS: Erro ao buscar arquivoS para {cnpj_orgao}/{ano_compra}/{sequencial_compra} (Pag: {pagina}): {e}")
         if hasattr(e, 'response') and e.response is not None:
              print(f"ARQUIVOS: Status: {e.response.status_code}, Texto: {e.response.text[:200]}")
         return None 
@@ -71,19 +71,15 @@ def fetch_all_itens_for_licitacao(conn, licitacao_id_local, cnpj_orgao, ano_comp
     tamanho_pagina_itens = 100 # API do PNCP costuma ter limites altos para sub-recursos
     
     while True:
-        itens_pagina = fetch_itens_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina_atual_itens, tamanho_pagina_itens)
-        if itens_pagina is None: # Erro na chamada
+        itens_pagina = fetch_itens_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina_atual_itens, TAMANHO_PAGINA_SYNC)
+        if itens_pagina is None: 
             print(f"ITENS: Falha ao buscar página {pagina_atual_itens} de itens. Abortando busca de itens para esta licitação.")
             return None # Ou retorna o que conseguiu até agora: todos_itens_api
-        
         if not itens_pagina: # Lista vazia, fim da paginação
             break
-        
         todos_itens_api.extend(itens_pagina)
-        
-        # A API de itens parece não retornar 'paginasRestantes'.
         # Se o número de itens retornados for menor que tamanho_pagina_itens, assumimos que é a última página.
-        if len(itens_pagina) < tamanho_pagina_itens:
+        if len(itens_pagina) < TAMANHO_PAGINA_SYNC:
             break
         pagina_atual_itens += 1
         time.sleep(0.2) # Delay entre páginas de itens
@@ -109,7 +105,7 @@ def fetch_all_itens_for_licitacao(conn, licitacao_id_local, cnpj_orgao, ano_comp
         
         itens_salvos_count = 0
         for item_api in todos_itens_api:
-            item_db_tuple = (       # Renomeado para não confundir com licitacao_db
+            item_db_tuple = (      
                 licitacao_id_local,
                 item_api.get('numeroItem'),
                 item_api.get('descricao'),
@@ -143,14 +139,13 @@ def fetch_all_itens_for_licitacao(conn, licitacao_id_local, cnpj_orgao, ano_comp
 ### ARQUIVOS ###
 def fetch_all_arquivos_for_licitacao(conn, licitacao_id_local, cnpj_orgao, ano_compra, sequencial_compra):
     todos_arquivos_api_metadados = [] # Lista para guardar os metadados de todos os arquivos
-    pagina_atual_arquivos = 1
-    tamanho_pagina_arquivos = 100 # API do PNCP costuma ter limites altos para sub-recursos
+    pagina_atual_arquivos = 1    
 
     while True:
         # 1. Busca uma página de METADADOS de arquivos para verificar a quantidade de arquivos
-        arquivos_pagina_metadados = fetch_arquivos_from_api( # Função que chama o endpoint de lista
+        arquivos_pagina_metadados = fetch_arquivos_from_api(
             cnpj_orgao, ano_compra, sequencial_compra, 
-            pagina_atual_arquivos, tamanho_pagina_arquivos
+            pagina_atual_arquivos, TAMANHO_PAGINA_SYNC
         )
         
         if arquivos_pagina_metadados is None: # Erro na chamada
@@ -162,7 +157,7 @@ def fetch_all_arquivos_for_licitacao(conn, licitacao_id_local, cnpj_orgao, ano_c
             
         todos_arquivos_api_metadados.extend(arquivos_pagina_metadados)
         
-        if len(arquivos_pagina_metadados) < tamanho_pagina_arquivos:
+        if len(arquivos_pagina_metadados) < TAMANHO_PAGINA_SYNC:
             break
         pagina_atual_arquivos += 1
         time.sleep(0.2)
@@ -175,7 +170,7 @@ def fetch_all_arquivos_for_licitacao(conn, licitacao_id_local, cnpj_orgao, ano_c
         try:
             cursor.execute("DELETE FROM arquivos_licitacao WHERE licitacao_id = ?", (licitacao_id_local,))
         except sqlite3.Error as e:
-            print(f"ERRO (save_db): Ao deletar arquivos antigos da licitação ID {licitacao_id_local}: {e}")
+            print(f"ERRO (ARQUIVOS): Ao deletar arquivos antigos da licitação ID {licitacao_id_local}: {e}")
 
         sql_insert_arquivo = """
             INSERT INTO arquivos_licitacao (
@@ -224,7 +219,7 @@ def get_db_connection():
 
 
 # --- Lógica Principal de Sincronização ---
-def fetch_licitacoes_from_api(codigo_modalidade, pagina=1):
+#def fetch_licitacoes_from_api(codigo_modalidade, pagina=1):
     """Busca licitações de uma página específica da API para uma dada modalidade."""
     params = {
         'dataFinal': DATA_ATUAL_PARAM,
@@ -267,14 +262,41 @@ def fetch_licitacoes_from_api(codigo_modalidade, pagina=1):
 
     return None, 0 # (Em caso de erro, retorna None e 0 páginas restantes)
 
+def format_datetime_for_api(dt_obj): 
+    """Formata um objeto datetime para YYYYMMDD."""
+    return dt_obj.strftime('%Y%m%d')
 
-def save_licitacao_to_db(conn, licitacao_api_lista, pncp_ids_from_current_sync_set):
-    cursor = conn.cursor()
+def fetch_licitacoes_por_atualizacao(data_inicio_str, data_fim_str, codigo_modalidade_api, pagina=1, tamanho_pagina=TAMANHO_PAGINA_SYNC):
+    """Busca licitações da API /v1/contratacoes/atualizacao."""
+    params_api = {
+        'dataInicial': data_inicio_str,
+        'dataFinal': data_fim_str,
+        'pagina': pagina,
+        'tamanhoPagina': tamanho_pagina,
+        'codigoModalidadeContratacao': codigo_modalidade_api
+    }
+    url_api_pncp = f"{API_BASE_URL}/v1/contratacoes/atualizacao" 
+    print(f"SYNC ATUALIZACAO: Buscando em {url_api_pncp} com params {params_api}")
     
-    # Criação do link_portal_pncp (COMO VOCÊ FEZ, ESTÁ ÓTIMO)
-    cnpj_orgao_link = licitacao_api_lista.get('orgaoEntidade', {}).get('cnpj')
-    ano_compra_link = licitacao_api_lista.get('anoCompra')
-    sequencial_compra_link = licitacao_api_lista.get('sequencialCompra')
+    try:
+        response = requests.get(url_api_pncp, params=params_api, timeout=120)
+        response.raise_for_status()
+        if response.status_code == 204:
+            return None, 0
+        data_api = response.json()
+        return data_api.get('data'), data_api.get('paginasRestantes', 0)
+    except Exception as e:
+        print(f"SYNC ATUALIZACAO: Erro geral ao buscar (modalidade {codigo_modalidade_api}, pag {pagina}): {e}")
+        return None, 0
+
+
+def  save_licitacao_to_db(conn, licitacao_api_item): 
+    cursor = conn.cursor()
+      
+    # Criação do link_portal_pncp 
+    cnpj_orgao_link = licitacao_api_item.get('orgaoEntidade', {}).get('cnpj')
+    ano_compra_link = licitacao_api_item.get('anoCompra')
+    sequencial_compra_link = licitacao_api_item.get('sequencialCompra')
     link_pncp_val = None
     if cnpj_orgao_link and ano_compra_link and sequencial_compra_link is not None:
         try:
@@ -283,59 +305,60 @@ def save_licitacao_to_db(conn, licitacao_api_lista, pncp_ids_from_current_sync_s
         except ValueError:
             link_pncp_val = None
 
-    # Mapeamento de licitacao_db (COMO VOCÊ FEZ, SÓ ADICIONANDO link_portal_pncp AO FINAL)
+    # Mapeamento de licitacao_db 
     licitacao_db = {
-        'numeroControlePNCP': licitacao_api_lista.get('numeroControlePNCP'),
-        'numeroCompra': licitacao_api_lista.get('numeroCompra'),
-        'anoCompra': licitacao_api_lista.get('anoCompra'),
-        'processo': licitacao_api_lista.get('processo'),
-        'tipolnstrumentoConvocatorioId': licitacao_api_lista.get('tipoInstrumentoConvocatorioCodigo'),
-        'tipolnstrumentoConvocatorioNome': licitacao_api_lista.get('tipoInstrumentoConvocatorioNome'),
-        'modalidadeId': licitacao_api_lista.get('modalidadeId'),
-        'modalidadeNome': licitacao_api_lista.get('modalidadeNome'),
-        'modoDisputaId': licitacao_api_lista.get('modoDisputaId'),
-        'modoDisputaNome': licitacao_api_lista.get('modoDisputaNome'),
-        'situacaoCompraId': licitacao_api_lista.get('situacaoCompraId'),
-        'situacaoCompraNome': licitacao_api_lista.get('situacaoCompraNome'),
-        'objetoCompra': licitacao_api_lista.get('objetoCompra'),
-        'informacaoComplementar': licitacao_api_lista.get('informacaoComplementar'),
-        'srp': licitacao_api_lista.get('srp'),
-        'amparoLegalCodigo': licitacao_api_lista.get('amparoLegal', {}).get('codigo'),
-        'amparoLegalNome': licitacao_api_lista.get('amparoLegal', {}).get('nome'),
-        'amparoLegalDescricao': licitacao_api_lista.get('amparoLegal', {}).get('descricao'),
-        'valorTotalEstimado': licitacao_api_lista.get('valorTotalEstimado'),
-        'valorTotalHomologado': licitacao_api_lista.get('valorTotalHomologado'),
-        'dataAberturaProposta': licitacao_api_lista.get('dataAberturaProposta', '').split('T')[0] if licitacao_api_lista.get('dataAberturaProposta') else None,
-        'dataEncerramentoProposta': licitacao_api_lista.get('dataEncerramentoProposta', '').split('T')[0] if licitacao_api_lista.get('dataEncerramentoProposta') else None,
-        'dataPublicacaoPncp': licitacao_api_lista.get('dataPublicacaoPncp', '').split('T')[0] if licitacao_api_lista.get('dataPublicacaoPncp') else None,
-        'dataInclusao': licitacao_api_lista.get('dataInclusao', '').split('T')[0] if licitacao_api_lista.get('dataInclusao') else None,
-        'dataAtualizacao': licitacao_api_lista.get('dataAtualizacao', '').split('T')[0] if licitacao_api_lista.get('dataAtualizacao') else None,
-        'sequencialCompra': licitacao_api_lista.get('sequencialCompra'),
-        'orgaoEntidadeCnpj': licitacao_api_lista.get('orgaoEntidade', {}).get('cnpj'),
-        'orgaoEntidadeRazaoSocial': licitacao_api_lista.get('orgaoEntidade', {}).get('razaoSocial'),
-        'orgaoEntidadePoderId': licitacao_api_lista.get('orgaoEntidade', {}).get('poderId'),
-        'orgaoEntidadeEsferaId': licitacao_api_lista.get('orgaoEntidade', {}).get('esferaId'),
-        'unidadeOrgaoCodigo': licitacao_api_lista.get('unidadeOrgao', {}).get('codigoUnidade'),
-        'unidadeOrgaoNome': licitacao_api_lista.get('unidadeOrgao', {}).get('nomeUnidade'),
-        'unidadeOrgaoCodigoIbge': licitacao_api_lista.get('unidadeOrgao', {}).get('codigoIbge'),
-        'unidadeOrgaoMunicipioNome': licitacao_api_lista.get('unidadeOrgao', {}).get('municipioNome'),
-        'unidadeOrgaoUfSigla': licitacao_api_lista.get('unidadeOrgao', {}).get('ufSigla'),
-        'unidadeOrgaoUfNome': licitacao_api_lista.get('unidadeOrgao', {}).get('ufNome'),
-        'usuarioNome': licitacao_api_lista.get('usuarioNome'),
-        'linkSistemaOrigem': licitacao_api_lista.get('linkSistemaOrigem'),
-        'link_portal_pncp': link_pncp_val, # Adicionado
-        'justificativaPresencial': licitacao_api_lista.get('justificativaPresencial')
+        'numeroControlePNCP': licitacao_api_item.get('numeroControlePNCP'),
+        'numeroCompra': licitacao_api_item.get('numeroCompra'),
+        'anoCompra': licitacao_api_item.get('anoCompra'),
+        'processo': licitacao_api_item.get('processo'),
+        'tipolnstrumentoConvocatorioId': licitacao_api_item.get('tipoInstrumentoConvocatorioCodigo'),
+        'tipolnstrumentoConvocatorioNome': licitacao_api_item.get('tipoInstrumentoConvocatorioNome'),
+        'modalidadeId': licitacao_api_item.get('modalidadeId'),
+        'modalidadeNome': licitacao_api_item.get('modalidadeNome'),
+        'modoDisputaId': licitacao_api_item.get('modoDisputaId'),
+        'modoDisputaNome': licitacao_api_item.get('modoDisputaNome'),
+        'situacaoCompraId': licitacao_api_item.get('situacaoCompraId'),
+        'situacaoCompraNome': licitacao_api_item.get('situacaoCompraNome'),
+        'objetoCompra': licitacao_api_item.get('objetoCompra'),
+        'informacaoComplementar': licitacao_api_item.get('informacaoComplementar'),
+        'srp': licitacao_api_item.get('srp'),
+        'amparoLegalCodigo': licitacao_api_item.get('amparoLegal', {}).get('codigo'),
+        'amparoLegalNome': licitacao_api_item.get('amparoLegal', {}).get('nome'),
+        'amparoLegalDescricao': licitacao_api_item.get('amparoLegal', {}).get('descricao'),
+        'valorTotalEstimado': licitacao_api_item.get('valorTotalEstimado'),
+        'valorTotalHomologado': licitacao_api_item.get('valorTotalHomologado'),
+        'dataAberturaProposta': licitacao_api_item.get('dataAberturaProposta', '').split('T')[0] if licitacao_api_item.get('dataAberturaProposta') else None,
+        'dataEncerramentoProposta': licitacao_api_item.get('dataEncerramentoProposta', '').split('T')[0] if licitacao_api_item.get('dataEncerramentoProposta') else None,
+        'dataPublicacaoPncp': licitacao_api_item.get('dataPublicacaoPncp', '').split('T')[0] if licitacao_api_item.get('dataPublicacaoPncp') else None,
+        'dataInclusao': licitacao_api_item.get('dataInclusao', '').split('T')[0] if licitacao_api_item.get('dataInclusao') else None,
+        'dataAtualizacao': licitacao_api_item.get('dataAtualizacao', '').split('T')[0] if licitacao_api_item.get('dataAtualizacao') else None,
+        'sequencialCompra': licitacao_api_item.get('sequencialCompra'),
+        'orgaoEntidadeCnpj': licitacao_api_item.get('orgaoEntidade', {}).get('cnpj'),
+        'orgaoEntidadeRazaoSocial': licitacao_api_item.get('orgaoEntidade', {}).get('razaoSocial'),
+        'orgaoEntidadePoderId': licitacao_api_item.get('orgaoEntidade', {}).get('poderId'),
+        'orgaoEntidadeEsferaId': licitacao_api_item.get('orgaoEntidade', {}).get('esferaId'),
+        'unidadeOrgaoCodigo': licitacao_api_item.get('unidadeOrgao', {}).get('codigoUnidade'),
+        'unidadeOrgaoNome': licitacao_api_item.get('unidadeOrgao', {}).get('nomeUnidade'),
+        'unidadeOrgaoCodigoIbge': licitacao_api_item.get('unidadeOrgao', {}).get('codigoIbge'),
+        'unidadeOrgaoMunicipioNome': licitacao_api_item.get('unidadeOrgao', {}).get('municipioNome'),
+        'unidadeOrgaoUfSigla': licitacao_api_item.get('unidadeOrgao', {}).get('ufSigla'),
+        'unidadeOrgaoUfNome': licitacao_api_item.get('unidadeOrgao', {}).get('ufNome'),
+        'usuarioNome': licitacao_api_item.get('usuarioNome'),
+        'linkSistemaOrigem': licitacao_api_item.get('linkSistemaOrigem'),
+        'link_portal_pncp': link_pncp_val, 
+        'justificativaPresencial': licitacao_api_item.get('justificativaPresencial')
     }
     
     if not licitacao_db['numeroControlePNCP']:
-        print(f"AVISO (save_db): Licitação da lista sem 'numeroControlePNCP'. Dados: {licitacao_api_lista}")
+        print(f"AVISO (save_db): Licitação da lista sem 'numeroControlePNCP'. Dados: {licitacao_api_item}")
         return None
 
-    if licitacao_db['situacaoCompraId'] == 1:
-        pncp_ids_from_current_sync_set.add(licitacao_db['numeroControlePNCP'])
-    else:
-        print(f"INFO (save_db): Licitação {licitacao_db['numeroControlePNCP']} da lista não é ativa (situação: {licitacao_db['situacaoCompraId']}). Pulando.")
-        return None
+    """ --if licitacao_db['situacaoCompraId'] == 1:
+        --pncp_ids_from_current_sync_set.add(licitacao_db['numeroControlePNCP'])
+    --else:
+        --print(f"INFO (save_db): Licitação {licitacao_db['numeroControlePNCP']} da lista não é ativa (situação: {licitacao_db['situacaoCompraId']}). Pulando.")
+        --return None
+    """
 
     # SQL UPSERT ATUALIZADO
     sql_upsert_licitacao = """
@@ -414,45 +437,33 @@ def save_licitacao_to_db(conn, licitacao_api_lista, pncp_ids_from_current_sync_s
     try:
         cursor.execute("SELECT id, dataAtualizacao FROM licitacoes WHERE numeroControlePNCP = ?", (licitacao_db['numeroControlePNCP'],))
         row = cursor.fetchone()
-        data_atualizacao_api_dt = datetime.strptime(licitacao_db['dataAtualizacao'], '%Y-%m-%d') if licitacao_db['dataAtualizacao'] else None
+        api_data_att_str = licitacao_db.get('dataAtualizacao')
+        api_data_att_dt = datetime.strptime(api_data_att_str, '%Y-%m-%d').date() if api_data_att_str else None
 
-        if row: 
-            id_existente, data_atualizacao_db_str = row
-            licitacao_id_local_final = id_existente
-            if data_atualizacao_db_str: # Apenas tenta converter se não for None
-                data_atualizacao_db_dt = datetime.strptime(data_atualizacao_db_str, '%Y-%m-%d')
-                if data_atualizacao_api_dt and (data_atualizacao_api_dt > data_atualizacao_db_dt):
-                    flag_houve_mudanca_real = True
-            elif data_atualizacao_api_dt: # DB não tem data, API tem -> é uma atualização
+        if row:
+            licitacao_id_local_final = row['id']
+            db_data_att_str = row['dataAtualizacao']
+            db_data_att_dt = datetime.strptime(db_data_att_str, '%Y-%m-%d').date() if db_data_att_str else None
+            if api_data_att_dt and (not db_data_att_dt or api_data_att_dt > db_data_att_dt):
                 flag_houve_mudanca_real = True
-        else: 
-            flag_houve_mudanca_real = True 
+        else:
+            flag_houve_mudanca_real = True
 
-        if flag_houve_mudanca_real: 
-            cursor.execute(sql_upsert_licitacao, licitacao_db) 
+        if flag_houve_mudanca_real:
+            cursor.execute(sql_upsert_licitacao, licitacao_db)
             if cursor.rowcount > 0:
-                if not row: 
-                    licitacao_id_local_final = cursor.lastrowid
-                # (Já temos licitacao_id_local_final se row existia)
-                print(f"INFO (save_db): Licitação {licitacao_db['numeroControlePNCP']} INSERIDA/ATUALIZADA com ID local {licitacao_id_local_final}.")
-            elif row: # UPSERT não afetou (WHERE não passou), mas ID já existe
-                 licitacao_id_local_final = row[0] # Garante que temos o ID
-                 print(f"INFO (save_db): Licitação {licitacao_db['numeroControlePNCP']} (ID {licitacao_id_local_final}) já existe, UPSERT não alterou (data não mais nova).")
-            # else: # Não existia e não inseriu? Erro ou condição inesperada
-        elif row : 
-            licitacao_id_local_final = row[0]
-            print(f"INFO (save_db): Licitação {licitacao_db['numeroControlePNCP']} (ID {licitacao_id_local_final}) já existe e está atualizada. Nenhuma alteração na principal.")
+                if not row: licitacao_id_local_final = cursor.lastrowid
+                print(f"INFO (SAVE_DB): Licitação {licitacao_db['numeroControlePNCP']} UPSERTED. ID: {licitacao_id_local_final}")
+            elif row: # Não atualizou (WHERE falhou), mas já existia
+                 print(f"INFO (SAVE_DB): Licitação {licitacao_db['numeroControlePNCP']} não precisou de update (data não mais nova). ID: {licitacao_id_local_final}")
+        elif row:
+             print(f"INFO (SAVE_DB): Licitação {licitacao_db['numeroControlePNCP']} já atualizada. ID: {licitacao_id_local_final}")
         
-        # Se ainda não temos o ID local (caso de UPSERT ter falhado ou WHERE não satisfeito e não era nova)
-        if not licitacao_id_local_final and row: # Se existia mas algo deu errado no UPSERT
-            licitacao_id_local_final = row[0]
-        elif not licitacao_id_local_final and not row and not flag_houve_mudanca_real: # Não existia e não era pra mudar, mas não pegou ID?
-            # Tenta pegar o ID recém-inserido se for o caso, ou se UPSERT falhou em retornar lastrowid
-             cursor.execute("SELECT id FROM licitacoes WHERE numeroControlePNCP = ?", (licitacao_db['numeroControlePNCP'],))
-             id_row_check = cursor.fetchone()
-             if id_row_check: licitacao_id_local_final = id_row_check[0]
-
-
+        if not licitacao_id_local_final and flag_houve_mudanca_real: # Se era nova e UPSERT não deu lastrowid
+            cursor.execute("SELECT id FROM licitacoes WHERE numeroControlePNCP = ?", (licitacao_db['numeroControlePNCP'],))
+            id_row = cursor.fetchone()
+            if id_row: licitacao_id_local_final = id_row['id']
+            
     except sqlite3.Error as e:
         print(f"ERRO (save_db): Ao salvar licitação principal {licitacao_db.get('numeroControlePNCP', 'N/A')}: {e}")
         return None 
@@ -461,114 +472,113 @@ def save_licitacao_to_db(conn, licitacao_api_lista, pncp_ids_from_current_sync_s
         print(f"AVISO CRÍTICO (save_db): Não foi possível obter/confirmar ID local para {licitacao_db['numeroControlePNCP']}. Pulando sub-detalhes.")
         return None
 
-    # --- BUSCAR E SALVAR ITENS (e futuramente ARQUIVOS) ---
+    # --- BUSCAR E SALVAR ITENS
     buscar_sub_detalhes = False
-    if flag_houve_mudanca_real:
-        buscar_sub_detalhes = True
-    else: 
-        cursor.execute("SELECT COUNT(id) FROM itens_licitacao WHERE licitacao_id = ?", (licitacao_id_local_final,))
-        count_itens = cursor.fetchone()[0]
-        if count_itens == 0:
-            buscar_sub_detalhes = True
-            print(f"INFO (save_db): Licitação {licitacao_db['numeroControlePNCP']} (ID {licitacao_id_local_final}) sem mudança principal, mas não possui itens. Buscando itens.")
-    
-    if buscar_sub_detalhes:
-        cnpj_param = licitacao_db.get('orgaoEntidadeCnpj')
-        ano_param = licitacao_db.get('anoCompra')
-        sequencial_param = licitacao_db.get('sequencialCompra')
-
-        if cnpj_param and ano_param and sequencial_param is not None:
-            print(f"INFO (save_db): Iniciando busca de ITENS para {licitacao_db['numeroControlePNCP']} (ID Local: {licitacao_id_local_final})")
-            fetch_all_itens_for_licitacao(conn, licitacao_id_local_final, cnpj_param, ano_param, sequencial_param)
-            
-            print(f"INFO (save_db): Iniciando busca de ARQUIVOS para {licitacao_db['numeroControlePNCP']} (ID Local: {licitacao_id_local_final})")
-            fetch_all_arquivos_for_licitacao(conn, licitacao_id_local_final, cnpj_param, ano_param, sequencial_param) # Descomentar e implementar
-        else:
-            print(f"AVISO (save_db): Não foi possível buscar sub-detalhes para {licitacao_db['numeroControlePNCP']} por falta de CNPJ, Ano ou Sequencial.")
+    if flag_houve_mudanca_real: buscar_sub_detalhes = True
     else:
-        print(f"INFO (save_db): Licitação {licitacao_db['numeroControlePNCP']} (ID {licitacao_id_local_final}) não necessita busca de sub-detalhes no momento.")
-
+        cursor.execute("SELECT COUNT(id) FROM itens_licitacao WHERE licitacao_id = ?", (licitacao_id_local_final,))
+        if cursor.fetchone()[0] == 0: buscar_sub_detalhes = True
+            
+    if buscar_sub_detalhes:        
+        # Pegar cnpj, ano, sequencial de licitacao_db para passar para as funções
+        cnpj_p = licitacao_db.get('orgaoEntidadeCnpj')
+        ano_p = licitacao_db.get('anoCompra')
+        seq_p = licitacao_db.get('sequencialCompra')
+        if cnpj_p and ano_p and seq_p is not None:
+            print(f"INFO (SAVE_DB): Iniciando busca de ITENS para {licitacao_db['numeroControlePNCP']}")
+            fetch_all_itens_for_licitacao(conn, licitacao_id_local_final, cnpj_p, ano_p, seq_p)
+            print(f"INFO (SAVE_DB): Iniciando busca de ARQUIVOS para {licitacao_db['numeroControlePNCP']}")
+            fetch_all_arquivos_for_licitacao(conn, licitacao_id_local_final, cnpj_p, ano_p, seq_p)
+        else:
+             print(f"AVISO (SAVE_DB): Faltam CNPJ/Ano/Seq para buscar sub-detalhes de {licitacao_db['numeroControlePNCP']}")
+    else:
+        print(f"INFO (SAVE_DB): Licitação {licitacao_db['numeroControlePNCP']} não necessita busca de sub-detalhes.")
+        
     return licitacao_id_local_final
 
 
-def sync_all_active_licitacoes():
+def sync_licitacoes_ultima_janela_anual():
     conn = get_db_connection()
-    if not conn:
-        return
+    if not conn: return
 
-    total_licitacoes_com_subdetalhes_processados = 0 # Renomeado para clareza
-    total_erros_api_lista = 0 # Para erros ao buscar a lista principal
+    agora = datetime.now()
+    data_fim_periodo_dt = agora
+    data_inicio_periodo_dt = agora - timedelta(days=365) # Últimos 12 meses
 
-    pncp_ids_from_current_sync = set() 
+    data_inicio_api_str = format_datetime_for_api(data_inicio_periodo_dt)
+    data_fim_api_str = format_datetime_for_api(data_fim_periodo_dt)
 
-    for codigo_modalidade in CODIGOS_MODALIDADE:
-        print(f"\n--- Iniciando sincronização para modalidade: {codigo_modalidade} ---")
+    print(f"SYNC ANUAL: Iniciando sincronização para licitações atualizadas entre {data_inicio_api_str} e {data_fim_api_str}")
+
+    licitacoes_processadas_total = 0
+    
+    for modalidade_id_sync in CODIGOS_MODALIDADE:
+        print(f"\n--- SYNC JANELA: Processando Modalidade {modalidade_id_sync} ---")
         pagina_atual = 1
         paginas_processadas_modalidade = 0
+        erros_api_modalidade = 0
 
         while True:
-            if LIMITE_PAGINAS_TESTE is not None and paginas_processadas_modalidade >= LIMITE_PAGINAS_TESTE:
-                print(f"Limite de {LIMITE_PAGINAS_TESTE} páginas de teste atingido para modalidade {codigo_modalidade}. Parando.")
+            if LIMITE_PAGINAS_TESTE_SYNC is not None and paginas_processadas_modalidade >= LIMITE_PAGINAS_TESTE_SYNC:
+                print(f"SYNC JANELA: Limite de {LIMITE_PAGINAS_TESTE_SYNC} páginas atingido para modalidade {modalidade_id_sync}.")
                 break
-            
-            print(f"Buscando página {pagina_atual} para modalidade {codigo_modalidade}...")
-            licitacoes_data, paginas_restantes = fetch_licitacoes_from_api(codigo_modalidade, pagina_atual)
 
-            if licitacoes_data is None: # Erro na chamada da API de lista
-				# Se fetch_licitacoes_from_api retorna None para os dados, pode ser um erro de API ou 204 No Content.
-                # Se for 204, paginas_restantes também será 0, o loop vai parar.
-                # Se for erro de API, paginas_restantes será 0 e o loop também para.
-                total_erros_api_lista += 1
-                if total_erros_api_lista > 5:
-                    print("Muitos erros de API ao buscar listas. Abortando sincronização.")
-                    conn.close() # Fechar conexão antes de sair
-                    return # Sair da função sync_all_active_licitacoes
-                print(f"Não foi possível obter dados da página {pagina_atual} para modalidade {codigo_modalidade}. Tentando próxima ou parando.")
-                # Decide se continua para a próxima página ou para a modalidade (paginas_restantes=0 pararia)
-                # Se o erro for crítico, o break abaixo é apropriado para a modalidade.
-                # Se quiséssemos tentar a próxima página mesmo com erro nesta, a lógica seria diferente.
-                break # Para esta modalidade se houve erro na busca da página atual
+            licitacoes_data, paginas_restantes = fetch_licitacoes_por_atualizacao(
+                data_inicio_api_str, data_fim_api_str, modalidade_id_sync, pagina_atual
+            )
 
-            if not licitacoes_data: # Lista explicitamente vazia (não None)
-                print(f"Nenhuma licitação encontrada na página {pagina_atual} para modalidade {codigo_modalidade}.")
-            else: 
-                print(f"Processando {len(licitacoes_data)} licitações da página {pagina_atual}...")
-                for licitacao_api_item_da_lista in licitacoes_data:
-                    # Passa o item da lista e o set para a função
-                    # save_licitacao_to_db irá:
-                    # 1. Salvar/atualizar licitacao principal se for ativa.
-                    # 2. Adicionar ao pncp_ids_from_current_sync se ativa.
-                    # 3. Chamar fetch_all_itens_for_licitacao (e futuramente arquivos).
-                    id_local_salvo = save_licitacao_to_db(conn, licitacao_api_item_da_lista, pncp_ids_from_current_sync)
-                    
-                    if id_local_salvo: # Se save_licitacao_to_db processou e retornou um ID
-                        total_licitacoes_com_subdetalhes_processados += 1
+            if licitacoes_data is None: # Erro
+                erros_api_modalidade += 1
+                if erros_api_modalidade > 3:
+                    print(f"SYNC JANELA: Muitos erros de API para modalidade {modalidade_id_sync}. Abortando esta modalidade.")
+                    break 
+                if paginas_restantes == 0 : # Se API indicou erro e fim
+                    break
+    
+            if not licitacoes_data: # Fim dos dados
+                print(f"SYNC JANELA: Nenhuma licitação na API para modalidade {modalidade_id_sync}, página {pagina_atual}.")
+                # Verifique se paginas_restantes é 0 para confirmar o fim
+                if paginas_restantes == 0:
+                    break
+                else: # Pode ser uma página vazia no meio, mas API indica mais páginas (raro)
+                    print(f"SYNC ANUAL: Página {pagina_atual} vazia, mas {paginas_restantes} páginas restantes. Tentando próxima.")
+                    pagina_atual += 1
+                    time.sleep(0.5)
+                    continue
+
+            print(f"SYNC JANELA: Modalidade {modalidade_id_sync}, Página {pagina_atual}: Processando {len(licitacoes_data)} licitações.")
+            for lic_api in licitacoes_data:
+                save_licitacao_to_db(conn, lic_api) # Removido o set
+                licitacoes_processadas_total += 1
             
-            conn.commit() # Commit após processar todos os itens de uma página da lista
-            print(f"Página {pagina_atual} processada. {paginas_restantes} páginas restantes para esta modalidade.")
+            conn.commit()
+            print(f"SYNC JANELA: Modalidade {modalidade_id_sync}, Página {pagina_atual} processada. {paginas_restantes} páginas restantes.")
             paginas_processadas_modalidade += 1
             
-            if paginas_restantes == 0:
-                print(f"Todas as páginas processadas para a modalidade {codigo_modalidade}.")
-                break 
-            
+            if paginas_restantes == 0: break
             pagina_atual += 1
-            time.sleep(0.5) 
-        
-        if total_erros_api_lista > 5: break # Sai do loop de modalidades também
+            time.sleep(0.5)
 
-    # Aqui viria a lógica de limpeza de licitações que não estão mais ativas (usando pncp_ids_from_current_sync)
-    # Mas vamos deixar isso para depois, conforme o plano.
+    # Limpeza de licitações MUITO antigas (fora da janela de ~13 meses, por exemplo)
+    agora = datetime.now() # Recalcula 'agora' para a limpeza
+    data_limite_permanencia_dt = agora - timedelta(days=395) 
+    data_limite_permanencia_db_str = data_limite_permanencia_dt.strftime('%Y-%m-%d')
+    try:
+        cursor = conn.cursor()
+        print(f"SYNC JANELA: Limpando licitações com dataAtualizacao < {data_limite_permanencia_db_str}")
+        cursor.execute("DELETE FROM licitacoes WHERE dataAtualizacao < ?", (data_limite_permanencia_db_str,))
+        deleted_count = cursor.rowcount
+        conn.commit()
+        print(f"SYNC JANELA: Limpeza de {deleted_count} licitações antigas concluída.")
+    except sqlite3.Error as e:
+        print(f"SYNC JANELA: Erro na limpeza: {e}")
 
     conn.close()
-    print(f"\n--- Sincronização concluída ---")
-    print(f"Total de licitações da lista para as quais tentamos salvar/atualizar dados principais e sub-detalhes: {total_licitacoes_com_subdetalhes_processados}")
+    print(f"\n--- Sincronização da Janela Anual Concluída ---")
+    print(f"Total de licitações da API (na janela de atualização) processadas: {licitacoes_processadas_total}")
 
-# ... (if __name__ == '__main__': ...)
 
-save_licitacao_to_db
-# --- Ponto de Entrada do Script ---
 if __name__ == '__main__':
-    print("Iniciando script de sincronização com a API do PNCP...")
-    sync_all_active_licitacoes()
-    print("Script de sincronização finalizado.") 
+    print("Iniciando script de sincronização (janela anual de atualizações)...")
+    sync_licitacoes_ultima_janela_anual()
+    print("Script de sincronização finalizado.")
