@@ -200,3 +200,59 @@ header.border-bottom {
     margin-top: 1.25rem;
     margin-bottom: 1.25rem;
 }
+
+/* Estilos para as Tags de Palavra-Chave */
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; /* Espaço entre as tags */
+    padding: 5px 0;
+}
+
+.tag-item {
+    background-color: #007bff; /* Azul Bootstrap */
+    color: white;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 0.85em;
+    display: inline-flex; /* Para alinhar o texto e o botão de remover */
+    align-items: center;
+}
+
+.tag-item .remove-tag {
+    background: none;
+    border: none;
+    color: white;
+    margin-left: 5px;
+    padding: 0;
+    font-size: 1.1em; /* Tamanho do 'x' */
+    line-height: 1;
+    cursor: pointer;
+}
+.tag-item .remove-tag:hover {
+    opacity: 0.7;
+}
+/* Fim do estilos para as Tags de Palavra-Chave */
+
+/* TAG DE FILTROS NO TOPO DA TABELA*/
+#filtrosAtivosContainer .badge {
+    margin-right: 5px;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+#filtrosAtivosContainer strong {
+    color: #555;
+}
+
+#loadingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.7);
+    z-index: 1050; /* Acima da maioria dos elementos */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

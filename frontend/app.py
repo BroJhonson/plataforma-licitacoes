@@ -11,9 +11,8 @@ API_BACKEND_URL = "http://127.0.0.1:5000" # URL do seu backend original
 @app.route('/')
 def index():
     return render_template('index.html')
-
+   
 # --- API ROUTES FOR FRONTEND JAVASCRIPT ---
-
 @app.route('/api/frontend/licitacoes', methods=['GET'])
 def api_get_licitacoes():
     # Coleta todos os query parameters enviados pelo JavaScript

@@ -4,6 +4,10 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log("DOM Carregado. Iniciando main.js...");
 
     // Elementos do DOM
+    const filtrosAtivosContainer = document.getElementById('filtrosAtivosContainer');
+    const filtrosAtivosTexto = document.getElementById('filtrosAtivosTexto');
+    const linkLimparFiltrosRapido = document.getElementById('linkLimparFiltrosRapido');
+
     const ufsContainer = document.getElementById('ufsContainerDropdown');
     const municipiosSelect = document.getElementById('municipios');
     const municipiosHelp = document.getElementById('municipiosHelp');
@@ -26,7 +30,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const exibicaoInfo = document.getElementById('exibicaoInfo');
     const ordenarPorSelect = document.getElementById('ordenarPor');
     const itensPorPaginaSelect = document.getElementById('itensPorPagina');
-    
+    const palavraChaveInclusaoInputField = document.getElementById('palavraChaveInclusaoInput'); // Novo ID
+    //const btnAddPalavraInclusao = document.getElementById('btnAddPalavraInclusao');
+    const tagsPalavraInclusaoContainer = document.getElementById('tagsPalavraInclusaoContainer');
+    const palavraChaveExclusaoInputField = document.getElementById('palavraChaveExclusaoInput'); // Novo ID
+    //const btnAddPalavraExclusao = document.getElementById('btnAddPalavraExclusao');
+    const tagsPalavraExclusaoContainer = document.getElementById('tagsPalavraExclusaoContainer');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    if(linkLimparFiltrosRapido) { // Garante que o elemento existe
+        linkLimparFiltrosRapido.addEventListener('click', function(e){
+            e.preventDefault(); // Previne o comportamento padrão do link (navegar para #)
+            console.log("Link Limpar Filtros Rápido clicado"); // Para debug
+            limparFiltros(); // Chama a função principal de limpar filtros
+        });
+    }
+    // Arrays para armazenar as palavras-chave
+    let palavrasChaveInclusao = [];
+    let palavrasChaveExclusao = [];
     // Estado da Aplicação (para filtros, paginação, etc.)
     let currentPage = 1;
     
@@ -42,6 +63,142 @@ document.addEventListener('DOMContentLoaded', function () {
         { sigla: "RO", nome: "Rondônia" }, { sigla: "RR", nome: "Roraima" }, { sigla: "SC", nome: "Santa Catarina" },
         { sigla: "SP", nome: "São Paulo" }, { sigla: "SE", nome: "Sergipe" }, { sigla: "TO", nome: "Tocantins" }
     ];
+
+    // FUNÇÃO DE TAGS NAS PALAVRAS-CHAVE
+    function renderTags(palavrasArray, containerElement, tipo) { // tipo pode ser 'inclusao' ou 'exclusao'
+        containerElement.innerHTML = ''; // Limpa tags existentes
+        palavrasArray.forEach((palavra, index) => {
+            const tag = document.createElement('span');
+            tag.classList.add('tag-item');
+            tag.textContent = palavra;
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.classList.add('remove-tag');
+            removeBtn.innerHTML = '×'; // Caractere 'x'
+            removeBtn.title = 'Remover palavra';
+            removeBtn.addEventListener('click', () => {
+                if (tipo === 'inclusao') {
+                    palavrasChaveInclusao.splice(index, 1);
+                    renderTags(palavrasChaveInclusao, tagsPalavraInclusaoContainer, 'inclusao');
+                } else if (tipo === 'exclusao') {
+                    palavrasChaveExclusao.splice(index, 1);
+                    renderTags(palavrasChaveExclusao, tagsPalavraExclusaoContainer, 'exclusao');
+                }
+            });
+            tag.appendChild(removeBtn);
+            containerElement.appendChild(tag);
+        });
+    }
+
+    function addPalavraChave(inputField, palavrasArray, containerElement, tipo) {
+        const termos = inputField.value.trim();
+        if (termos) {
+            // Divide por vírgula ou ponto e vírgula, e limpa cada termo
+            const novasPalavras = termos.split(/[,;]+/).map(p => p.trim()).filter(p => p !== "");
+            
+            novasPalavras.forEach(novaPalavra => {
+                if (novaPalavra && !palavrasArray.includes(novaPalavra)) { // Evita duplicatas
+                    palavrasArray.push(novaPalavra);
+                }
+            });
+            inputField.value = ''; // Limpa o input
+            renderTags(palavrasArray, containerElement, tipo);
+        }
+    }
+
+    // Event Listeners para adicionar palavras-chave
+    if (palavraChaveInclusaoInputField) {
+        palavraChaveInclusaoInputField.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault(); 
+                addPalavraChave(palavraChaveInclusaoInputField, palavrasChaveInclusao, tagsPalavraInclusaoContainer, 'inclusao');
+            }
+        });
+    }
+
+    if (palavraChaveExclusaoInputField) {
+        palavraChaveExclusaoInputField.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                addPalavraChave(palavraChaveExclusaoInputField, palavrasChaveExclusao, tagsPalavraExclusaoContainer, 'exclusao');
+            }
+        });
+    }// FIM DA FUNÇÃO DE TAGS NAS PALAVRAS-CHAVE
+
+    // FUNÇÃO DAS TAGS NO TOPO
+    function atualizarExibicaoFiltrosAtivos() {
+        if (!filtrosAtivosContainer || !filtrosAtivosTexto) return;
+
+        let filtrosAplicados = [];
+
+        // Palavras-chave de Inclusão
+        if (palavrasChaveInclusao.length > 0) {
+            filtrosAplicados.push(`Buscar: ${palavrasChaveInclusao.map(p => `<span class="badge bg-primary">${p}</span>`).join(' ')}`);
+        }
+        // Palavras-chave de Exclusão
+        if (palavrasChaveExclusao.length > 0) {
+            filtrosAplicados.push(`Excluir: ${palavrasChaveExclusao.map(p => `<span class="badge bg-danger">${p}</span>`).join(' ')}`);
+        }
+        // UFs
+        const ufsSelecionadas = Array.from(document.querySelectorAll('#ufsContainerDropdown .filter-uf:checked')).map(cb => cb.value);
+        if (ufsSelecionadas.length > 0) {
+            filtrosAplicados.push(`UF: ${ufsSelecionadas.map(uf => `<span class="badge bg-secondary">${uf}</span>`).join(' ')}`);
+        }
+        // Municípios
+        const municipiosSelecionados = Array.from(document.querySelectorAll('#municipiosContainerDropdown .filter-municipio:checked')).map(cb => cb.value);
+        if (municipiosSelecionados.length > 0) {
+            filtrosAplicados.push(`Município: ${municipiosSelecionados.map(m => `<span class="badge bg-info text-dark">${m}</span>`).join(' ')}`);
+        }
+        // Modalidades
+        const modalidadesSelecionadas = Array.from(document.querySelectorAll('#modalidadesContainerDropdown .filter-modalidade:checked'))
+                                        .map(cb => {
+                                            const label = document.querySelector(`label[for="${cb.id}"]`);
+                                            return label ? label.textContent : cb.value; // Pega o nome do label
+                                        });
+        if (modalidadesSelecionadas.length > 0) {
+            filtrosAplicados.push(`Modalidade: ${modalidadesSelecionadas.map(m => `<span class="badge bg-warning text-dark">${m}</span>`).join(' ')}`);
+        }
+        // Status
+        const statusSelecionadoRadio = document.querySelector('.filter-status:checked');
+        if (statusSelecionadoRadio && statusSelecionadoRadio.value) { // Se não for "Todos"
+            const labelStatus = document.querySelector(`label[for="${statusSelecionadoRadio.id}"]`);
+            filtrosAplicados.push(`Status: <span class="badge bg-success">${labelStatus ? labelStatus.textContent : statusSelecionadoRadio.value}</span>`);
+        } else if (statusSelecionadoRadio && statusSelecionadoRadio.value === "") {
+            filtrosAplicados.push(`Status: <span class="badge bg-dark">Todos</span>`);
+        }
+
+
+        // Datas Publicação
+        if (dataPubInicioInput.value || dataPubFimInput.value) {
+            let strDataPub = "Data Pub.: ";
+            if (dataPubInicioInput.value) strDataPub += `de ${new Date(dataPubInicioInput.value+'T00:00:00').toLocaleDateString('pt-BR')} `;
+            if (dataPubFimInput.value) strDataPub += `até ${new Date(dataPubFimInput.value+'T00:00:00').toLocaleDateString('pt-BR')}`;
+            filtrosAplicados.push(`<span class="badge bg-light text-dark border">${strDataPub.trim()}</span>`);
+        }
+        // Datas Atualização (SE OS INPUTS EXISTIREM)
+        if (dataAtualizacaoInicioInput && dataAtualizacaoFimInput && (dataAtualizacaoInicioInput.value || dataAtualizacaoFimInput.value)) {
+            let strDataAtual = "Data Atual.: ";
+            if (dataAtualizacaoInicioInput.value) strDataAtual += `de ${new Date(dataAtualizacaoInicioInput.value+'T00:00:00').toLocaleDateString('pt-BR')} `;
+            if (dataAtualizacaoFimInput.value) strDataAtual += `até ${new Date(dataAtualizacaoFimInput.value+'T00:00:00').toLocaleDateString('pt-BR')}`;
+            filtrosAplicados.push(`<span class="badge bg-light text-dark border">${strDataAtual.trim()}</span>`);
+        }
+        // Valor
+        if (valorMinInput.value || valorMaxInput.value) {
+            let strValor = "Valor: ";
+            if (valorMinInput.value) strValor += `min R$ ${valorMinInput.value} `;
+            if (valorMaxInput.value) strValor += `max R$ ${valorMaxInput.value}`;
+            filtrosAplicados.push(`<span class="badge bg-light text-dark border">${strValor.trim()}</span>`);
+        }
+
+
+        if (filtrosAplicados.length > 0) {
+            filtrosAtivosTexto.innerHTML = filtrosAplicados.join(' • '); // Separador • é um ponto
+            filtrosAtivosContainer.style.display = 'block';
+        } else {
+            filtrosAtivosTexto.innerHTML = 'Nenhum filtro aplicado.';
+            // filtrosAtivosContainer.style.display = 'none'; // Ou mostrar "Nenhum filtro aplicado"
+        }
+    }
 
     //  FUNÇÃO DE FILTROS - ESTADO -UF
     function updateUFSelectedCount() {
@@ -119,7 +276,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });        
     }
-
 
 
     // --- FUNÇÕES DE INICIALIZAÇÃO E POPULAÇÃO DE FILTROS ---
@@ -208,7 +364,6 @@ document.addEventListener('DOMContentLoaded', function () {
             statusContainer.innerHTML = `<small class="text-danger">Erro ao carregar status: ${error.message}</small>`;
         }
     }
-
 
 
     function popularUFs() { 
@@ -344,30 +499,17 @@ document.addEventListener('DOMContentLoaded', function () {
     async function buscarLicitacoes(page = 1) {
         currentPage = page;
         const params = new URLSearchParams();
-
-        // Coleta palavraChaveInc uma vez no início da função
-        const palavraChaveInc = palavraChaveInclusaoInput.value.trim();
-        if (palavraChaveInc) {
-            // ASSUMINDO QUE O USUÁRIO SEPARA AS PALAVRAS POR VÍRGULA NO INPUT
-            palavraChaveInc.split(',').forEach(p => {
-                const termoLimpo = p.trim();
-                if (termoLimpo) { // Garante que não envia strings vazias se houver vírgulas extras
-                    params.append('palavraChave', termoLimpo);
-                }
-            });
-        }
-
-        const palavraChaveExc = palavraChaveExclusaoInput.value.trim();
-        if (palavraChaveExc) {
-            // ASSUMINDO QUE O USUÁRIO SEPARA AS PALAVRAS POR VÍRGULA NO INPUT
-            palavraChaveExc.split(',').forEach(p => {
-                const termoLimpo = p.trim();
-                if (termoLimpo) {
-                    params.append('excluirPalavra', termoLimpo);
-                }
-            });
-        }
         
+        if(loadingOverlay) loadingOverlay.classList.remove('d-none');
+
+        // Coleta palavraChave uma vez no início da função
+        if (palavrasChaveInclusao.length > 0) {
+            palavrasChaveInclusao.forEach(p => params.append('palavraChave', p));
+        }
+        if (palavrasChaveExclusao.length > 0) {
+            palavrasChaveExclusao.forEach(p => params.append('excluirPalavra', p));
+        }
+                
         document.querySelectorAll('.filter-uf:checked').forEach(cb => params.append('uf', cb.value));
         document.querySelectorAll('.filter-modalidade:checked').forEach(cb => params.append('modalidadeId', cb.value));
         
@@ -450,6 +592,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             renderLicitacoesTable(data.licitacoes);
             renderPagination(data);
+            atualizarExibicaoFiltrosAtivos();
                                 
             totalRegistrosInfo.textContent = data.total_registros || '0';
             if (data.licitacoes && data.licitacoes.length > 0) {
@@ -466,6 +609,9 @@ document.addEventListener('DOMContentLoaded', function () {
             totalRegistrosInfo.textContent = '0';
             exibicaoInfo.textContent = 'Erro';
             paginationControls.innerHTML = '';
+        }finally {
+            // Oculta o overlay de carregamento no final, seja sucesso ou erro
+            if (loadingOverlay) loadingOverlay.classList.add('d-none');
         }
     }
 
@@ -654,16 +800,28 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function limparFiltros() {
-        palavraChaveInclusaoInput.value = '';
-        palavraChaveExclusaoInput.value = '';
-        document.querySelectorAll('.filter-uf:checked').forEach(cb => cb.checked = false);
+    function limparFiltros() {        
+        if(palavraChaveInclusaoInputField) palavraChaveInclusaoInputField.value = '';
+        if(palavraChaveExclusaoInputField) palavraChaveExclusaoInputField.value = '';
+
+        palavrasChaveInclusao = []; // Limpa o array
+        palavrasChaveExclusao = []; // Limpa o array
+        renderTags(palavrasChaveInclusao, tagsPalavraInclusaoContainer, 'inclusao'); // Re-renderiza (vazio)
+        renderTags(palavrasChaveExclusao, tagsPalavraExclusaoContainer, 'exclusao'); // Re-renderiza (vazio)
+
+        //document.querySelectorAll('.filter-uf:checked').forEach(cb => cb.checked = false);
+        //handleUFChange(); 
+        document.querySelectorAll('#ufsContainerDropdown .filter-uf:checked').forEach(cb => cb.checked = false);
+        // Atualizar contagem e municípios após desmarcar UFs
+        if (typeof updateUFSelectedCount === "function") updateUFSelectedCount(); // Atualiza badge de UF SE ESSE TIVER PROBLEMA, UTILIZAR O DE CIMA
+        handleUFChange(); // Isso deve limpar e desabilitar os municípios e atualizar o badge de municípios
         
-        handleUFChange(); // Isso limpará e desabilitará o select de municípios
+        //document.querySelectorAll('.filter-modalidade:checked').forEach(cb => cb.checked = false);           
+        //updateModalidadeSelectedCount(); // >>> Resetar o contador de modalidades <<<
+        document.querySelectorAll('#modalidadesContainerDropdown .filter-modalidade:checked').forEach(cb => cb.checked = false);
+        if (typeof updateModalidadeSelectedCount === "function") updateModalidadeSelectedCount(); // Atualiza badge de modalidade (criar essa função)
+
         
-        document.querySelectorAll('.filter-modalidade:checked').forEach(cb => cb.checked = false);           
-        
-        updateModalidadeSelectedCount(); // >>> Resetar o contador de modalidades <<<
 
         // Resetar status para o default
         const radiosStatus = document.querySelectorAll('.filter-status');
@@ -687,22 +845,28 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         statusWarning.classList.add('d-none');
 
-        dataPubInicioInput.value = '';
-        dataPubFimInput.value = '';
-        // >>> LIMPAR DATAS DE ATUALIZAÇÃO <<<
+        if(dataPubInicioInput) dataPubInicioInput.value = '';
+        if(dataPubFimInput) dataPubFimInput.value = '';
         if(dataAtualizacaoInicioInput) dataAtualizacaoInicioInput.value = '';
         if(dataAtualizacaoFimInput) dataAtualizacaoFimInput.value = '';
-
-        valorMinInput.value = '';
-        valorMaxInput.value = '';
+        if(valorMinInput) valorMinInput.value = '';
+        if(valorMaxInput) valorMaxInput.value = '';
         
         const advancedCollapse = document.getElementById('collapseAdvanced');
         if (advancedCollapse && advancedCollapse.classList.contains('show')) {
             new bootstrap.Collapse(advancedCollapse).hide();
         }
-
                 
-        console.log("Filtros limpos, buscando licitações...");
+        console.log("Filtros limpos, buscando licitações...");        
+        atualizarExibicaoFiltrosAtivos(); 
+
+        // Event listener para o link de limpar rápido
+        if(linkLimparFiltrosRapido) {
+            linkLimparFiltrosRapido.addEventListener('click', function(e){
+                e.preventDefault();
+                limparFiltros(); // Chama a função principal de limpar filtros
+            });
+        }
         buscarLicitacoes(1); 
     }
 
