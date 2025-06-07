@@ -1,4 +1,4 @@
-# database_setup.py
+# python database_setup.py
 
 import sqlite3 # (Importa o módulo sqlite3 para interagir com bancos de dados SQLite)
 import os # (Importa o módulo os para manipulação de caminhos de arquivos e diretórios)
@@ -73,7 +73,8 @@ def main():
         usuarioNome TEXT,
         linkSistemaOrigem TEXT,
         link_portal_pncp TEXT,
-        justificativaPresencial TEXT
+        justificativaPresencial TEXT,
+        situacaoReal TEXT
     );
     """
 

@@ -1,4 +1,4 @@
-# sync_api.py
+# python sync_api.py
 
 import requests # (Para fazer requisições HTTP)
 import sqlite3 # (Para interagir com o banco de dados SQLite)
@@ -18,8 +18,8 @@ data_futura = hoje + timedelta(days=6*30) # Aproximação de 6 meses (180 dias)
 DATA_ATUAL_PARAM = data_futura.strftime('%Y%m%d')
 #print(f"INFO: Usando dataFinal calculada como: {DATA_ATUAL_PARAM}")
 TAMANHO_PAGINA_SYNC  = 50 # OBRIGATORIO
-LIMITE_PAGINAS_TESTE_SYNC = 1 # OBRIGATORIO. Mudar para None para buscar todas.
-CODIGOS_MODALIDADE = [5, 6] # (OBRIGATORIO. 5 = Concorrencia; 6 = Pregão Eletrônico)
+LIMITE_PAGINAS_TESTE_SYNC = 100 # OBRIGATORIO. Mudar para None para buscar todas.
+CODIGOS_MODALIDADE = [5, 6, 1, 2, 3, 4 ] # (OBRIGATORIO. 5 = Concorrencia; 6 = Pregão Eletrônico)
 API_BASE_URL = "https://pncp.gov.br/api/consulta" # (URL base da API do PNCP)      
 API_BASE_URL_PNCP_API = "https://pncp.gov.br/pncp-api"   # Para itens e arquivos    ## PARA TODOS OS LINKS DE ARQUIVOS E ITENS USAR PAGINAÇÃO SE NECESSARIO ##
 ENDPOINT_PROPOSTAS_ABERTAS = "/v1/contratacoes/proposta" # (Endpoint específico)
@@ -60,80 +60,6 @@ def fetch_arquivos_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina=1,
              print(f"ARQUIVOS: Status: {e.response.status_code}, Texto: {e.response.text[:200]}")
         return None 
 
-
-
-
-### ITENS DA LICITAÇÃO ###
-def fetch_all_itens_for_licitacao(conn, licitacao_id_local, cnpj_orgao, ano_compra, sequencial_compra):
-    """Busca todos os itens de uma licitação, lidando com paginação."""
-    todos_itens_api = []
-    pagina_atual_itens = 1
-    tamanho_pagina_itens = 100 # API do PNCP costuma ter limites altos para sub-recursos
-    
-    while True:
-        itens_pagina = fetch_itens_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina_atual_itens, TAMANHO_PAGINA_SYNC)
-        if itens_pagina is None: 
-            print(f"ITENS: Falha ao buscar página {pagina_atual_itens} de itens. Abortando busca de itens para esta licitação.")
-            return None # Ou retorna o que conseguiu até agora: todos_itens_api
-        if not itens_pagina: # Lista vazia, fim da paginação
-            break
-        todos_itens_api.extend(itens_pagina)
-        # Se o número de itens retornados for menor que tamanho_pagina_itens, assumimos que é a última página.
-        if len(itens_pagina) < TAMANHO_PAGINA_SYNC:
-            break
-        pagina_atual_itens += 1
-        time.sleep(0.2) # Delay entre páginas de itens
-    
-    print(f"ITENS: Total de {len(todos_itens_api)} itens encontrados para {cnpj_orgao}/{ano_compra}/{sequencial_compra}.")
-    
-    # Salvar no banco
-    if todos_itens_api:
-        cursor = conn.cursor()
-        try:
-            cursor.execute("DELETE FROM itens_licitacao WHERE licitacao_id = ?", (licitacao_id_local,))
-        except sqlite3.Error as e:
-            print(f"ERRO (save_db): Ao deletar itens antigos da licitação ID {licitacao_id_local}: {e}")
-
-        sql_insert_item = """
-        INSERT INTO itens_licitacao (
-            licitacao_id, numeroItem, descricao, materialOuServicoNome, quantidade,
-            unidadeMedida, valorUnitarioEstimado, valorTotal, orcamentoSigiloso,
-            itemCategoriaNome, categoriaItemCatalogo, criterioJulgamentoNome, 
-            situacaoCompraItemNome, tipoBeneficioNome, incentivoProdutivoBasico, dataInclusao,
-            dataAtualizacao, temResultado, informacaoComplementar
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""" # 19 placeholders
-        
-        itens_salvos_count = 0
-        for item_api in todos_itens_api:
-            item_db_tuple = (      
-                licitacao_id_local,
-                item_api.get('numeroItem'),
-                item_api.get('descricao'),
-                item_api.get('materialOuServicoNome'),
-                item_api.get('quantidade'),
-                item_api.get('unidadeMedida'),
-                item_api.get('valorUnitarioEstimado'),
-                item_api.get('valorTotal'),
-                item_api.get('orcamentoSigiloso'), # API envia boolean
-                item_api.get('itemCategoriaNome'),
-                item_api.get('categoriaItemCatalogo'),
-                item_api.get('criterioJulgamentoNome'),
-                item_api.get('situacaoCompraItemNome'),
-                item_api.get('tipoBeneficioNome'),
-                item_api.get('incentivoProdutivoBasico'), # API envia boolean
-                item_api.get('dataInclusao', '').split('T')[0] if item_api.get('dataInclusao') else None,
-                item_api.get('dataAtualizacao', '').split('T')[0] if item_api.get('dataAtualizacao') else None,
-                item_api.get('temResultado'), # API envia boolean
-                item_api.get('informacaoComplementar')
-            )
-            try: # ... (try-except para executar o insert)
-                cursor.execute(sql_insert_item, item_db_tuple)
-                itens_salvos_count += 1
-            except sqlite3.Error as e:
-                print(f"ERRO (save_db): Ao salvar item {item_api.get('numeroItem')} da licitação ID {licitacao_id_local}: {e} - Dados: {item_db_tuple}")
-        if itens_salvos_count > 0:
-            print(f"INFO (save_db): {itens_salvos_count} itens da licitação {licitacao_id_local} salvos.")
-    return todos_itens_api
 
 
 ### ARQUIVOS ###
@@ -218,50 +144,6 @@ def get_db_connection():
 
 
 
-# --- Lógica Principal de Sincronização ---
-#def fetch_licitacoes_from_api(codigo_modalidade, pagina=1):
-    """Busca licitações de uma página específica da API para uma dada modalidade."""
-    params = {
-        'dataFinal': DATA_ATUAL_PARAM,
-        'codigoModalidadeContratacao': codigo_modalidade,
-        'pagina': pagina,
-        'tamanhoPagina': TAMANHO_PAGINA,
-        # 'ufSigla': 'SP', # Exemplo se quisesse filtrar por UF
-        # 'codigoMunicipioIbge': '3550308', # Exemplo para São Paulo capital
-        # Outros parâmetros opcionais podem ser adicionados aqui
-    }
-    headers = {
-        'Accept': 'application/json' # (Define o tipo de conteúdo esperado na resposta)
-    }
-    
-    url = f"{API_BASE_URL}{ENDPOINT_PROPOSTAS_ABERTAS}"
-    print(f"Buscando dados da API: {url} com params: {params}")
-    
-    try:
-        response = requests.get(url, params=params, headers=headers, timeout=30) # (Timeout de 30s)
-        response.raise_for_status() # (Levanta um erro HTTP para respostas 4xx ou 5xx)
-
-        if response.status_code == 204: # (No Content)
-            print("API retornou 204 No Content (sem dados para os parâmetros).")
-            return None, 0 # (Retorna None para dados e 0 para páginas restantes)
-        
-        data = response.json() # (Converte a resposta JSON em um dicionário Python)
-        return data.get('data'), data.get('paginasRestantes', 0) # (Retorna a lista de licitações e o número de páginas restantes)
-
-    except requests.exceptions.HTTPError as http_err:
-        print(f"Erro HTTP ao chamar a API: {http_err}")
-        print(f"Conteúdo da resposta: {response.text if response else 'Nenhuma resposta'}")
-    except requests.exceptions.ConnectionError as conn_err:
-        print(f"Erro de Conexão com a API: {conn_err}")
-    except requests.exceptions.Timeout as timeout_err:
-        print(f"Timeout ao chamar a API: {timeout_err}")
-    except requests.exceptions.RequestException as req_err:
-        print(f"Erro genérico de requisição à API: {req_err}")
-    except json.JSONDecodeError as json_err:
-        print(f"Erro ao decodificar JSON da API: {json_err.msg}. Resposta: {response.text}")
-
-    return None, 0 # (Em caso de erro, retorna None e 0 páginas restantes)
-
 def format_datetime_for_api(dt_obj): 
     """Formata um objeto datetime para YYYYMMDD."""
     return dt_obj.strftime('%Y%m%d')
@@ -293,20 +175,8 @@ def fetch_licitacoes_por_atualizacao(data_inicio_str, data_fim_str, codigo_modal
 def  save_licitacao_to_db(conn, licitacao_api_item): 
     cursor = conn.cursor()
       
-    # Criação do link_portal_pncp 
-    cnpj_orgao_link = licitacao_api_item.get('orgaoEntidade', {}).get('cnpj')
-    ano_compra_link = licitacao_api_item.get('anoCompra')
-    sequencial_compra_link = licitacao_api_item.get('sequencialCompra')
-    link_pncp_val = None
-    if cnpj_orgao_link and ano_compra_link and sequencial_compra_link is not None:
-        try:
-            seq_sem_zeros = str(int(str(sequencial_compra_link)))
-            link_pncp_val = f"https://pncp.gov.br/app/editais/{cnpj_orgao_link}/{ano_compra_link}/{seq_sem_zeros}"
-        except ValueError:
-            link_pncp_val = None
-
     # Mapeamento de licitacao_db 
-    licitacao_db = {
+    licitacao_db_parcial = {
         'numeroControlePNCP': licitacao_api_item.get('numeroControlePNCP'),
         'numeroCompra': licitacao_api_item.get('numeroCompra'),
         'anoCompra': licitacao_api_item.get('anoCompra'),
@@ -345,20 +215,149 @@ def  save_licitacao_to_db(conn, licitacao_api_item):
         'unidadeOrgaoUfNome': licitacao_api_item.get('unidadeOrgao', {}).get('ufNome'),
         'usuarioNome': licitacao_api_item.get('usuarioNome'),
         'linkSistemaOrigem': licitacao_api_item.get('linkSistemaOrigem'),
-        'link_portal_pncp': link_pncp_val, 
-        'justificativaPresencial': licitacao_api_item.get('justificativaPresencial')
+        'justificativaPresencial': licitacao_api_item.get('justificativaPresencial'),
+        #'link_portal_pncp': link_pncp_val
     }
     
-    if not licitacao_db['numeroControlePNCP']:
+    if not licitacao_db_parcial['numeroControlePNCP']:
         print(f"AVISO (save_db): Licitação da lista sem 'numeroControlePNCP'. Dados: {licitacao_api_item}")
         return None
+    
+     # Gerar link_portal_pncp
+    cnpj_l = licitacao_db_parcial['orgaoEntidadeCnpj']
+    ano_l = licitacao_db_parcial['anoCompra']
+    seq_l = licitacao_db_parcial['sequencialCompra']
+    link_pncp_val = None
+    if cnpj_l and ano_l and seq_l is not None:
+        try:
+            seq_sem_zeros = str(int(str(seq_l)))
+            link_pncp_val = f"https://pncp.gov.br/app/editais/{cnpj_l}/{ano_l}/{seq_sem_zeros}"
+        except ValueError: link_pncp_val = None
+    licitacao_db_parcial['link_portal_pncp'] = link_pncp_val
 
-    """ --if licitacao_db['situacaoCompraId'] == 1:
-        --pncp_ids_from_current_sync_set.add(licitacao_db['numeroControlePNCP'])
-    --else:
-        --print(f"INFO (save_db): Licitação {licitacao_db['numeroControlePNCP']} da lista não é ativa (situação: {licitacao_db['situacaoCompraId']}). Pulando.")
-        --return None
-    """
+    # --- Determinar flag_houve_mudanca_real e obter licitacao_id_local_existente ---
+    # Esta flag e o ID são importantes para decidir se buscamos itens/arquivos e para o UPSERT.
+    licitacao_id_local_final = None
+    flag_houve_mudanca_real = False
+    
+    cursor.execute("SELECT id, dataAtualizacao FROM licitacoes WHERE numeroControlePNCP = ?", (licitacao_db_parcial['numeroControlePNCP'],))
+    row_existente = cursor.fetchone()
+    api_data_att_str = licitacao_db_parcial.get('dataAtualizacao')
+    api_data_att_dt = datetime.strptime(api_data_att_str, '%Y-%m-%d').date() if api_data_att_str else None
+
+    if row_existente:
+        licitacao_id_local_final = row_existente['id']
+        db_data_att_str = row_existente['dataAtualizacao']
+        db_data_att_dt = datetime.strptime(db_data_att_str, '%Y-%m-%d').date() if db_data_att_str else None
+        if api_data_att_dt and (not db_data_att_dt or api_data_att_dt > db_data_att_dt):
+            flag_houve_mudanca_real = True
+    else:
+        flag_houve_mudanca_real = True # Nova licitação, considera como mudança
+
+    # --- Buscar Itens (SEMPRE que houver mudança ou for nova, OU se não tiver itens e quisermos popular) ---
+    # Para determinar 'situacaoReal' com base nos itens, precisamos deles AGORA.
+    # A lógica de 'buscar_sub_detalhes' precisa ser adaptada.
+    # Vamos buscar itens se for nova ou atualizada, ou se o banco não tem itens para ela.
+    
+    itens_da_licitacao_api = [] # Lista de itens buscados da API
+    necessita_buscar_itens = False
+    if flag_houve_mudanca_real:
+        necessita_buscar_itens = True
+    elif licitacao_id_local_final: # Se já existe no DB mas não houve mudança na dataAtualizacao
+        cursor.execute("SELECT COUNT(id) FROM itens_licitacao WHERE licitacao_id = ?", (licitacao_id_local_final,))
+        if cursor.fetchone()[0] == 0:
+            necessita_buscar_itens = True
+            print(f"INFO (save_db): Licitação {licitacao_db_parcial['numeroControlePNCP']} sem itens no banco. Buscando...")
+
+
+    if necessita_buscar_itens and licitacao_db_parcial['orgaoEntidadeCnpj'] and licitacao_db_parcial['anoCompra'] and licitacao_db_parcial['sequencialCompra'] is not None:
+        print(f"INFO (save_db): Iniciando busca de ITENS para {licitacao_db_parcial['numeroControlePNCP']} (para definir situacaoReal e salvar)")
+        # fetch_all_itens_for_licitacao agora SÓ BUSCA e retorna a lista de itens da API
+        # O salvamento dos itens será feito DEPOIS de salvar a licitação principal.
+        itens_brutos_api = fetch_all_itens_for_licitacao_APENAS_BUSCA(
+            licitacao_db_parcial['orgaoEntidadeCnpj'], 
+            licitacao_db_parcial['anoCompra'], 
+            licitacao_db_parcial['sequencialCompra']
+        )
+        if itens_brutos_api:
+            itens_da_licitacao_api = itens_brutos_api 
+            # Guardamos para usar na lógica de situacaoReal e para salvar depois
+    
+    # --- LÓGICA PARA DEFINIR licitacao_db_parcial['situacaoReal'] ---
+    hoje_date = date.today()
+    data_encerramento_str = licitacao_db_parcial.get('dataEncerramentoProposta')
+    status_compra_api = licitacao_db_parcial.get('situacaoCompraId')
+    
+    situacao_real_calculada = "Desconhecida" # Default
+
+    status_api_encerram_definitivo = [2, 3] #  Anulada,  Deserta
+
+    if status_compra_api in status_api_encerram_definitivo:
+        situacao_real_calculada = "Encerrada"
+    elif status_compra_api == 4: # TRATAMENTO EXPLÍCITO PARA SUSPENSA
+        situacao_real_calculada = "Suspensa"
+    elif licitacao_db_parcial.get('dataAberturaProposta') is None and data_encerramento_str is None:
+        # Se NÃO HÁ datas de abertura E encerramento, você considera encerrada.
+        # Isso pode ser um problema se a API nem sempre fornecer essas datas para licitações ativas.
+        situacao_real_calculada = "Encerrada" # (Considerada encerrada por falta de datas)
+    elif status_compra_api == 1: # Apenas se for "Divulgada no PNCP" pela API
+        encerra_por_item_ou_julgamento = False
+       
+        if itens_da_licitacao_api: # VERIFICA SE HÁ ITENS
+            status_itens_que_encerram = ["Homologado", "Fracassado", "Deserto", "Anulado/Revogado/Cancelado" ] 
+            # ERRO POTENCIAL 1: Acessa [0] sem checar se itens_da_licitacao_api tem elementos. (Corrigido no código acima com 'if itens_da_licitacao_api:')
+            # Mas ainda pode ter problemas se a lista for vazia após o 'if'
+            
+            # Assumindo que 'itens_da_licitacao_api' não é None, mas PODE SER UMA LISTA VAZIA
+            if len(itens_da_licitacao_api) > 0:
+                primeiro_item_status = itens_da_licitacao_api[0].get('situacaoCompraItemNome')
+                if primeiro_item_status: # Verifica se o status do item não é None
+                    primeiro_item_status_lower = primeiro_item_status.lower()
+                
+                    # ERRO POTENCIAL 2: Se 'situacaoCompraItemNome' for qualquer coisa que NÃO esteja em status_itens_que_encerram E NÃO seja 'Em Andamento', cai em "Em Julgamento"
+                    if primeiro_item_status_lower in [s.lower() for s in status_itens_que_encerram]: # Comparação case-insensitive
+                        situacao_real_calculada = "Encerrada"
+                        encerra_por_item_ou_julgamento = True
+                    # >>> ESTE É UM PONTO CRÍTICO <<<
+                    elif primeiro_item_status_lower and primeiro_item_status_lower != "em andamento": 
+                        # Se o status do primeiro item NÃO for "em andamento" e NÃO for um dos que encerram,
+                        # ele se torna "Em Julgamento/Propostas Encerradas"
+                        situacao_real_calculada = "Em Julgamento/Propostas Encerradas"
+                        # status_item_para_julgamento = itens_da_licitacao_api[0].get('situacaoCompraItemNome') # Não usado, pode remover
+                        encerra_por_item_ou_julgamento = True
+                else: # Se o primeiro item não tem 'situacaoCompraItemNome'
+                    # O que fazer aqui? Por enquanto, não define encerra_por_item_ou_julgamento, então a lógica abaixo baseada em datas será usada.
+                    pass 
+            # else: # Se itens_da_licitacao_api for uma lista vazia
+                # Nenhuma lógica de item será aplicada. A lógica de datas abaixo será usada.
+
+        # Se não foi encerrada/julgamento por item (encerra_por_item_ou_julgamento é False)
+        if not encerra_por_item_ou_julgamento: 
+            if data_encerramento_str:
+                try:
+                    data_encerramento_date = datetime.strptime(data_encerramento_str, '%Y-%m-%d').date()
+                    if hoje_date > data_encerramento_date:
+                        # >>> ESTE É OUTRO PONTO CRÍTICO <<<
+                        # Se a data de encerramento já passou, vira "Em Julgamento/Propostas Encerradas"
+                        situacao_real_calculada = "Em Julgamento/Propostas Encerradas"
+                    else:
+                        situacao_real_calculada = "A Receber/Recebendo Proposta"
+                except ValueError:
+                     # Data de encerramento em formato inválido, o que fazer?
+                     # Talvez tratar como "A Receber/Recebendo Proposta" ou "Desconhecida" e logar um aviso
+                     print(f"AVISO: Formato inválido para dataEncerramentoProposta: {data_encerramento_str} para {licitacao_db_parcial['numeroControlePNCP']}")
+                     situacao_real_calculada = "A Receber/Recebendo Proposta" # Ou outra default segura
+            else: # Sem data de encerramento, mas ativa pela API e não definida por status de item
+                  # E aqui se status_compra_api == 1, será "A Receber/Recebendo Proposta"
+                situacao_real_calculada = "A Receber/Recebendo Proposta"
+    # else:
+        # Se status_compra_api não for 1, 2, 3 ou 4, e tiver datas de abertura/encerramento,
+        # vai usar o 'situacao_real_calculada = "Desconhecida"' inicial.
+        # Se você espera mais casos, precisa tratar outros status_compra_api.
+
+    licitacao_db_parcial['situacaoReal'] = situacao_real_calculada
+    # --- FIM DA LÓGICA situacaoReal ---
+
 
     # SQL UPSERT ATUALIZADO
     sql_upsert_licitacao = """
@@ -374,7 +373,7 @@ def  save_licitacao_to_db(conn, licitacao_api_item):
         orgaoEntidadePoderId, orgaoEntidadeEsferaId, unidadeOrgaoCodigo, unidadeOrgaoNome,
         unidadeOrgaoCodigoIbge, unidadeOrgaoMunicipioNome, unidadeOrgaoUfSigla,
         unidadeOrgaoUfNome, usuarioNome, linkSistemaOrigem, 
-        link_portal_pncp, justificativaPresencial                  -- Adicionado link_portal_pncp
+        link_portal_pncp, justificativaPresencial, situacaoReal 
     ) VALUES (
         :numeroControlePNCP, :numeroCompra, :anoCompra, :processo,
         :tipolnstrumentoConvocatorioId, :tipolnstrumentoConvocatorioNome,
@@ -387,7 +386,7 @@ def  save_licitacao_to_db(conn, licitacao_api_item):
         :orgaoEntidadePoderId, :orgaoEntidadeEsferaId, :unidadeOrgaoCodigo, :unidadeOrgaoNome,
         :unidadeOrgaoCodigoIbge, :unidadeOrgaoMunicipioNome, :unidadeOrgaoUfSigla,
         :unidadeOrgaoUfNome, :usuarioNome, :linkSistemaOrigem,
-        :link_portal_pncp, :justificativaPresencial              -- Adicionado :link_portal_pncp
+        :link_portal_pncp, :justificativaPresencial, :situacaoReal 
     )
     ON CONFLICT(numeroControlePNCP) DO UPDATE SET
         numeroCompra = excluded.numeroCompra,
@@ -427,76 +426,151 @@ def  save_licitacao_to_db(conn, licitacao_api_item):
         unidadeOrgaoUfNome = excluded.unidadeOrgaoUfNome,
         usuarioNome = excluded.usuarioNome,
         linkSistemaOrigem = excluded.linkSistemaOrigem,
-        link_portal_pncp = excluded.link_portal_pncp,             -- Adicionado link_portal_pncp
-        justificativaPresencial = excluded.justificativaPresencial
+        link_portal_pncp = excluded.link_portal_pncp,             
+        justificativaPresencial = excluded.justificativaPresencial,
+        situacaoReal = excluded.situacaoReal
     WHERE licitacoes.dataAtualizacao < excluded.dataAtualizacao OR licitacoes.dataAtualizacao IS NULL;"""
     
-    licitacao_id_local_final = None
-    flag_houve_mudanca_real = False 
-
+    
     try:
-        cursor.execute("SELECT id, dataAtualizacao FROM licitacoes WHERE numeroControlePNCP = ?", (licitacao_db['numeroControlePNCP'],))
-        row = cursor.fetchone()
-        api_data_att_str = licitacao_db.get('dataAtualizacao')
-        api_data_att_dt = datetime.strptime(api_data_att_str, '%Y-%m-%d').date() if api_data_att_str else None
-
-        if row:
-            licitacao_id_local_final = row['id']
-            db_data_att_str = row['dataAtualizacao']
-            db_data_att_dt = datetime.strptime(db_data_att_str, '%Y-%m-%d').date() if db_data_att_str else None
-            if api_data_att_dt and (not db_data_att_dt or api_data_att_dt > db_data_att_dt):
-                flag_houve_mudanca_real = True
-        else:
-            flag_houve_mudanca_real = True
-
-        if flag_houve_mudanca_real:
-            cursor.execute(sql_upsert_licitacao, licitacao_db)
+        if flag_houve_mudanca_real: # Só executa UPSERT se for nova ou API tem dados mais novos
+            cursor.execute(sql_upsert_licitacao, licitacao_db_parcial)
             if cursor.rowcount > 0:
-                if not row: licitacao_id_local_final = cursor.lastrowid
-                print(f"INFO (SAVE_DB): Licitação {licitacao_db['numeroControlePNCP']} UPSERTED. ID: {licitacao_id_local_final}")
-            elif row: # Não atualizou (WHERE falhou), mas já existia
-                 print(f"INFO (SAVE_DB): Licitação {licitacao_db['numeroControlePNCP']} não precisou de update (data não mais nova). ID: {licitacao_id_local_final}")
-        elif row:
-             print(f"INFO (SAVE_DB): Licitação {licitacao_db['numeroControlePNCP']} já atualizada. ID: {licitacao_id_local_final}")
+                if not row_existente: 
+                    licitacao_id_local_final = cursor.lastrowid
+                # (licitacao_id_local_final já tem valor se row_existente)
+                print(f"INFO (SAVE_DB): Licitação {licitacao_db_parcial['numeroControlePNCP']} UPSERTED. ID: {licitacao_id_local_final}. SituacaoReal: {situacao_real_calculada}")
+            elif row_existente:
+                 print(f"INFO (SAVE_DB): Licitação {licitacao_db_parcial['numeroControlePNCP']} não precisou de update. ID: {licitacao_id_local_final}. SituacaoReal: {situacao_real_calculada}")
+        elif row_existente:
+             licitacao_id_local_final = row_existente['id'] # Garante que temos o ID
+             print(f"INFO (SAVE_DB): Licitação {licitacao_db_parcial['numeroControlePNCP']} já atualizada. ID: {licitacao_id_local_final}. SituacaoReal (do DB): {row_existente['situacaoReal'] if 'situacaoReal' in row_existente.keys() else 'N/A'}") # Mostra o do DB
         
-        if not licitacao_id_local_final and flag_houve_mudanca_real: # Se era nova e UPSERT não deu lastrowid
-            cursor.execute("SELECT id FROM licitacoes WHERE numeroControlePNCP = ?", (licitacao_db['numeroControlePNCP'],))
+        if not licitacao_id_local_final and flag_houve_mudanca_real:
+            cursor.execute("SELECT id FROM licitacoes WHERE numeroControlePNCP = ?", (licitacao_db_parcial['numeroControlePNCP'],))
             id_row = cursor.fetchone()
             if id_row: licitacao_id_local_final = id_row['id']
             
     except sqlite3.Error as e:
-        print(f"ERRO (save_db): Ao salvar licitação principal {licitacao_db.get('numeroControlePNCP', 'N/A')}: {e}")
-        return None 
-    
-    if not licitacao_id_local_final:
-        print(f"AVISO CRÍTICO (save_db): Não foi possível obter/confirmar ID local para {licitacao_db['numeroControlePNCP']}. Pulando sub-detalhes.")
+        print(f"ERRO (SAVE_DB): Ao salvar principal {licitacao_db_parcial.get('numeroControlePNCP')}: {e}")
         return None
-
-    # --- BUSCAR E SALVAR ITENS
-    buscar_sub_detalhes = False
-    if flag_houve_mudanca_real: buscar_sub_detalhes = True
-    else:
-        cursor.execute("SELECT COUNT(id) FROM itens_licitacao WHERE licitacao_id = ?", (licitacao_id_local_final,))
-        if cursor.fetchone()[0] == 0: buscar_sub_detalhes = True
-            
-    if buscar_sub_detalhes:        
-        # Pegar cnpj, ano, sequencial de licitacao_db para passar para as funções
-        cnpj_p = licitacao_db.get('orgaoEntidadeCnpj')
-        ano_p = licitacao_db.get('anoCompra')
-        seq_p = licitacao_db.get('sequencialCompra')
-        if cnpj_p and ano_p and seq_p is not None:
-            print(f"INFO (SAVE_DB): Iniciando busca de ITENS para {licitacao_db['numeroControlePNCP']}")
-            fetch_all_itens_for_licitacao(conn, licitacao_id_local_final, cnpj_p, ano_p, seq_p)
-            print(f"INFO (SAVE_DB): Iniciando busca de ARQUIVOS para {licitacao_db['numeroControlePNCP']}")
-            fetch_all_arquivos_for_licitacao(conn, licitacao_id_local_final, cnpj_p, ano_p, seq_p)
-        else:
-             print(f"AVISO (SAVE_DB): Faltam CNPJ/Ano/Seq para buscar sub-detalhes de {licitacao_db['numeroControlePNCP']}")
-    else:
-        print(f"INFO (SAVE_DB): Licitação {licitacao_db['numeroControlePNCP']} não necessita busca de sub-detalhes.")
         
+    if not licitacao_id_local_final:
+        print(f"AVISO CRÍTICO (SAVE_DB): Falha ao obter ID local para {licitacao_db_parcial.get('numeroControlePNCP')}")
+        return None 
+
+    # --- SALVAR ITENS E ARQUIVOS (usando licitacao_id_local_final e os itens_da_licitacao_api) ---
+    # Somente se houve mudança real ou se os itens não existiam antes (essa lógica de "não existiam antes" foi feita para buscar_sub_detalhes)
+    # A flag_houve_mudanca_real já cobre o caso de ser novo ou atualizado.
+    # Se não houve mudança e os itens já existem, podemos pular o re-salvamento deles se não mudaram.
+    # Mas para garantir consistência com 'situacaoReal', talvez seja bom sempre processar itens se 'flag_houve_mudanca_real'
+    # ou se 'necessita_buscar_itens' era true.
+    
+    if necessita_buscar_itens and itens_da_licitacao_api: # Se buscamos e obtivemos itens
+        salvar_itens_no_banco(conn, licitacao_id_local_final, itens_da_licitacao_api) # Nova função para apenas salvar
+
+    # Lógica para arquivos (similar: buscar se necessário e depois salvar)
+    # ... fetch_all_arquivos_for_licitacao_APENAS_BUSCA e salvar_arquivos_no_banco ...
+    # Por agora, vamos manter a chamada original, mas idealmente ela também seria dividida.
+    if flag_houve_mudanca_real or necessita_buscar_itens: # Condição simplificada para buscar arquivos
+        if licitacao_db_parcial['orgaoEntidadeCnpj'] and licitacao_db_parcial['anoCompra'] and licitacao_db_parcial['sequencialCompra'] is not None:
+            fetch_all_arquivos_for_licitacao(conn, licitacao_id_local_final, 
+                                             licitacao_db_parcial['orgaoEntidadeCnpj'], 
+                                             licitacao_db_parcial['anoCompra'], 
+                                             licitacao_db_parcial['sequencialCompra'])
+    
     return licitacao_id_local_final
 
+# Nova função para buscar itens sem salvar (para desacoplar)
+def fetch_all_itens_for_licitacao_APENAS_BUSCA(cnpj_orgao, ano_compra, sequencial_compra):
+    todos_itens_api = []
+    pagina_atual_itens = 1
+    # ... (lógica de loop e chamada a fetch_itens_from_api como em fetch_all_itens_for_licitacao) ...
+    # MAS SEM A PARTE DE SALVAR NO BANCO AQUI DENTRO
+    while True:
+        itens_pagina = fetch_itens_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina_atual_itens, TAMANHO_PAGINA_SYNC)
+        if itens_pagina is None: return None 
+        if not itens_pagina: break
+        todos_itens_api.extend(itens_pagina)
+        if len(itens_pagina) < TAMANHO_PAGINA_SYNC: break
+        pagina_atual_itens += 1
+        time.sleep(0.2)
+    print(f"ITENS (Busca): Total de {len(todos_itens_api)} itens encontrados para {cnpj_orgao}/{ano_compra}/{sequencial_compra}.")
+    return todos_itens_api
 
+# Nova função para salvar itens no banco (separada da busca)
+def salvar_itens_no_banco(conn, licitacao_id_local, lista_itens_api):
+    if not lista_itens_api:
+        print(f"INFO (ITENS_SAVE): Sem itens para salvar para licitação ID {licitacao_id_local}.")
+        return
+    
+    cursor = conn.cursor()
+    try:
+        # Deletar itens antigos ANTES do loop, uma única vez
+        print(f"DEBUG (ITENS_SAVE): Deletando itens antigos para licitação ID {licitacao_id_local}")
+        cursor.execute("DELETE FROM itens_licitacao WHERE licitacao_id = ?", (licitacao_id_local,))
+    except sqlite3.Error as e:
+        print(f"ERRO (ITENS_SAVE): Ao deletar itens antigos (lic_id {licitacao_id_local}): {e}")
+        # Você pode querer retornar ou levantar o erro aqui, dependendo da sua estratégia
+        return 
+
+    # Defina a string SQL uma vez, antes do loop
+    sql_insert_item = """
+    INSERT INTO itens_licitacao (
+        licitacao_id, numeroItem, descricao, materialOuServicoNome, quantidade,
+        unidadeMedida, valorUnitarioEstimado, valorTotal, orcamentoSigiloso,
+        itemCategoriaNome, categoriaItemCatalogo, criterioJulgamentoNome, 
+        situacaoCompraItemNome, tipoBeneficioNome, incentivoProdutivoBasico, dataInclusao,
+        dataAtualizacao, temResultado, informacaoComplementar
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""" # 19 placeholders
+    
+    itens_salvos_count = 0
+    itens_com_erro_count = 0
+
+    for item_api in lista_itens_api: 
+        item_db_tuple = (      
+            licitacao_id_local,
+            item_api.get('numeroItem'),
+            item_api.get('descricao'),
+            item_api.get('materialOuServicoNome'),
+            item_api.get('quantidade'),
+            item_api.get('unidadeMedida'),
+            item_api.get('valorUnitarioEstimado'),
+            item_api.get('valorTotal'),
+            bool(item_api.get('orcamentoSigiloso')), 
+            item_api.get('itemCategoriaNome'),
+            item_api.get('categoriaItemCatalogo'),
+            item_api.get('criterioJulgamentoNome'),
+            item_api.get('situacaoCompraItemNome'),
+            item_api.get('tipoBeneficioNome'),
+            bool(item_api.get('incentivoProdutivoBasico')), 
+            item_api.get('dataInclusao', '').split('T')[0] if item_api.get('dataInclusao') else None,
+            item_api.get('dataAtualizacao', '').split('T')[0] if item_api.get('dataAtualizacao') else None,
+            bool(item_api.get('temResultado')), 
+            item_api.get('informacaoComplementar')
+        )
+        try:
+            # Se precisar do debug da tupla, coloque-o AQUI:
+            # print(f"DEBUG ITENS_SAVE: Tentando inserir tupla: {item_db_tuple}")
+            
+            cursor.execute(sql_insert_item, item_db_tuple)
+            
+            if cursor.rowcount > 0: 
+                itens_salvos_count += 1
+            else:
+                print(f"AVISO (ITENS_SAVE): Insert do item {item_api.get('numeroItem')} (lic_id {licitacao_id_local}) não afetou linhas. Dados: {item_db_tuple}")
+        except sqlite3.Error as e:
+            itens_com_erro_count += 1
+            print(f"ERRO (ITENS_SAVE): Ao salvar item {item_api.get('numeroItem')} da licitação ID {licitacao_id_local}: {e} - Dados: {item_db_tuple}")
+
+    print(f"INFO (ITENS_SAVE): Para licitação ID {licitacao_id_local}: {itens_salvos_count} itens salvos, {itens_com_erro_count} itens com erro.")
+
+# (Similarmente, você pode querer dividir fetch_all_arquivos_for_licitacao em busca e salvamento)
+
+
+
+
+    
 def sync_licitacoes_ultima_janela_anual():
     conn = get_db_connection()
     if not conn: return

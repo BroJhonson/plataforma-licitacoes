@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}RADAR PNCP{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <!-- Bootstrap Icons (Opcional, mas útil para botões) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Nosso CSS Personalizado -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Estilos rápidos para layout, podem ir para style.css depois */
+        body { display: flex; flex-direction: column; min-height: 100vh; }
+        .main-content { flex-grow: 1; }
+        .filter-panel { background-color: #f8f9fa; padding: 15px; height: calc(100vh - 150px); overflow-y: auto; /* Ajustar altura conforme cabeçalho/rodapé */}
+        .table-panel { padding: 15px; }
+        .details-panel-container { /* Estilos para o painel lateral (Offcanvas do Bootstrap cuidará disso) */ }
+        .site-footer { background-color: #343a40; color: white; padding: 15px 0; }
+    </style>
+</head>
+<body>
+    <header class="bg-light border-bottom">
+        <div class="container-fluid">
+            <div class="d-flex flex-wrap align-items-center justify-content-between py-2">
+                <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-dark text-decoration-none">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RADAR PNCP Logo" height="40" class="me-2">
+                    <span class="fs-4">RADAR PNCP</span>
+                </a>
+                <div id="current-datetime" class="text-muted">
+                    <!-- Data e Hora serão inseridas por JavaScript -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content container-fluid mt-3">
+        {% block content %}
+        <!-- Conteúdo da página específica (index.html) virá aqui -->
+        {% endblock %}
+    </main>
+
+    <footer class="site-footer mt-auto">
+        <div class="container">
+            <div class="d-flex flex-wrap justify-content-between align-items-center">
+                <p class="mb-0">© 2025 RADAR PNCP. Todos os direitos reservados.</p>
+                <ul class="nav">
+                    <li class="nav-item"><a href="#" class="nav-link px-2 text-white">Política de Privacidade</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link px-2 text-white">Política de Cookies</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle (Popper.js e Bootstrap JS) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <!-- Nosso JavaScript Principal -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

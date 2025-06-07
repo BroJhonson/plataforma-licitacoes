@@ -1,0 +1,202 @@
+/* static/css/style.css */
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Garante que o rodapé fique no fim da página, mesmo com pouco conteúdo */
+    font-size: 0.95rem;
+    background-color: #f4f6f9; /* Um cinza bem claro para o fundo geral */
+}
+
+/* Estilo para o cabeçalho (se precisar de ajustes) */
+header.border-bottom {
+    background-color: #ffffff; /* Cabeçalho com fundo branco */
+    box-shadow: 0 2px 4px rgba(0,0,0,.08); /* Sombra sutil no cabeçalho */
+    /* Se quiser o cabeçalho fixo no topo:
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030; 
+    */
+}
+
+/* Se o header for fixo, o .main-content precisará de um padding-top
+   para não ficar escondido atrás do header. Ex: 70px se o header tiver essa altura. */
+.main-content {
+    flex-grow: 1; /* Faz o conteúdo principal ocupar o espaço restante */
+    /* padding-top: 70px; */ /* Descomente e ajuste se o header for fixo */
+}
+
+/* Painel de Filtros Fixo à Esquerda */
+#painel-filtros-fixo {
+    position: -webkit-sticky; /* Para Safari */
+    position: sticky;
+    top: 20px; /* Distância do topo da janela (ajuste se tiver cabeçalho fixo) */
+    height: calc(100vh - 40px - 70px); /* Altura: (Viewport) - (2 * 'top') - (Rodapé aprox.) */
+                                    /* Ajuste o '70px' (rodapé) se necessário */
+    display: flex; /* Para usar flexbox e empurrar botões para baixo */
+    flex-direction: column; /* Empilha os elementos verticalmente */
+}
+
+.filter-collapsible .form-label { /* Para o link clicável */
+    cursor: pointer;
+    font-weight: 500;
+    color: #333; /* Cor do texto do link */
+}
+.filter-collapsible .form-label:hover {
+    color: #007bff;
+}
+.filter-collapsible .bi-chevron-down {
+    transition: transform 0.2s ease-in-out;
+}
+.filter-collapsible [aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
+}
+/* Remover max-height dos checkbox-container se o collapse cuida da altura */
+/* .checkbox-container { max-height: 150px; ... }  Pode ser removido ou ajustado */ /*SO OLHAR SE PRECISA OU NAO*/
+
+#painel-filtros-fixo > .p-3 { /* O div que tem a borda, fundo e sombra */
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Faz este div ocupar o espaço disponível no #painel-filtros-fixo */
+    overflow: hidden; /* Esconde o overflow do painel principal, o scroll será no #conteudo-scroll-filtros */
+}
+
+#conteudo-scroll-filtros {
+    overflow-y: auto; /* BARRA DE ROLAGEM SÓ AQUI */
+    flex-grow: 1; /* Permite que esta área cresça e ocupe espaço */
+    padding-right: 5px; /* Espaço para a barra de rolagem não colar no conteúdo */
+}
+
+/* Estilização dos títulos e labels dentro dos filtros */
+#painel-filtros-fixo h5 {
+    color: #007bff; /* Azul mais vibrante */
+    margin-bottom: 1rem;
+}
+
+#painel-filtros-fixo .form-label {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    font-size: 0.9em;
+}
+
+/* Campos de formulário menores nos filtros */
+#painel-filtros-fixo .form-control-sm,
+#painel-filtros-fixo .form-select-sm {
+    font-size: 0.85em;
+}
+
+/* Container para checkboxes (UFs, Modalidades) */
+.checkbox-container {
+    /*max-height: 150px; /* Altura máxima antes de mostrar scroll interno */
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    padding: 0.5rem; /* Padding interno */
+    border-radius: 0.25rem;
+    background-color: #ffffff; /* Fundo branco para destacar */
+}
+
+.checkbox-container .form-check {
+    margin-bottom: 0.2rem;
+}
+.checkbox-container .form-check-label {
+    font-size: 0.9em;
+    font-weight: normal; /* Labels dos checkboxes normais */
+}
+.objeto-container a {
+    font-size: 0.85em;
+    text-decoration: none;
+}
+
+.objeto-container .ver-mais-objeto,
+.objeto-container .ver-menos-objeto {
+    cursor: pointer;
+}
+
+#coluna-tabela h4 {
+    color: #007bff;
+}
+
+/* Rodapé */
+.site-footer {
+    background-color: #343a40; /* Cinza escuro */
+    color: #f8f9fa; /* Texto claro */
+    padding: 1rem 0;
+    font-size: 0.65em;
+    text-align: center;
+}
+
+.site-footer .nav-link {
+    color: #adb5bd;
+    padding: 0.25rem 0.5rem;
+}
+
+.site-footer .nav-link:hover {
+    color: #ffffff;
+}
+
+/* Ajustes no painel lateral de detalhes (Offcanvas) */
+#detailsPanelContent p {
+    margin-bottom: 0.3rem; /* Menor margem entre parágrafos */
+    font-size: 0.9em; /* Fonte informativa um pouco menor */
+    line-height: 1.4;    /* Melhorar legibilidade com fontes menores */
+}
+#detailsPanelContent strong {
+    font-size: 1em; /* Mantém o negrito no tamanho original relativo ao <p> */
+    color: #343a40; /* Cor mais escura para destaque */
+}
+#detailsPanelContent .badge { /* Badges dentro dos detalhes */
+    font-size: 0.85em;
+}
+#detailsPanelContent .small { /* Textos explicitamente marcados como small */
+    font-size: 0.8em;
+}
+
+/* Justificativa Presencial e Informação Complementar - Caixas de texto */
+#detailsPanelContent div[style*="white-space: pre-wrap"] {
+    font-size: 0.88em; /* Mesmo tamanho da fonte informativa */
+    padding: 8px; /* Padding um pouco menor */
+    max-height: 120px; /* Altura um pouco menor se desejado */
+}
+#detailsPanelContent .justificativa-container a.small {
+    font-size: 0.9em; /* Para "Ver mais/menos" não ficar tão pequeno */
+}
+
+/* Para a tabela de itens */
+#detailsPanelItensTableContainer {
+    max-height: 300px; /* ou o valor que você já tem */
+    overflow-y: auto;  /* ou o valor que você já tem */
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+/* Paginação da tabela de itens */
+#detailsPanelItensPagination .page-link-sm {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+}
+
+#detailsPanelItensTableContainer table td,
+#detailsPanelItensTableContainer table th {
+    padding: 0.25rem 0.4rem; /* Padding menor nas células */
+    font-size: 0.85em;
+    vertical-align: middle;
+
+.offcanvas-title {
+    font-size: 1.2rem; /* Um pouco menor */
+}
+}
+
+.offcanvas-body h5 { /* Títulos H5 dentro do offcanvas */
+    font-size: 1.05rem;
+    color: #007bff;
+    margin-top: 1.25rem; /* Mais espaço acima */
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid #e9ecef;
+}
+.offcanvas-body hr {
+    margin-top: 1.25rem;
+    margin-bottom: 1.25rem;
+}

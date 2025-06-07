@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Busca de Licitações - RADAR PNCP{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="row">
+        <!-- Coluna da Esquerda: Painel de Filtros -->
+        <div class="col-lg-2 col-md-3" id="coluna-filtros">  <!--Aqui define a largura do filtro larg 2 por 3 atual-->
+            <div id="painel-filtros-fixo">
+                <div class="p-3 border rounded bg-light shadow-sm">
+                    <h5><i class="bi bi-filter"></i> Filtros</h5>
+                    <hr>
+                    <div id="conteudo-scroll-filtros">
+                        <!-- Seus filtros aqui dentro -->
+                        <!-- Filtro: Palavra-Chave de Inclusão -->
+                        <div class="mb-3">
+                            <label for="palavraChaveInclusao" class="form-label">Palavras-chave (buscar):</label>
+                            <input type="text" class="form-control form-control-sm" id="palavraChaveInclusao" name="palavraChaveInclusao" placeholder="Ex: construção, consultoria">
+                        </div>
+
+                        <!-- Filtro: Palavra-Chave de Exclusão -->
+                        <div class="mb-3">
+                            <label for="palavraChaveExclusao" class="form-label">Palavras-chave (excluir):</label>
+                            <input type="text" class="form-control form-control-sm" id="palavraChaveExclusao" name="palavraChaveExclusao" placeholder="Ex: urgente, cancelado">
+                        </div>
+
+                        <!-- Filtro: Estados (UFs) - Colapsável 
+                        <div class="mb-3 filter-collapsible">
+                            <a class="form-label text-decoration-none d-flex justify-content-between align-items-center" 
+                            data-bs-toggle="collapse" href="#collapseUFs" role="button" 
+                            aria-expanded="false" aria-controls="collapseUFs">
+                                Estados (UF) <i class="bi bi-chevron-down"></i>
+                            </a>
+                            <div class="collapse" id="collapseUFs">
+                                <div id="ufsContainer" class="checkbox-container mt-2">
+                                    <small class="text-muted">Carregando UFs...</small>
+                                </div>
+                            </div>
+                        </div> -->
+                                                
+                        <!-- Filtro: Estados (UFs) - Dropdown com pesquisa -->
+                        <div class="mb-3 filter-dropdown">
+                            <div class="dropdown w-100">
+                                <button class="btn btn-outline-secondary dropdown-toggle btn-sm w-100 text-start" type="button"
+                                        id="dropdownUfsButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                    Estados (UF) <span id="ufSelectedCount" class="badge bg-primary rounded-pill ms-1" style="display: none;">0</span>
+                                </button>
+                                <div class="dropdown-menu p-2" aria-labelledby="dropdownUfsButton" style="min-width: 250px; max-height: 300px; overflow-y: auto;">
+                                    
+                                    <input type="text" id="ufSearchInput" class="form-control form-control-sm mb-2" placeholder="Buscar UF...">
+
+                                    <div id="ufsContainerDropdown">
+                                        </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filtro: Municípios - Dropdown -->
+                        <div class="mb-3 filter-dropdown">
+                            <div class="dropdown w-100">
+                                <button class="btn btn-outline-secondary dropdown-toggle btn-sm w-100 text-start" type="button"
+                                        id="dropdownMunicipiosButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                    Municípios <span id="municipiosSelectedCount" class="badge bg-primary rounded-pill ms-1" style="display: none;">0</span>
+                                </button>
+                                <div class="dropdown-menu p-2" aria-labelledby="dropdownMunicipiosButton" style="min-width: 250px; max-height: 300px; overflow-y: auto;">
+                                    <input type="text" id="municipioSearchInput" class="form-control form-control-sm mb-2" placeholder="Buscar município...">
+                                    <div id="municipiosContainerDropdown">
+                                        <small class="text-muted">Selecione uma UF primeiro</small>
+                                    </div>
+                                </div>
+                                <small class="text-muted" id="municipiosHelp">Selecione uma ou mais UFs para listar os municípios.</small>
+                            </div>
+                        </div>
+
+
+                        <!-- Filtro: Modalidades - Dropdown -->
+                        <div class="mb-3 filter-dropdown">
+                            <div class="dropdown w-100">
+                                <button class="btn btn-outline-secondary dropdown-toggle btn-sm w-100 text-start" type="button"
+                                        id="dropdownModalidadesButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                    Modalidades <span id="modalidadesSelectedCount" class="badge bg-primary rounded-pill ms-1" style="display: none;">0</span>
+                                </button>
+                                <div class="dropdown-menu p-2" aria-labelledby="dropdownModalidadesButton" style="min-width: 250px; max-height: 300px; overflow-y: auto;">
+                                    
+                                    <input type="text" id="modalidadeSearchInput" class="form-control form-control-sm mb-2" placeholder="Buscar modalidade...">
+
+                                    <div id="modalidadesContainerDropdown">
+                                        <small class="text-muted">Carregando modalidades...</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filtro: Status (Situação da Contratação) 
+                        <div class="mb-3">
+                            <label class="form-label">Situação:</label>
+                            <div id="statusContainer">
+                                <small class="text-muted">Carregando status...</small>
+                            </div>
+                            <small id="statusWarning" class="text-danger d-none">Palavra-chave é obrigatória para este status.</small>
+                        </div> -->
+                        
+                        <!-- Filtro: Status (Situação da Contratação) - Colapsável -->
+                        <div class="mb-3 filter-collapsible">
+                            <a class="form-label text-decoration-none d-flex justify-content-between align-items-center"
+                                data-bs-toggle="collapse" href="#collapseStatus" role="button"
+                                aria-expanded="false" aria-controls="collapseStatus">
+                                Situação <i class="bi bi-chevron-down"></i>
+                            </a>
+                            <div class="collapse" id="collapseStatus">
+                                <div id="statusContainer" class="mt-2">
+                                <small class="text-muted">Carregando status...</small>
+                                </div>
+                                <small id="statusWarning" class="text-danger d-none">Palavra-chave é obrigatória para este status.</small>
+                            </div>
+                        </div>
+
+
+                        <!-- Filtros Avançados (Colapsáveis) -->
+                        <div class="mb-3 filter-collapsible">
+                            <a class="form-label text-decoration-none d-flex justify-content-between align-items-center"
+                                data-bs-toggle="collapse" href="#collapseAdvanced" role="button"
+                                aria-expanded="false" aria-controls="collapseAdvanced">
+                                Filtros Avançados <i class="bi bi-chevron-down"></i>
+                            </a>
+                            <div class="collapse" id="collapseAdvanced">
+                                <div class="mt-2">
+                                    <div class="mb-3">
+                                        <label class="form-label">Data de Publicação:</label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="date" class="form-control" id="dataPubInicio" name="dataPubInicio" title="Data de Início">
+                                            <span class="input-group-text">a</span>
+                                            <input type="date" class="form-control" id="dataPubFim" name="dataPubFim" title="Data de Fim">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Valor Estimado (R$):</label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" class="form-control" id="valorMin" name="valorMin" placeholder="Mínimo" min="0" step="any">
+                                            <span class="input-group-text">a</span>
+                                            <input type="number" class="form-control" id="valorMax" name="valorMax" placeholder="Máximo" min="0" step="any">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Data de Atualização:</label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="date" class="form-control" id="dataAtualizacaoInicio" name="dataAtualizacaoInicio" title="Data de Atualização Início">
+                                            <span class="input-group-text">a</span>
+                                            <input type="date" class="form-control" id="dataAtualizacaoFim" name="dataAtualizacaoFim" title="Data de Atualização Fim">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> {# Fim de #conteudo-scroll-filtros #}
+                    <hr class="mt-auto"> {# Empurra os botões para baixo se houver espaço #}
+                    <button class="btn btn-primary w-100" id="btnBuscarLicitacoes"><i class="bi bi-search"></i> Aplicar Filtros</button>
+                    <button class="btn btn-outline-secondary w-100 mt-2" id="btnLimparFiltros"><i class="bi bi-eraser"></i> Limpar Filtros</button>
+                </div> {# Fim de .p-3 border rounded bg-light shadow-sm #}
+            </div> {# Fim de #painel-filtros-fixo #}
+        </div> {# Fim de #coluna-filtros #}
+
+        
+        <!-- Coluna da Direita: Tabela de Licitações -->
+        <div class="col-lg-10 col-md-9" id="coluna-tabela">
+            <div class="p-3 border rounded bg-white shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4><i class="bi bi-list-ul"></i> Licitações Encontradas <span id="totalRegistrosInfo" class="badge bg-secondary ms-2">0</span></h4>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary me-2" id="btnAtualizarTabela" title="Atualizar">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="col-auto me-2"> <!-- Usar col-auto para ocupar só o necessário -->
+                        <label for="ordenarPor" class="form-label form-label-sm mb-0">Ordenar por:</label>
+                        <select class="form-select form-select-sm" id="ordenarPor" style="width: auto; min-width: 180px;">
+                            <option value="dataAtualizacao_desc" selected>Mais Recentes</option>
+                            <option value="dataAtualizacao_asc">Mais Antigas</option>                        
+                        </select>
+                    </div>
+                    <div class="col text-center" id="exibicaoInfo"> <!-- col para ocupar o espaço restante -->
+                        <!-- Ex: "Exibindo 1-10 de 100" -->
+                    </div>
+                    <div class="col-auto ms-2"> <!-- Usar col-auto -->
+                        <label for="itensPorPagina" class="form-label form-label-sm mb-0">Itens por:</label>
+                        <select class="form-select form-select-sm" id="itensPorPagina" style="width: auto; min-width: 80px;">
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th>Município/UF</th>
+                                <th>Objeto da Compra</th>
+                                <th>Órgão</th>
+                                <th>Status</th>
+                                <th>Valor (R$)</th>
+                                <th>Modalidade</th>
+                                <th>Atualização</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="licitacoesTableBody">
+                            <tr><td colspan="8" class="text-center">Nenhuma licitação encontrada ou aguardando filtros...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <nav aria-label="Navegação das licitações">
+                    <ul class="pagination justify-content-center" id="paginationControls">
+                        <!-- Controles de paginação -->
+                    </ul>
+                </nav>
+            </div> {# Fim de .p-3 border rounded bg-white shadow-sm #}
+        </div> {# Fim de #coluna-tabela #}
+    </div> {# Fim de .row #}
+</div> {# Fim de .container-fluid #}
+
+<!-- Painel Lateral de Detalhes (Bootstrap Offcanvas) -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="detailsPanel" aria-labelledby="detailsPanelLabel" style="width: 45vw;">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="detailsPanelLabel">Detalhes da Licitação</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+    <div id="detailsPanelContent">
+        <p class="text-center">Selecione uma licitação para ver os detalhes.</p>
+        </div>
+        <hr>
+        <h5>Itens da Contratação</h5>
+        <div id="detailsPanelItensTableContainer" class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+            <table class="table table-sm table-bordered table-striped"> <!-- Adicionado table-striped -->
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Descrição</th>
+                        <th class="text-end">Qtde.</th>
+                        <th class="text-end">Vl. Unit.</th>
+                        <th class="text-end">Vl. Total</th> <!-- Nova Coluna -->
+                    </tr>
+                </thead>
+                <tbody id="detailsPanelItensTableBody">
+                    <!-- Itens da licitação serão inseridos aqui -->
+                </tbody>
+            </table>
+        </div>
+        <nav><ul class="pagination pagination-sm justify-content-center mt-2" id="detailsPanelItensPagination"></ul></nav>
+        <hr>
+        <h5>Arquivos</h5>
+        <ul class="list-group list-group-flush" id="detailsPanelArquivosList"></ul>
+        <hr>
+        <div class="d-grid gap-2">
+            <a href="#" class="btn btn-primary" id="detailsPanelBtnPncp" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Acessar PNCP</a>
+            <button class="btn btn-outline-secondary" id="detailsPanelBtnSistemaOrigem" disabled><i class="bi bi-building"></i> Acessar Sistema de Origem (Pendente)</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas"><i class="bi bi-x-circle"></i> Fechar</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
