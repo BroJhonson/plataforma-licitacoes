@@ -638,7 +638,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td><div class="objeto-container" data-lic-id="${lic.id}">${objetoHtml}</div></td>
                 <td>${lic.orgaoEntidadeRazaoSocial || 'N/I'}</td>
                 <td><span class="badge ${statusBadgeClass}">${lic.situacaoReal || lic.situacaoCompraNome || 'N/I'}</span></td>
-                <td>${lic.valorTotalEstimado ? `R$ ${parseFloat(lic.valorTotalEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/I'}</td>
+                <td>${lic.valorTotalEstimado === null ? '<span class="text-info fst-italic">Sigiloso</span>' : (lic.valorTotalEstimado ? 
+                    `R$ ${parseFloat(lic.valorTotalEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/I')}</td>
                 <td>${lic.modalidadeNome || 'N/I'}</td>
                 <td>${lic.dataAtualizacao ? new Date(lic.dataAtualizacao + 'T00:00:00Z').toLocaleDateString('pt-BR') : 'N/I'}</td> 
                 <td>
@@ -927,16 +928,33 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         const lic = data.licitacao;
-        //DEBUG
-        console.log("Detalhes da Licitação Específica:", lic);
-
-        // Atualizar título do Offcanvas (PAINEL DETALHES)
+        const detailsPanelSubtitle = document.getElementById('detailsPanelSubtitle'); // Subtítulo (Edital)
         const detailsPanelLabel = document.getElementById('detailsPanelLabel');
-        if (detailsPanelLabel) {            
-            detailsPanelLabel.textContent = lic.unidadeOrgaoNome ? `Unidade: ${lic.unidadeOrgaoNome}` : (lic.processo ? `Processo: ${lic.processo}` 
-                : `Detalhes: ${lic.numeroControlePNCP || 'N/I'}`);
-            //detailsPanelLabel.textContent = lic.processo ? `Processo: ${lic.processo}` : `Detalhes: ${lic.numeroControlePNCP || 'N/I'}`;
+
+        let tituloPrincipal = `Detalhes: ${lic.numeroControlePNCP || 'N/I'}`; // Fallback
+        if (lic.unidadeOrgaoNome) {
+            tituloPrincipal = lic.unidadeOrgaoNome;
+        } else if (lic.processo) { 
+            tituloPrincipal = `Processo: ${lic.processo}`;
         }
+        
+        if (detailsPanelLabel) {
+            detailsPanelLabel.textContent = tituloPrincipal;
+        }
+
+        if (detailsPanelSubtitle) { // Se o elemento para subtítulo existir
+            if (lic.numeroCompra && lic.anoCompra) {
+                detailsPanelSubtitle.textContent = `Edital: ${lic.numeroCompra}/${lic.anoCompra}`;
+                detailsPanelSubtitle.style.display = 'block'; // Garante que está visível
+            } else if (lic.numeroCompra) {
+                detailsPanelSubtitle.textContent = `Número da Compra: ${lic.numeroCompra}`;
+                detailsPanelSubtitle.style.display = 'block';
+            } else {
+                detailsPanelSubtitle.textContent = '';
+                detailsPanelSubtitle.style.display = 'none'; // Oculta se não houver edital
+            }
+        }
+
 
          // Formatar datas helper (opcional, mas útil)
         const formatDate = (dateString) => {
@@ -947,14 +965,16 @@ document.addEventListener('DOMContentLoaded', function () {
             return new Date(dateString + 'T00:00:00Z').toLocaleDateString('pt-BR');
         };
 
+        let numeroEditalHtml = '';
+        if (lic.numeroCompra && lic.anoCompra) {
+            numeroEditalHtml = `<p class="mb-1"><strong>Edital:</strong> ${lic.numeroCompra}/${lic.anoCompra}</small></p>`;
+        } else if (lic.numeroCompra) {
+            numeroEditalHtml = `<p class="mb-0"><strong>Número Compra:</strong> ${lic.numeroCompra}</small></p>`;
+        }
 
-        let htmlContent = `
+        let htmlContent = ` 
             <p><strong>Número PNCP:</strong> ${lic.numeroControlePNCP || 'N/I'}</p>
-            ${
-                lic.processo 
-                    ? `<p><strong>Número do Processo:</strong> ${lic.processo}</p>` 
-                    : ''
-            }
+            ${lic.processo ? `<p><strong>Número do Processo:</strong> ${lic.processo}</p>` : ''}     
             <p><strong>Objeto:</strong></p>
             <div class="mb-2" style="white-space: pre-wrap; background-color: #f8f9fa; padding: 10px; border-radius: 5px; max-height: 150px; overflow-y: auto;">${lic.objetoCompra || 'N/I'}</div>
             <p><strong>Órgão:</strong> ${lic.orgaoEntidadeRazaoSocial || 'N/I'}</p>
@@ -970,16 +990,16 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             ${lic.modoDisputaNome ? `<p><strong>Modo de Disputa:</strong> ${lic.modoDisputaNome}</p>` : '<p class="text-muted small"><small><strong>Modo de Disputa:</strong> (Não informado)</small></p>'}
             ${lic.tipolnstrumentoConvocatorioNome ? `<p><strong>Tipo:</strong> ${lic.tipolnstrumentoConvocatorioNome}</p>` : '<p class="text-muted small"><small><strong>Tipo:</strong> (Não informado)</small></p>'}
-            <!-- DESABILITADO PARA TESTAR O DE BAIXO <p><strong>Situação:</strong> <span class="badge ${getStatusBadgeClass(lic.situacaoReal)}">${lic.situacaoReal || 'N/I'}</span></p>  -->
-            ${lic.situacaoReal ? `<p><small><strong>Situação Atual:</strong> ${lic.situacaoReal} </small></p>` : ''}            
-            
+            <p><strong>Situação Atual:</strong> <span class="badge ${getStatusBadgeClass(lic.situacaoReal)}">${lic.situacaoReal || 'N/I'}</span></p>                         
             <!-- DESABILITADO PARA TESTAR O DE BAIXO <p><strong>Data Publicação PNCP:</strong> ${lic.dataPublicacaoPncp ? new Date(lic.dataPublicacaoPncp + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/I'}</p>  -->
             <p><strong>Data Publicação PNCP:</strong> ${formatDate(lic.dataPublicacaoPncp)}</p>
-
-            <p><strong>Início Recebimento Propostas:</strong> ${formatDate(lic.dataAberturaProposta)}</p>
-            <p><strong>Fim Recebimento Propostas:</strong> ${formatDate(lic.dataEncerramentoProposta)}</p>
-            <p><strong>Última Atualização:</strong> ${formatDate(lic.dataAtualizacao)}</p>
-            <p><strong>Valor Total Estimado:</strong> ${lic.valorTotalEstimado ? `R$ ${parseFloat(lic.valorTotalEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/I'}</p>
+            <div class="my-2 p-2 border-start border-primary border-3 bg-light-subtle rounded-end">
+                <p class="mb-1"><strong>Início Recebimento Propostas:</strong> ${formatDate(lic.dataAberturaProposta)}</p>
+                <p class="mb-0"><strong>Fim Recebimento Propostas:</strong> ${formatDate(lic.dataEncerramentoProposta)}</p>
+            </div>
+            <p><strong>Última Atualização:</strong> ${formatDate(lic.dataAtualizacao)}</p>            
+            <p><strong>Valor Total Estimado:</strong> ${lic.valorTotalEstimado === null ? '<span class="text-info fst-italic">Sigiloso</span>' : (lic.valorTotalEstimado ? 
+                `R$ ${parseFloat(lic.valorTotalEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Sigiloso')}</p>
             <p><strong>Informação Complementar:</strong></p>
             <div style="white-space: pre-wrap; background-color: #f8f9fa; padding: 10px; border-radius: 5px; max-height: 150px; overflow-y: auto;">
                 ${lic.informacaoComplementar || 'Nenhuma'}

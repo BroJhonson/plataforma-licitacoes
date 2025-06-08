@@ -15,8 +15,7 @@
         body { display: flex; flex-direction: column; min-height: 100vh; }
         .main-content { flex-grow: 1; }
         .filter-panel { background-color: #f8f9fa; padding: 15px; height: calc(100vh - 150px); overflow-y: auto; /* Ajustar altura conforme cabeçalho/rodapé */}
-        .table-panel { padding: 15px; }
-        .details-panel-container { /* Estilos para o painel lateral (Offcanvas do Bootstrap cuidará disso) */ }
+        .table-panel { padding: 15px; }        
         .site-footer { background-color: #343a40; color: white; padding: 5px 0; }
     </style>
 </head>
@@ -24,10 +23,12 @@
     <header class="border-bottom"> 
         <div class="container-fluid">
             <div class="d-flex flex-wrap align-items-center justify-content-between py-2">
-                <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-dark text-decoration-none">
-                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RADAR PNCP Logo" height="40" class="me-2">
-                    <span class="fs-4">RADAR PNCP</span>
-                </a>
+                <div class="logo-container">
+                    <a href="/">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RADAR PNCP Logo" height="40">
+                    </a>
+                    <p class="logo-subtitle mb-0">Filtre e escolha suas licitações com muito mais facilidade!</p>
+                </div>
                 <div id="current-datetime" class="text-muted">
                     <!-- Data e Hora serão inseridas por JavaScript -->
                 </div>

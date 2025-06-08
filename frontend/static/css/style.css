@@ -10,7 +10,7 @@ body {
 /* Estilo para o cabeçalho da página */
 header.border-bottom {
     background: linear-gradient(to bottom, #628294, #fafafa); /* Degradê vertical de verde-azulado para azul */
-    box-shadow: 0 2px 4px rgba(255, 255, 255, 0.08); /* Sombra sutil mantida */
+    box-shadow: 0 2px 4px rgba(160, 160, 160, 0.5); /* Sombra sutil mantida */
     padding: 1.5rem 0; /* Aumenta a altura do cabeçalho com mais padding vertical */
     min-height: 80px; /* Define uma altura mínima para o cabeçalho */
     /* position: fixed; top: 0; left: 0; right: 0; z-index: 1030; - Descomente para fixar o cabeçalho */
@@ -24,6 +24,24 @@ header.border-bottom .fs-4 {
     flex-grow: 1; /* Faz o conteúdo principal ocupar o espaço restante */
     padding-top: 30px; /* Ajusta o padding-top para evitar que o conteúdo fique atrás do cabeçalho ampliado */
 }
+
+/* Estilos para o container do logo no cabeçalho */
+.logo-container {
+    margin-left: 60px; /* Desloca o conjunto (ícone + texto) para a direita */
+    display: flex;
+    flex-direction: column; /* Empilha o ícone e o texto verticalmente */
+    align-items: flex-start; /* Centraliza o texto abaixo do ícone */
+}
+
+/* Estilo para o subtítulo abaixo do logo */
+.logo-subtitle {
+    font-size: 0.8rem; /* Tamanho da fonte do texto */
+    font-weight: 500;
+    color: #1f2b38; /* Cor do texto */
+    margin-top: 5px; /* Espaço entre o ícone e o texto */
+    font-style: italic; /* Deixa o texto em itálico */
+}
+
 
 /* Estilo para o painel de filtros fixo à esquerda */
 #painel-filtros-fixo {

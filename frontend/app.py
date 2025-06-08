@@ -11,7 +11,7 @@ API_BACKEND_URL = "http://127.0.0.1:5000" # URL do seu backend original
 @app.route('/')
 def index():
     return render_template('index.html')
-                
+                                          
 # --- API ROUTES FOR FRONTEND JAVASCRIPT ---
 @app.route('/api/frontend/licitacoes', methods=['GET'])
 def api_get_licitacoes():
@@ -34,7 +34,7 @@ def api_get_licitacoes():
         error_json = None
         try:
             error_json = http_err.response.json()
-        except ValueError: # Se a resposta de erro não for JSON
+        except ValueError: #Se a resposta de erro não for JSON
             pass # error_json permanece None
         
         if error_json and 'erro' in error_json:
