@@ -938,33 +938,53 @@ document.addEventListener('DOMContentLoaded', function () {
             //detailsPanelLabel.textContent = lic.processo ? `Processo: ${lic.processo}` : `Detalhes: ${lic.numeroControlePNCP || 'N/I'}`;
         }
 
-        
+         // Formatar datas helper (opcional, mas útil)
+        const formatDate = (dateString) => {
+            if (!dateString) return 'N/I';
+            // Adiciona 'Z' para garantir que seja tratada como UTC se não tiver fuso,
+            // evitando problemas de off-by-one day dependendo do fuso do cliente.
+            // Se a data já vier com fuso do backend, pode não ser necessário o 'Z'.
+            return new Date(dateString + 'T00:00:00Z').toLocaleDateString('pt-BR');
+        };
+
+
         let htmlContent = `
             <p><strong>Número PNCP:</strong> ${lic.numeroControlePNCP || 'N/I'}</p>
-            <p><strong>Objeto:</strong> ${lic.objetoCompra || 'N/I'}</p>
+            ${
+                lic.processo 
+                    ? `<p><strong>Número do Processo:</strong> ${lic.processo}</p>` 
+                    : ''
+            }
+            <p><strong>Objeto:</strong></p>
+            <div class="mb-2" style="white-space: pre-wrap; background-color: #f8f9fa; padding: 10px; border-radius: 5px; max-height: 150px; overflow-y: auto;">${lic.objetoCompra || 'N/I'}</div>
             <p><strong>Órgão:</strong> ${lic.orgaoEntidadeRazaoSocial || 'N/I'}</p>
             <p><strong>Unidade Compradora:</strong> ${lic.unidadeOrgaoNome || 'N/I'}</p>
             <p><strong>Município/UF:</strong> ${lic.unidadeOrgaoMunicipioNome || 'N/I'}/${lic.unidadeOrgaoUfSigla || 'N/I'}</p>
             <p><strong>Modalidade:</strong> ${lic.modalidadeNome || 'N/I'}</p>    
-            <p><strong>Amparo Legal:</strong> ${lic.amparoLegalNome || 'N/I'}</p>
+            <!-- DESABILITADO PARA TESTAR O DE BAIXO <p><strong>Amparo Legal:</strong> ${lic.amparoLegalNome || 'N/I'}</p> -->
+            ${lic.amparoLegalNome ? `<p><strong>Amparo Legal:</strong> ${lic.amparoLegalNome}</p>` : ''}
             ${
                 lic.valorTotalHomologado
                     ? `<p><strong>Valor Total Homologado:</strong> R$ ${parseFloat(lic.valorTotalHomologado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>`
                     : ''
             }
-            <p><strong>Situação:</strong> <span class="badge ${getStatusBadgeClass(lic.situacaoReal)}">${lic.situacaoReal || 'N/I'}</span></p>
-            <p><strong>Data Publicação PNCP:</strong> ${lic.dataPublicacaoPncp ? new Date(lic.dataPublicacaoPncp + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/I'}</p>
-            <p><strong>Valor Estimado:</strong> ${lic.valorTotalEstimado ? `R$ ${parseFloat(lic.valorTotalEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/I'}</p>
+            ${lic.modoDisputaNome ? `<p><strong>Modo de Disputa:</strong> ${lic.modoDisputaNome}</p>` : '<p class="text-muted small"><small><strong>Modo de Disputa:</strong> (Não informado)</small></p>'}
+            ${lic.tipolnstrumentoConvocatorioNome ? `<p><strong>Tipo:</strong> ${lic.tipolnstrumentoConvocatorioNome}</p>` : '<p class="text-muted small"><small><strong>Tipo:</strong> (Não informado)</small></p>'}
+            <!-- DESABILITADO PARA TESTAR O DE BAIXO <p><strong>Situação:</strong> <span class="badge ${getStatusBadgeClass(lic.situacaoReal)}">${lic.situacaoReal || 'N/I'}</span></p>  -->
+            ${lic.situacaoReal ? `<p><small><strong>Situação Atual:</strong> ${lic.situacaoReal} </small></p>` : ''}            
+            
+            <!-- DESABILITADO PARA TESTAR O DE BAIXO <p><strong>Data Publicação PNCP:</strong> ${lic.dataPublicacaoPncp ? new Date(lic.dataPublicacaoPncp + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/I'}</p>  -->
+            <p><strong>Data Publicação PNCP:</strong> ${formatDate(lic.dataPublicacaoPncp)}</p>
+
+            <p><strong>Início Recebimento Propostas:</strong> ${formatDate(lic.dataAberturaProposta)}</p>
+            <p><strong>Fim Recebimento Propostas:</strong> ${formatDate(lic.dataEncerramentoProposta)}</p>
+            <p><strong>Última Atualização:</strong> ${formatDate(lic.dataAtualizacao)}</p>
+            <p><strong>Valor Total Estimado:</strong> ${lic.valorTotalEstimado ? `R$ ${parseFloat(lic.valorTotalEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/I'}</p>
             <p><strong>Informação Complementar:</strong></p>
             <div style="white-space: pre-wrap; background-color: #f8f9fa; padding: 10px; border-radius: 5px; max-height: 150px; overflow-y: auto;">
                 ${lic.informacaoComplementar || 'Nenhuma'}
             </div>
-
-            <!-- Placeholders para campos pendentes de API -->
-            <p class="mt-2 text-muted"><small><strong>Modo de Disputa:</strong> (Pendente API)</small></p>
-            <p class="text-muted"><small><strong>Tipo:</strong> (Pendente API)</small></p>
-            <p class="text-muted"><small><strong>Data Início Recebimento:</strong> (Pendente API)</small></p>
-            <p class="text-muted"><small><strong>Data Fim Recebimento:</strong> (Pendente API)</small></p>
+            
         `;
 
         

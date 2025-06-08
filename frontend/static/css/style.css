@@ -1,77 +1,74 @@
-/* static/css/style.css */
-
+/* Estilização geral do corpo da página */
 body {
     display: flex;
     flex-direction: column;
     min-height: 100vh; /* Garante que o rodapé fique no fim da página, mesmo com pouco conteúdo */
     font-size: 0.95rem;
-    background-color: #f4f6f9; /* Um cinza bem claro para o fundo geral */
+    background-color: #0f1f28; /* Fundo do site alterado para verde levemente azul */
 }
 
-/* Estilo para o cabeçalho (se precisar de ajustes) */
+/* Estilo para o cabeçalho da página */
 header.border-bottom {
-    background-color: #ffffff; /* Cabeçalho com fundo branco */
-    box-shadow: 0 2px 4px rgba(0,0,0,.08); /* Sombra sutil no cabeçalho */
-    /* Se quiser o cabeçalho fixo no topo:
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1030; 
-    */
+    background: linear-gradient(to bottom, #628294, #fafafa); /* Degradê vertical de verde-azulado para azul */
+    box-shadow: 0 2px 4px rgba(255, 255, 255, 0.08); /* Sombra sutil mantida */
+    padding: 1.5rem 0; /* Aumenta a altura do cabeçalho com mais padding vertical */
+    min-height: 80px; /* Define uma altura mínima para o cabeçalho */
+    /* position: fixed; top: 0; left: 0; right: 0; z-index: 1030; - Descomente para fixar o cabeçalho */
+}
+header.border-bottom .fs-4 {
+    color: #007bff; /* Define a cor da fonte como branco para "RADAR PNCP" */
 }
 
-/* Se o header for fixo, o .main-content precisará de um padding-top
-   para não ficar escondido atrás do header. Ex: 70px se o header tiver essa altura. */
+/* Estilo para o conteúdo principal, abaixo do cabeçalho */
 .main-content {
     flex-grow: 1; /* Faz o conteúdo principal ocupar o espaço restante */
-    /* padding-top: 70px; */ /* Descomente e ajuste se o header for fixo */
+    padding-top: 30px; /* Ajusta o padding-top para evitar que o conteúdo fique atrás do cabeçalho ampliado */
 }
 
-/* Painel de Filtros Fixo à Esquerda */
+/* Estilo para o painel de filtros fixo à esquerda */
 #painel-filtros-fixo {
-    position: -webkit-sticky; /* Para Safari */
+    position: -webkit-sticky; /* Suporte para Safari */
     position: sticky;
     top: 20px; /* Distância do topo da janela (ajuste se tiver cabeçalho fixo) */
-    height: calc(100vh - 40px - 70px); /* Altura: (Viewport) - (2 * 'top') - (Rodapé aprox.) */
-                                    /* Ajuste o '70px' (rodapé) se necessário */
-    display: flex; /* Para usar flexbox e empurrar botões para baixo */
+    height: calc(100vh - 40px - 70px); /* Altura ajustada para viewport menos margens e rodapé */
+    display: flex; /* Usa flexbox para alinhamento */
     flex-direction: column; /* Empilha os elementos verticalmente */
 }
 
-.filter-collapsible .form-label { /* Para o link clicável */
+/* Estilo para o link clicável nos filtros (ex.: "Status", "Modalidades") */
+.filter-collapsible .form-label {
     cursor: pointer;
     font-weight: 500;
     color: #333; /* Cor do texto do link */
 }
 .filter-collapsible .form-label:hover {
-    color: #007bff;
+    color: #007bff; /* Cor ao passar o mouse */
 }
 .filter-collapsible .bi-chevron-down {
-    transition: transform 0.2s ease-in-out;
+    transition: transform 0.2s ease-in-out; /* Animação suave da seta */
 }
 .filter-collapsible [aria-expanded="true"] .bi-chevron-down {
-    transform: rotate(180deg);
+    transform: rotate(180deg); /* Rota a seta ao expandir */
 }
-/* Remover max-height dos checkbox-container se o collapse cuida da altura */
-/* .checkbox-container { max-height: 150px; ... }  Pode ser removido ou ajustado */ /*SO OLHAR SE PRECISA OU NAO*/
 
-#painel-filtros-fixo > .p-3 { /* O div que tem a borda, fundo e sombra */
+/* Estilo do container interno do painel de filtros */
+#painel-filtros-fixo > .p-3 {
     display: flex;
     flex-direction: column;
-    flex-grow: 1; /* Faz este div ocupar o espaço disponível no #painel-filtros-fixo */
-    overflow: hidden; /* Esconde o overflow do painel principal, o scroll será no #conteudo-scroll-filtros */
+    flex-grow: 1; /* Ocupa o espaço disponível */
+    overflow: hidden; /* Esconde overflow, scroll será no #conteudo-scroll-filtros */
 }
 
+/* Estilo para a área de rolagem dos filtros */
 #conteudo-scroll-filtros {
-    overflow-y: auto; /* BARRA DE ROLAGEM SÓ AQUI */
-    flex-grow: 1; /* Permite que esta área cresça e ocupe espaço */
-    padding-right: 5px; /* Espaço para a barra de rolagem não colar no conteúdo */
+    overflow-y: auto; /* Barra de rolagem vertical */
+    flex-grow: 1; /* Ocupa o espaço disponível */
+    padding-right: 5px; /* Espaço para a barra de rolagem não colar */
 }
 
-/* Estilização dos títulos e labels dentro dos filtros */
+/* Estilo dos títulos e labels dentro do painel de filtros */
 #painel-filtros-fixo h5 {
-    color: #007bff; /* Azul mais vibrante */
+    color: #007bff; /* Azul vibrante para títulos */
     margin-bottom: 1rem;
 }
 
@@ -81,18 +78,17 @@ header.border-bottom {
     font-size: 0.9em;
 }
 
-/* Campos de formulário menores nos filtros */
+/* Estilo dos campos de formulário nos filtros */
 #painel-filtros-fixo .form-control-sm,
 #painel-filtros-fixo .form-select-sm {
     font-size: 0.85em;
 }
 
-/* Container para checkboxes (UFs, Modalidades) */
+/* Estilo do container de checkboxes (UFs, Modalidades) */
 .checkbox-container {
-    /*max-height: 150px; /* Altura máxima antes de mostrar scroll interno */
     overflow-y: auto;
     border: 1px solid #ced4da;
-    padding: 0.5rem; /* Padding interno */
+    padding: 0.5rem;
     border-radius: 0.25rem;
     background-color: #ffffff; /* Fundo branco para destacar */
 }
@@ -102,8 +98,10 @@ header.border-bottom {
 }
 .checkbox-container .form-check-label {
     font-size: 0.9em;
-    font-weight: normal; /* Labels dos checkboxes normais */
+    font-weight: normal;
 }
+
+/* Estilo para links no container de objetos */
 .objeto-container a {
     font-size: 0.85em;
     text-decoration: none;
@@ -114,84 +112,90 @@ header.border-bottom {
     cursor: pointer;
 }
 
+/* Estilo do título da coluna da tabela */
 #coluna-tabela h4 {
     color: #007bff;
 }
 
-/* Rodapé */
+/* Estilo do rodapé */
 .site-footer {
-    background-color: #343a40; /* Cinza escuro */
-    color: #f8f9fa; /* Texto claro */
-    padding: 1rem 0;
+    background-color: #43484d; /* Cinza escuro */
+    color: #faf8f8; /* Texto claro */
+    padding: 0.2rem 0;
     font-size: 0.65em;
     text-align: center;
+}
+.site-footer p,
+.site-footer .nav {
+    margin-bottom: 0;
+    line-height: 1.2;
 }
 
 .site-footer .nav-link {
     color: #adb5bd;
-    padding: 0.25rem 0.5rem;
+    padding: 0.5rem 0.5rem;
 }
 
 .site-footer .nav-link:hover {
     color: #ffffff;
 }
 
-/* Ajustes no painel lateral de detalhes (Offcanvas) */
+/* Estilo do painel de detalhes (offcanvas) */
 #detailsPanelContent p {
-    margin-bottom: 0.3rem; /* Menor margem entre parágrafos */
-    font-size: 0.9em; /* Fonte informativa um pouco menor */
-    line-height: 1.4;    /* Melhorar legibilidade com fontes menores */
+    margin-bottom: 0.3rem;
+    font-size: 0.9em;
+    line-height: 1.4;
 }
 #detailsPanelContent strong {
-    font-size: 1em; /* Mantém o negrito no tamanho original relativo ao <p> */
-    color: #343a40; /* Cor mais escura para destaque */
+    font-size: 1em;
+    color: #343a40;
 }
-#detailsPanelContent .badge { /* Badges dentro dos detalhes */
+#detailsPanelContent .badge {
     font-size: 0.85em;
 }
-#detailsPanelContent .small { /* Textos explicitamente marcados como small */
+#detailsPanelContent .small {
     font-size: 0.8em;
 }
 
-/* Justificativa Presencial e Informação Complementar - Caixas de texto */
+/* Estilo das caixas de texto em "Justificativa" e "Informação Complementar" */
 #detailsPanelContent div[style*="white-space: pre-wrap"] {
-    font-size: 0.88em; /* Mesmo tamanho da fonte informativa */
-    padding: 8px; /* Padding um pouco menor */
-    max-height: 120px; /* Altura um pouco menor se desejado */
+    font-size: 0.88em;
+    padding: 8px;
+    max-height: 120px;
 }
 #detailsPanelContent .justificativa-container a.small {
-    font-size: 0.9em; /* Para "Ver mais/menos" não ficar tão pequeno */
+    font-size: 0.9em;
 }
 
-/* Para a tabela de itens */
+/* Estilo da tabela de itens no painel de detalhes */
 #detailsPanelItensTableContainer {
-    max-height: 300px; /* ou o valor que você já tem */
-    overflow-y: auto;  /* ou o valor que você já tem */
+    max-height: 300px;
+    overflow-y: auto;
     margin-left: 10px;
     margin-right: 10px;
 }
 
-/* Paginação da tabela de itens */
+#detailsPanelItensTableContainer table td,
+#detailsPanelItensTableContainer table th {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.85em;
+    vertical-align: middle;
+}
+
 #detailsPanelItensPagination .page-link-sm {
     padding: 0.2rem 0.4rem;
     font-size: 0.75rem;
 }
 
-#detailsPanelItensTableContainer table td,
-#detailsPanelItensTableContainer table th {
-    padding: 0.25rem 0.4rem; /* Padding menor nas células */
-    font-size: 0.85em;
-    vertical-align: middle;
-
+/* Estilo do título do offcanvas */
 .offcanvas-title {
-    font-size: 1.2rem; /* Um pouco menor */
-}
+    font-size: 1.2rem;
 }
 
-.offcanvas-body h5 { /* Títulos H5 dentro do offcanvas */
+.offcanvas-body h5 {
     font-size: 1.05rem;
     color: #007bff;
-    margin-top: 1.25rem; /* Mais espaço acima */
+    margin-top: 1.25rem;
     margin-bottom: 0.75rem;
     padding-bottom: 0.25rem;
     border-bottom: 1px solid #e9ecef;
@@ -201,21 +205,21 @@ header.border-bottom {
     margin-bottom: 1.25rem;
 }
 
-/* Estilos para as Tags de Palavra-Chave */
+/* Estilo das tags de palavra-chave */
 .tags-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px; /* Espaço entre as tags */
+    gap: 5px;
     padding: 5px 0;
 }
 
 .tag-item {
-    background-color: #007bff; /* Azul Bootstrap */
+    background-color: #007bff;
     color: white;
     padding: 3px 8px;
     border-radius: 10px;
     font-size: 0.85em;
-    display: inline-flex; /* Para alinhar o texto e o botão de remover */
+    display: inline-flex;
     align-items: center;
 }
 
@@ -225,16 +229,15 @@ header.border-bottom {
     color: white;
     margin-left: 5px;
     padding: 0;
-    font-size: 1.1em; /* Tamanho do 'x' */
+    font-size: 1.1em;
     line-height: 1;
     cursor: pointer;
 }
 .tag-item .remove-tag:hover {
     opacity: 0.7;
 }
-/* Fim do estilos para as Tags de Palavra-Chave */
 
-/* TAG DE FILTROS NO TOPO DA TABELA*/
+/* Estilo das tags de filtros no topo da tabela */
 #filtrosAtivosContainer .badge {
     margin-right: 5px;
     margin-bottom: 5px;
@@ -244,6 +247,7 @@ header.border-bottom {
     color: #555;
 }
 
+/* Estilo do overlay de carregamento */
 #loadingOverlay {
     position: fixed;
     top: 0;
@@ -251,8 +255,83 @@ header.border-bottom {
     width: 100%;
     height: 100%;
     background-color: rgba(255, 255, 255, 0.7);
-    z-index: 1050; /* Acima da maioria dos elementos */
+    z-index: 1050;
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+/* Ajustes de responsividade para telas pequenas */
+@media (max-width: 767.98px) {
+    #painel-filtros-fixo {
+        position: static;
+        height: auto;
+        margin-bottom: 1.5rem;
+    }
+    #conteudo-scroll-filtros {
+        overflow-y: visible;
+        max-height: none;
+    }
+}
+
+
+
+/* Estilo do botão "Aplicar Filtros" DEGRADÊ*/
+#painel-filtros-fixo .btn-primary {
+    background: linear-gradient(90deg, #17bdaa, #007bff); /* Degradê de verde-azulado para azul */
+    border: none;
+    font-size: 0.9em;
+}
+#painel-filtros-fixo .btn-primary:hover {
+    background: linear-gradient(90deg, #9e4b05, #ee7007); /* Degradê ao passar o mouse */
+}
+
+/* Estilo da tabela principal de licitações */
+#licitacoes-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+#licitacoes-table th {
+    background-color: #e9ecef;
+    padding: 0.5rem;
+    text-align: left;
+    font-size: 0.9em;
+    color: #343a40;
+}
+#licitacoes-table td {
+    padding: 0.5rem;
+    font-size: 0.85em;
+    border-bottom: 1px solid #dee2e6;
+}
+#licitacoes-table td:nth-child(4) {
+    font-weight: bold;
+    color: #007bff;
+}
+#licitacoes-table tr:hover {
+    background-color: #f1f3f5;
+}
+
+/* Estilo da paginação da tabela principal */
+.pagination {
+    margin-top: 1rem;
+}
+.pagination .page-link {
+    color: #007bff;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85em;
+}
+.pagination .page-link:hover {
+    background-color: #e9ecef;
+}
+
+/* Estilo do cabeçalho da tabela (título "Licitações Encontradas") */
+#licitacoes-header {
+    padding: 1rem;
+    background-color: #ffffff;
+    border-bottom: 1px solid #dee2e6;
+}
+#licitacoes-header h4 {
+    color: #007bff;
+    margin: 0;
+    font-size: 1.1em;
 }
