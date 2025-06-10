@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - RADAR PNCP{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <h1 class="mb-4">{{ page_title }}</h1>
+            <p><em>Última atualização: [Data da Última Atualização]</em></p>
+            
+            <p>Bem-vindo à Política de Privacidade do RADAR PNCP. Sua privacidade é importante para nós...</p>
+            
+            <h2>1. Coleta de Informações</h2>
+            <p>[Detalhe aqui quais informações são coletadas, ex: dados de navegação via cookies, informações de formulário de contato, etc.]</p>
+
+            <h2>2. Uso das Informações</h2>
+            <p>[Detalhe como as informações coletadas são usadas.]</p>
+
+            <h2>3. Compartilhamento de Informações</h2>
+            <p>[Detalhe se e como as informações são compartilhadas com terceiros.]</p>
+            
+            <h2>4. Cookies</h2>
+            <p>Utilizamos cookies para [propósitos]. Consulte nossa <a href="{{ url_for('pagina_politica_cookies') }}">Política de Cookies</a> para mais detalhes.</p>
+
+            <h2>5. Seus Direitos</h2>
+            <p>[Detalhe os direitos dos usuários em relação aos seus dados.]</p>
+
+            <h2>6. Segurança</h2>
+            <p>[Descreva as medidas de segurança.]</p>
+            
+            <h2>7. Contato</h2>
+            <p>Se tiver dúvidas sobre esta política, entre em contato: [seu email de contato].</p>
+
+            <!-- ADICIONE TODO O TEXTO LEGAL NECESSÁRIO AQUI -->
+        </div>
+    </div>
+</div>
+{% endblock %}

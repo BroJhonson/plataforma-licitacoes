@@ -19,20 +19,69 @@
         .site-footer { background-color: #343a40; color: white; padding: 5px 0; }
     </style>
 </head>
-<body>
+<!-- Botão Voltar ao Topo -->
+<button onclick="scrollToTop()" id="btnVoltarAoTopo" title="Voltar ao topo" 
+        class="btn btn-primary rounded-circle p-2 shadow" 
+        style="position: fixed; bottom: 20px; right: 20px; display: none; z-index: 1000;">
+    <i class="bi bi-arrow-up-short" style="font-size: 1.5rem;"></i>
+</button>
+<!-- templates/base.html -->
+<body class="{{ body_class | default('') }}">
     <header class="border-bottom"> 
         <div class="container-fluid">
-            <div class="d-flex flex-wrap align-items-center justify-content-between py-2">
+               <!-- Estrutura para Desktop -->
+            <div class="d-none d-lg-flex flex-wrap align-items-center justify-content-between py-2">
                 <div class="logo-container">
-                    <a href="/">
-                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RADAR PNCP Logo" height="40">
+                    <a href="{{ url_for('pagina_home') }}">
+                        <img src="{{ url_for('static', filename='images/logo.finnd.png') }}" alt="RADAR PNCP Logo Desktop" height="40" id="logoDesktop">
+                        <!-- Placeholder para logo diferente se page-busca-licitacoes -->
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RADAR PNCP Logo Busca" height="40" id="logoBuscaLicitacoes" style="display: none;">
                     </a>
+                    {% if body_class == 'page-busca-licitacoes' %}
                     <p class="logo-subtitle mb-0">Filtre e escolha suas licitações com muito mais facilidade!</p>
-                </div>                
+                    {% endif %}
+                </div>
+                <nav class="ms-md-auto me-md-3"> <!-- me-md-3 para margem à direita em telas médias e acima -->
+                    <ul class="nav nav-pills"> <!-- Navbar (Navegação/menu para navegar entre paginas)-->
+                            <li class="nav-item"><a href="{{ url_for('pagina_home') }}" class="nav-link {% if request.endpoint == 'pagina_home' %}active{% endif %}">Inicio</a></li>
+                            <li class="nav-item"><a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Radar PNCP</a></li>
+                            <li class="nav-item"><a href="{{ url_for('pagina_blog') }}" class="nav-link {% if request.endpoint == 'pagina_blog' %}active{% endif %}">Blog</a></li>
+                            <li class="nav-item"><a href="{{ url_for('pagina_contato') }}" class="nav-link {% if request.endpoint == 'pagina_contato' %}active{% endif %}">Contato</a></li>
+                        </ul>
+                    </nav>                
+                </div>
+            </div>
+
+            <!-- Estrutura para Mobile (visível apenas abaixo de lg) -->
+            <div class="d-lg-none text-center py-3">
+                <a href="{{ url_for('pagina_home') }}">
+                    <img src="{{ url_for('static', filename='images/logo.finnd.png') }}" alt="RADAR PNCP Logo Mobile" height="50" class="mb-2" id="logoMobile">
+                    <!-- Placeholder para logo diferente se page-busca-licitacoes -->
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RADAR PNCP Logo Busca Mobile" height="50" class="mb-2" id="logoBuscaLicitacoesMobile" style="display: none;">
+                </a>
+                {% if body_class == 'page-busca-licitacoes' %}
+                    <p class="logo-subtitle-mobile mb-0">Ferramenta de busca avançada</p> 
+                {% else %}
+                    <p class="logo-subtitle-mobile mb-0 h5">FINND</p> <!-- Ou o título que você quer para outras páginas mobile -->
+                {% endif %}                
+                
+                <!-- Botão Dropdown para o Menu Mobile -->
+                <div class="dropdown position-absolute end-0 top-50 translate-middle-y me-3" style="z-index: 1030;">
+                    <button class="btn btn-outline-secondary btn-sm" type="button" id="mobileMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-list"></i> Menu
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mobileMenuButton">
+                        <li><a class="dropdown-item {% if request.endpoint == 'pagina_home' %}active{% endif %}" href="{{ url_for('pagina_home') }}">Inicio</a></li>
+                        <li><a class="dropdown-item {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">Radar PNCP</a></li>
+                        <li><a class="dropdown-item {% if request.endpoint == 'pagina_blog' %}active{% endif %}" href="{{ url_for('pagina_blog') }}">Blog</a></li>
+                        <li><a class="dropdown-item {% if request.endpoint == 'pagina_contato' %}active{% endif %}" href="{{ url_for('pagina_contato') }}">Contato</a></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </header>
 
+    
     <div id="loadingOverlay" class="d-none">
         <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
             <span class="visually-hidden">Carregando...</span>
@@ -50,11 +99,12 @@
             <div class="d-flex flex-wrap justify-content-between align-items-center">
                 <p class="mb-0">© 2025 RADAR PNCP. Todos os direitos reservados.</p>
                 <ul class="nav">
-                    <li class="nav-item"><a href="#" class="nav-link px-2 text-white">Política de Privacidade</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link px-2 text-white">Política de Cookies</a></li>
+                    <!-- Links das políticas já devem estar aqui, apenas confira os href -->
+                    <li class="nav-item"><a href="{{ url_for('pagina_politica_privacidade') }}" class="nav-link px-2">Política de Privacidade</a></li>
+                    <li class="nav-item"><a href="{{ url_for('pagina_politica_cookies') }}" class="nav-link px-2">Política de Cookies</a></li>
                 </ul>
             </div>
-        </div>
+        </div>        
     </footer>
 
     <!-- Bootstrap JS Bundle (Popper.js e Bootstrap JS) -->

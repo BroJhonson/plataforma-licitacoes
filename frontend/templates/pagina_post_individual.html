@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - Blog RADAR PNCP{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('pagina_home') }}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('pagina_blog') }}">Blog</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ post.titulo }}</li>
+                </ol>
+            </nav>
+
+            <article class="blog-post">
+                <h1 class="blog-post-title mb-1 fs-2">{{ post.titulo }}</h1>
+                <p class="blog-post-meta text-muted"><small>Publicado em: {{ post.data }}</small></p>
+                <hr>
+                <div class="post-content">
+                    <!-- Para exibir HTML formatado no conteúdo, use |safe, mas CUIDADO com XSS se o conteúdo vier de usuários -->
+                    <p>{{ post.conteudo_completo | nl2br }}</p> 
+                </div>
+            </article>
+        </div>
+    </div>
+</div>
+{% endblock %}

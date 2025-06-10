@@ -3,15 +3,72 @@ import requests # Para chamar a API do backend RADAR PNCP e IBGE
 
 app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta_muito_segura_aqui' # Mude isso!
-
-# URL base da API do Backend RADAR PNCP
 API_BACKEND_URL = "http://127.0.0.1:5000" # URL do seu backend original
 
-# Rota principal que renderiza o index.html
+                  
+# Rotas principais que renderiza as Paginas
 @app.route('/')
 def index():
-    return render_template('index.html')
-                                                          
+    return render_template('index.html', page_title="Buscar Licitações", body_class="page-busca-licitacoes")
+
+@app.route('/home') 
+def pagina_home():
+    return render_template('pagina_home.html', page_title="Bem-vindo", body_class="page-home")
+
+@app.route('/blog') #Depois modifico isso, ou deixo inativo
+def pagina_blog():
+    # Para um blog real, você buscaria posts de um banco de dados ou CMS.
+    # Por agora, vamos usar dados de exemplo.
+    posts_exemplo = [
+        {
+            "id": 1, "slug": "importancia-de-acompanhar-licitacoes",
+            "titulo": "A Importância de Acompanhar Licitações Públicas",
+            "data": "05/06/2024",
+            "resumo": "Descubra por que monitorar o PNCP pode abrir novas oportunidades para seu negócio e como nossa ferramenta pode ajudar.",
+            "conteudo_completo": "Conteúdo completo do post sobre a importância..." # Para uma página de post individual
+        },
+        {
+            "id": 2, "slug": "dicas-para-vencer-licitacoes",
+            "titulo": "5 Dicas Essenciais para Preparar Propostas Vencedoras",
+            "data": "28/05/2024",
+            "resumo": "Aprenda estratégias chave para aumentar suas chances de sucesso em processos licitatórios.",
+            "conteudo_completo": "Conteúdo completo do post sobre dicas para vencer..."
+        },
+        # Adicione mais posts de exemplo se desejar
+    ]
+    return render_template('pagina_blog.html', posts=posts_exemplo, page_title="Nosso Blog", body_class="page-blog")
+
+# (Opcional) Rota para um post individual do blog
+@app.route('/blog/<string:post_slug>')
+def pagina_post_blog(post_slug):
+    # Lógica para encontrar o post pelo slug (você precisaria implementar isso)
+    # Por agora, apenas um exemplo.
+    posts_exemplo = [
+        {"id": 1, "slug": "importancia-de-acompanhar-licitacoes", "titulo": "A Importância de Acompanhar Licitações Públicas", "data": "05/06/2024", "conteudo_completo": "Este é o conteúdo completo sobre a importância de acompanhar licitações..."},
+        {"id": 2, "slug": "dicas-para-vencer-licitacoes", "titulo": "5 Dicas Essenciais para Preparar Propostas Vencedoras", "data": "28/05/2024", "conteudo_completo": "Aqui detalhamos as 5 dicas essenciais..."}
+    ]
+    post_encontrado = next((post for post in posts_exemplo if post["slug"] == post_slug), None)
+    
+    if post_encontrado:
+        return render_template('pagina_post_individual.html', post=post_encontrado, page_title=post_encontrado["titulo"])
+    else:
+        return render_template('404.html', page_title="Post não encontrado", body_class="page-error"), 404 # Um template 404 genérico
+
+
+@app.route('/contato')
+def pagina_contato():
+    return render_template('pagina_contato.html', page_title="Fale Conosco", body_class="page-contato")
+
+@app.route('/politica-de-privacidade')
+def pagina_politica_privacidade():
+    return render_template('pagina_politica_privacidade.html', page_title="Política de Privacidade", body_class="page-legal")
+
+@app.route('/politica-de-cookies')
+def pagina_politica_cookies():
+    return render_template('pagina_politica_cookies.html', page_title="Política de Cookies", body_class="page-legal")
+
+
+
 # --- API ROUTES FOR FRONTEND JAVASCRIPT ---
 @app.route('/api/frontend/licitacoes', methods=['GET'])
 def api_get_licitacoes():

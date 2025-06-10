@@ -17,6 +17,7 @@ header.border-bottom {
 }
 header.border-bottom .fs-4 {
     color: #007bff; /* Define a cor da fonte como branco para "RADAR PNCP" */
+    z-index: 1025; /* Um z-index menor que o do Offcanvas (1040+) mas maior que o conteúdo normal */
 }
 
 /* Estilo para o conteúdo principal, abaixo do cabeçalho */
@@ -82,6 +83,21 @@ header.border-bottom .fs-4 {
     } */
 }
 
+/* Estilos para o cabeçalho mobile */
+.d-lg-none.text-center.py-3 { /* O container do logo mobile */
+    position: relative; /* Para posicionar o botão hamburger absolutamente dentro dele */
+}
+
+.logo-subtitle-mobile {
+    font-size: 1.1rem; /* Ajuste o tamanho do subtítulo/título mobile */
+    font-weight: 500;
+    color: #1f2b38;
+}
+
+/* Se quiser que o menu desktop não apareça em mobile e vice-versa */
+header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
+    /* Já está oculta em mobile por d-none d-lg-flex */
+}
 
 /* Estilo para o link clicável nos filtros (ex.: "Status", "Modalidades") */
 .filter-collapsible .form-label {
@@ -177,12 +193,93 @@ header.border-bottom .fs-4 {
 
 /* Responsividade para os controles da tabela */
 @media (max-width: 767.98px) { 
+    body {
+        font-size: 0.83rem; /* Reduz a fonte base para mobile. Ajuste este valor! */
+    }
+
+    /* Ajuste para títulos principais se necessário */
+    h1, .h1 { font-size: 1.7rem; }
+    h2, .h2 { font-size: 1.5rem; }
+    h3, .h3 { font-size: 1.3rem; }
+    h4, .h4 { font-size: 1.1rem; } /* Ex: "Licitações Encontradas" */
+    h5, .h5 { font-size: 1.0rem; } /* Ex: Títulos no Offcanvas */
+
+    /* Botões e Selects nos controles da tabela */
+    .table-controls-header .form-label-sm {
+        font-size: 0.8em; /* Relativo ao novo font-size do body em mobile */
+    }
+    .table-controls-header .form-select-sm {
+        font-size: 0.85em; /* Relativo ao novo font-size do body em mobile */
+        /* width: 100%; /* Já deve estar assim de antes para empilhar */
+    }
+
+    /* Texto "Exibindo X-Y de Z" */
+    #exibicaoInfo {
+        font-size: 0.8em;
+    }
+
+    /* Tabela principal */
+    #licitacoesTableBody td, 
+    #licitacoesTableBody th { /* Se quiser que os headers também diminuam */
+        font-size: 0.8em; /* Ajuste */
+        padding: 0.4rem; /* Menor padding */
+    }
+
+    /* Paginação principal */
+    .pagination .page-link {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75em; /* Relativo ao novo font-size do body */
+    }
+    
+    /* Painel de Detalhes (Offcanvas) */
+    #detailsPanel .offcanvas-title {
+        font-size: 1.1rem;
+    }
+    #detailsPanel #detailsPanelSubtitle {
+        font-size: 0.75em;
+    }
+    #detailsPanelContent p {
+        font-size: 0.85em; /* Ajuste, relativo ao novo body font-size */
+        margin-bottom: 0.3rem;
+    }
+    #detailsPanelContent div[style*="white-space: pre-wrap"], /* Caixas de texto */
+    #detailsPanelItensTableContainer table td,
+    #detailsPanelItensTableContainer table th {
+        font-size: 0.80em; /* Ajuste */
+    }
+    #detailsPanelItensPagination .page-link-sm {
+         font-size: 0.7em;
+    }
+
+
+    /* Filtros dentro do Offcanvas de Filtros */
+    #offcanvasFiltros .offcanvas-body .form-label {
+        font-size: 0.9em; /* Relativo ao novo body font-size */
+    }
+    #offcanvasFiltros .offcanvas-body .form-control-sm,
+    #offcanvasFiltros .offcanvas-body .checkbox-container .form-check-label,
+    #offcanvasFiltros .offcanvas-body .tag-item {
+        font-size: 0.85em; /* Relativo ao novo body font-size */
+    }
+     #offcanvasFiltros .offcanvas-footer .btn {
+        font-size: 0.9em; /* Botões no footer do offcanvas de filtros */
+    }
+    
+    /* Botão principal de abrir filtros (se estiver visível em mobile) */
+    #coluna-sidebar-esquerda .btn-primary, /* Botão sticky da sidebar */
+    .d-lg-none .btn-primary /* Botão que aparece em mobile para abrir filtros (se você tiver um) */
+    { 
+        font-size: 0.9em;
+        padding: 0.5rem 0.75rem;
+    }
+
     .table-controls-header {
         /* Mantém flex-direction: row e justify-content-space-between por padrão, 
            mas o flex-wrap: wrap permitirá que eles quebrem.
            Se quiser empilhar totalmente:*/
            flex-direction: column; 
            align-items: stretch; 
+           
         
     }
     .filter-control-group {
@@ -440,4 +537,99 @@ header.border-bottom .fs-4 {
         width: 95vw !important; /* Quase toda a largura da tela */
         max-width: none !important; /* Remove o max-width para que o 95vw seja efetivo */
     }
+}
+
+/* ESPAÇO DOS ANUNCIOS */
+#espaco-anuncios-lateral {
+    min-height: 300px; /* Para garantir que o espaço exista mesmo sem conteúdo alto */
+    /* Outros estilos como background, padding, etc., você já tem ou pode adicionar */
+    /* Se quiser que as imagens dentro não ultrapassem a largura do container: */
+}
+#espaco-anuncios-lateral img {
+    max-width: 100%; /* Garante que a imagem não seja maior que seu container */
+    height: auto;    /* Mantém a proporção da imagem */
+}
+
+/*BOTAO DE VOLTAR AO TOPO*/
+#btnVoltarAoTopo {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: none; /* Inicialmente oculto, JS controla */
+    z-index: 1000;
+    /* Forçar dimensões para um círculo perfeito */
+    width: 45px;  /* Ajuste o tamanho */
+    height: 45px; /* Ajuste o tamanho (igual à largura) */
+    padding: 0; /* Resetar padding para controlar o tamanho pelo width/height */
+    display: flex; /* Para centralizar o ícone */
+    align-items: center;
+    justify-content: center;
+    /* transition: opacity 0.3s, visibility 0.3s; /* Mantenha se quiser fade */
+}
+
+#btnVoltarAoTopo i.bi-arrow-up-short {
+    font-size: 1.5rem; /* Ajuste o tamanho do ícone se necessário */
+    line-height: 1; /* Ajuda na centralização vertical do ícone */
+}
+
+/* Estilização do painel de Feedback */
+
+
+/* Container para o painel de feedback na coluna lateral (DESKTOP) */
+#feedback-placeholder-desktop {
+    /* A largura já deve ser definida pela coluna Bootstrap pai (col-lg-2 col-md-3) */
+    /* Se o conteúdo interno estiver transbordando, precisamos estilizar o conteúdo */
+    margin-left: auto; 
+    margin-right: auto; 
+}
+
+/* Container para o painel de feedback abaixo da tabela (MOBILE) */
+#feedback-placeholder-mobile {
+    /* d-lg-none já o oculta no desktop */
+    /* text-center já está no HTML */
+    /* Não precisamos de muito aqui, pois o conteúdo interno será estilizado */
+    margin-left: auto; /* Para centralizar se a coluna pai for flex, mas text-center já deve cuidar */
+    margin-right: auto;
+    max-width: 500px; /* Exemplo: limita a largura no mobile se a coluna for 100% */
+}
+
+/* Estilo para o CONTEÚDO REAL do painel de feedback (que é clonado do template) */
+/* Vamos usar uma classe específica para ele para facilitar */
+.painel-feedback-conteudo {
+    padding: 1rem; /* p-3 é 1rem */
+    border: 1px solid #dee2e6; /* Cor de borda padrão do Bootstrap */
+    border-radius: 0.25rem;
+    background-color: #f8f9fa; /* bg-light */
+    text-align: center;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Sombra sutil */
+    margin-bottom: 1rem; /* Espaço abaixo dele */
+}
+
+/* Estilo para Desktop (quando o painel de feedback está na sidebar) */
+#coluna-sidebar-esquerda .painel-feedback-conteudo {
+    /* Ele já deve herdar a largura da #coluna-sidebar-esquerda. */
+    /* Se estiver vazando, pode ser que não haja um 'width: 100%' implícito. */
+    width: 100%; /* Força a ocupar a largura da coluna pai */
+    box-sizing: border-box; /* Garante que padding e border não aumentem a largura total */
+}
+
+/* Estilo para Mobile (quando o painel de feedback está abaixo da tabela) */
+#coluna-tabela-principal #feedback-placeholder-mobile .painel-feedback-conteudo {
+    max-width: 450px; /* Largura máxima para o painel no mobile para não ficar tela cheia */
+    margin-left: auto;  /* Centraliza o bloco */
+    margin-right: auto; /* Centraliza o bloco */
+    font-size: 0.9em; /* Letra um pouco menor no mobile para este painel */
+}
+
+#feedback-placeholder-mobile .painel-feedback-conteudo h6 {
+    font-size: 1.1em; /* Ajusta o título dentro do painel mobile */
+}
+
+#feedback-placeholder-mobile .painel-feedback-conteudo p small {
+    font-size: 0.9em; /* Ajusta o parágrafo dentro do painel mobile */
+}
+
+#feedback-placeholder-mobile .painel-feedback-conteudo .btn-sm {
+    font-size: 0.85em; /* Ajusta o botão dentro do painel mobile */
+    padding: 0.25rem 0.6rem;
 }
