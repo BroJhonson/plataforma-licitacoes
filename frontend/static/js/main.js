@@ -482,19 +482,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     
-    // Função para exibir Data e Hora Atual  ## NA VERDADE NEM PRECISO DISSO. POSSO ATÉ REMOVER
-    function displayCurrentDateTime() {
-        const dateTimeElement = document.getElementById('current-datetime');
-        if (dateTimeElement) {
-            const now = new Date();
-            const optionsDate = { year: 'numeric', month: '2-digit', day: '2-digit' };
-            const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
-            const formattedDate = now.toLocaleDateString('pt-BR', optionsDate);
-            const formattedTime = now.toLocaleTimeString('pt-BR', optionsTime);
-            dateTimeElement.textContent = `${formattedDate} ${formattedTime}`;
-        }
-    }
-
+    
     // --- FUNÇÕES DE BUSCA E RENDERIZAÇÃO DE LICITAÇÕES ---
     async function buscarLicitacoes(page = 1) {
         currentPage = page;
@@ -528,7 +516,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         if ((statusRadarValor === "" || statusRadarValor === "Encerrada") && !palavraChaveInc) {
             // A API do backend agora lida com a validação de obrigatoriedade, então o frontend pode apenas avisar
-            // ou o backend retornará um erro 400 que trataremos.
+            // ou o backend retornará um erro 400 que trataremos.       FAZER O ERRO 
             // Por enquanto, vamos manter o aviso no frontend:
             statusWarning.textContent = 'Palavra-chave de busca é obrigatória para este status.';
             statusWarning.classList.remove('d-none');
@@ -1183,36 +1171,18 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // --- INICIALIZAÇÃO DA PÁGINA (MODIFICADA) ---
-    async function inicializarPagina() {
-        displayCurrentDateTime();
-        setInterval(displayCurrentDateTime, 1000);
-        
+    // --- INICIALIZAÇÃO DA PÁGINA ---
+    async function inicializarPagina() {        
+                
         popularUFs(); 
         await popularModalidades(); 
-        await popularStatus();      
+        await popularStatus();   
+        buscarLicitacoes(1);   
 
         const defaultStatusChecked = document.querySelector('.filter-status:checked');
         const palavraChaveInicial = palavraChaveInclusaoInput.value.trim();
 
-        // A lógica de busca inicial pode ser simplificada para apenas buscar
-        // se as condições mínimas forem atendidas.
-        // A busca inicial com status default deve funcionar se não cair na validação de palavra-chave.
-        if (defaultStatusChecked) {
-            const statusVal = defaultStatusChecked.value;
-            if (!((statusVal === "" || statusVal === "Encerrada") && !palavraChaveInicial)) {
-                console.log("Inicializando busca de licitações com status default...");
-                buscarLicitacoes(1);
-            } else {
-                // Exibe mensagem de aviso se a condição de palavra-chave não for atendida pelo default
-                statusWarning.textContent = `Palavra-chave é obrigatória para o status "${defaultStatusChecked.labels[0].textContent || 'Todos'}".`;
-                statusWarning.classList.remove('d-none');
-                licitacoesTableBody.innerHTML = `<tr><td colspan="8" class="text-center">Forneça uma palavra-chave para buscar com o status selecionado.</td></tr>`;
-            }
-        } else {
-            // Caso nenhum status esteja marcado por padrão (improvável com a lógica de popularStatus)
-            licitacoesTableBody.innerHTML = `<tr><td colspan="8" class="text-center">Selecione os filtros e clique em "Aplicar Filtros".</td></tr>`;
-        }
+        
         setupFilterSearch('ufSearchInput', 'ufsContainerDropdown', '.form-check');
         setupFilterSearch('modalidadeSearchInput', 'modalidadesContainerDropdown', '.form-check');
         setupFilterSearch('municipioSearchInput', 'municipiosContainerDropdown', '.form-check');

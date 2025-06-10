@@ -43,15 +43,45 @@ header.border-bottom .fs-4 {
 }
 
 
-/* Estilo para o painel de filtros fixo à esquerda */
-#painel-filtros-fixo {
-    position: -webkit-sticky; /* Suporte para Safari */
-    position: sticky;
-    top: 20px; /* Distância do topo da janela (ajuste se tiver cabeçalho fixo) */
-    height: calc(100vh - 40px - 70px); /* Altura ajustada para viewport menos margens e rodapé */
-    display: flex; /* Usa flexbox para alinhamento */
-    flex-direction: column; /* Empilha os elementos verticalmente */
+#offcanvasFiltros .filter-dropdown .dropdown-menu {
+    /* Se precisar de ajustes no min-width dos dropdowns internos */
+    min-width: 280px; /* Exemplo, ajuste se os seus já estiverem diferentes */
 }
+
+/* Estilos para os inputs de busca dentro dos dropdowns de filtro no Offcanvas */
+#offcanvasFiltros .dropdown-menu input[type="text"].form-control-sm {
+    margin-bottom: 0.5rem; /* Um pouco de espaço abaixo do input de busca */
+}
+
+/* Manter estilos para .checkbox-container, .tags-container, .tag-item, etc., 
+   pois eles são usados dentro do Offcanvas agora. */
+
+
+/* Estilo para a área de anúncios (exemplo) */
+#espaco-anuncios-lateral {
+    min-height: 300px; /* Apenas para dar um volume ao espaço */
+    /* Adicione outros estilos que desejar */
+}
+
+
+/* Ajustes de responsividade para o botão de filtros e offcanvas */
+@media (max-width: 991.98px) { /* Abaixo de LG, quando o painel lateral fixo some */
+    #coluna-sidebar-esquerda .sticky-top { /* O botão de filtros */
+        position: static !important; /* Remove o sticky para o botão em mobile */
+    }
+    /* A coluna da tabela ocupará toda a largura, pois a coluna da sidebar some. */
+    /* Se #coluna-sidebar-esquerda não tiver d-none d-lg-block,
+       então você precisaria de:
+    #coluna-sidebar-esquerda {
+        display: none; 
+    }
+    #coluna-tabela-principal {
+        width: 100%;
+        flex: 0 0 100%;
+        max-width: 100%;
+    } */
+}
+
 
 /* Estilo para o link clicável nos filtros (ex.: "Status", "Modalidades") */
 .filter-collapsible .form-label {
@@ -67,39 +97,6 @@ header.border-bottom .fs-4 {
 }
 .filter-collapsible [aria-expanded="true"] .bi-chevron-down {
     transform: rotate(180deg); /* Rota a seta ao expandir */
-}
-
-/* Estilo do container interno do painel de filtros */
-#painel-filtros-fixo > .p-3 {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1; /* Ocupa o espaço disponível */
-    overflow: hidden; /* Esconde overflow, scroll será no #conteudo-scroll-filtros */
-}
-
-/* Estilo para a área de rolagem dos filtros */
-#conteudo-scroll-filtros {
-    overflow-y: auto; /* Barra de rolagem vertical */
-    flex-grow: 1; /* Ocupa o espaço disponível */
-    padding-right: 5px; /* Espaço para a barra de rolagem não colar */
-}
-
-/* Estilo dos títulos e labels dentro do painel de filtros */
-#painel-filtros-fixo h5 {
-    color: #007bff; /* Azul vibrante para títulos */
-    margin-bottom: 1rem;
-}
-
-#painel-filtros-fixo .form-label {
-    font-weight: 500;
-    margin-bottom: 0.25rem;
-    font-size: 0.9em;
-}
-
-/* Estilo dos campos de formulário nos filtros */
-#painel-filtros-fixo .form-control-sm,
-#painel-filtros-fixo .form-select-sm {
-    font-size: 0.85em;
 }
 
 /* Estilo do container de checkboxes (UFs, Modalidades) */
@@ -173,6 +170,42 @@ header.border-bottom .fs-4 {
 }
 #detailsPanelContent .small {
     font-size: 0.8em;
+}
+
+/* Painel detalhes (mobile) */
+
+
+/* Responsividade para os controles da tabela */
+@media (max-width: 767.98px) { 
+    .table-controls-header {
+        /* Mantém flex-direction: row e justify-content-space-between por padrão, 
+           mas o flex-wrap: wrap permitirá que eles quebrem.
+           Se quiser empilhar totalmente:*/
+           flex-direction: column; 
+           align-items: stretch; 
+        
+    }
+    .filter-control-group {
+        width: 100%; /* Em telas menores, cada grupo ocupa a largura total */
+        justify-content: space-between; /* Espaçar label e select dentro do grupo */
+        margin-bottom: 0.5rem;
+    }
+    .filter-control-group:last-child {
+        margin-bottom: 0;
+    }
+    .filter-control-group .form-select-sm {
+        /* Se você quiser que o select ocupe o espaço restante no grupo: */
+        /* flex-grow: 1; */
+        /* Ou mantenha width: auto com um min/max-width se necessário */
+        min-width: 0; /* Resetar min-width do desktop se necessário */
+        width: 100px; /* Exemplo, ou deixe auto */
+    }
+    #exibicaoInfo {
+        width: 100%;
+        order: 1; /* Pode mudar a ordem em mobile se desejar, ex: colocar o info no meio */
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
 }
 
 /* Estilo das caixas de texto em "Justificativa" e "Informação Complementar" */
@@ -292,8 +325,6 @@ header.border-bottom .fs-4 {
     }
 }
 
-
-
 /* Estilo do botão "Aplicar Filtros" DEGRADÊ*/
 #painel-filtros-fixo .btn-primary {
     background: linear-gradient(90deg, #17bdaa, #007bff); /* Degradê de verde-azulado para azul */
@@ -352,4 +383,61 @@ header.border-bottom .fs-4 {
     color: #007bff;
     margin: 0;
     font-size: 1.1em;
+}
+
+/* Controles acima da tabela (Ordenar por, Itens por página) */
+.table-controls-header {
+    display: flex;
+    flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    gap: 10px; /* Espaçamento entre os grupos de controle */
+}
+
+.filter-control-group {
+    display: flex; /* Alinha o label e o select na mesma linha */
+    align-items: center;
+    /* flex-grow: 0;  /* Não permite que o grupo cresça */
+    /* flex-shrink: 0; /* Não permite que o grupo encolha além do seu conteúdo */
+}
+
+.filter-control-group label {
+    white-space: nowrap; /* Evita que o label quebre linha */
+}
+
+.filter-control-group .form-select-sm {
+    /* width: auto; /* Já está inline, mas pode ser reforçado aqui */
+    /* Você pode definir um max-width aqui se quiser limitar o quão largos eles podem ficar,
+       mesmo com width: auto. Ex: max-width: 200px; */
+}
+
+#exibicaoInfo {
+    flex-grow: 1; /* Permite que este div ocupe o espaço central restante */
+    text-align: center;
+    /* min-width: 150px; /* Garante um espaço mínimo para o texto de exibição */
+}
+
+
+/* Estilo para o Offcanvas de Detalhes */
+#detailsPanel.offcanvas-end { /* Ou .offcanvas-start se mudar a origem */
+    /* Largura padrão para telas maiores (ex: desktop) */
+    width: 50vw; /* Ou o valor que você quer para desktop, ex: 700px, 800px, etc. */
+    /* max-width: 900px; /* Um limite máximo para telas muito largas se usar vw */
+}
+
+@media (max-width: 991.98px) { /* Telas médias (tablets) */
+    #detailsPanel.offcanvas-end, 
+    #detailsPanel.offcanvas-start {
+        width: 75vw !important; /* Um pouco mais largo em tablets */
+        /* max-width: 600px; /* Um limite se necessário */
+    }
+}
+
+@media (max-width: 767.98px) { /* Telas pequenas (smartphones) */
+    #detailsPanel.offcanvas-end, 
+    #detailsPanel.offcanvas-start {
+        width: 95vw !important; /* Quase toda a largura da tela */
+        max-width: none !important; /* Remove o max-width para que o 95vw seja efetivo */
+    }
 }
