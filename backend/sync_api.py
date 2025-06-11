@@ -12,14 +12,9 @@ from datetime import datetime, date, timedelta # (Para trabalhar com datas)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Define o caminho completo para o arquivo do banco de dados
 DATABASE_PATH = os.path.join(BASE_DIR, 'database.db')
-# Data atual para o parâmetro dataFinal (formato YYYYMMDD)
-hoje = date.today()
-data_futura = hoje + timedelta(days=6*30) # Aproximação de 6 meses (180 dias)
-DATA_ATUAL_PARAM = data_futura.strftime('%Y%m%d')
-#print(f"INFO: Usando dataFinal calculada como: {DATA_ATUAL_PARAM}")
 TAMANHO_PAGINA_SYNC  = 50 # OBRIGATORIO
-LIMITE_PAGINAS_TESTE_SYNC = 100 # OBRIGATORIO. Mudar para None para buscar todas.
-CODIGOS_MODALIDADE = [5, 6, 1, 2, 3, 4 ] # (OBRIGATORIO. 5 = Concorrencia; 6 = Pregão Eletrônico)
+LIMITE_PAGINAS_TESTE_SYNC = 1 # OBRIGATORIO. Mudar para None para buscar todas.
+CODIGOS_MODALIDADE = [5, 6, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13 ] # (OBRIGATORIO)
 API_BASE_URL = "https://pncp.gov.br/api/consulta" # (URL base da API do PNCP)      
 API_BASE_URL_PNCP_API = "https://pncp.gov.br/pncp-api"   # Para itens e arquivos    ## PARA TODOS OS LINKS DE ARQUIVOS E ITENS USAR PAGINAÇÃO SE NECESSARIO ##
 ENDPOINT_PROPOSTAS_ABERTAS = "/v1/contratacoes/proposta" # (Endpoint específico)
@@ -197,8 +192,8 @@ def  save_licitacao_to_db(conn, licitacao_api_item):
         'amparoLegalDescricao': licitacao_api_item.get('amparoLegal', {}).get('descricao'),
         'valorTotalEstimado': licitacao_api_item.get('valorTotalEstimado'),
         'valorTotalHomologado': licitacao_api_item.get('valorTotalHomologado'),
-        'dataAberturaProposta': licitacao_api_item.get('dataAberturaProposta', '').split('T')[0] if licitacao_api_item.get('dataAberturaProposta') else None,
-        'dataEncerramentoProposta': licitacao_api_item.get('dataEncerramentoProposta', '').split('T')[0] if licitacao_api_item.get('dataEncerramentoProposta') else None,
+        'dataAberturaProposta': licitacao_api_item.get('dataAberturaProposta'),
+        'dataEncerramentoProposta': licitacao_api_item.get('dataEncerramentoProposta'),
         'dataPublicacaoPncp': licitacao_api_item.get('dataPublicacaoPncp', '').split('T')[0] if licitacao_api_item.get('dataPublicacaoPncp') else None,
         'dataInclusao': licitacao_api_item.get('dataInclusao', '').split('T')[0] if licitacao_api_item.get('dataInclusao') else None,
         'dataAtualizacao': licitacao_api_item.get('dataAtualizacao', '').split('T')[0] if licitacao_api_item.get('dataAtualizacao') else None,
@@ -335,9 +330,9 @@ def  save_licitacao_to_db(conn, licitacao_api_item):
         if not encerra_por_item_ou_julgamento: 
             if data_encerramento_str:
                 try:
-                    data_encerramento_date = datetime.strptime(data_encerramento_str, '%Y-%m-%d').date()
-                    if hoje_date > data_encerramento_date:
-                        # >>> ESTE É OUTRO PONTO CRÍTICO <<<
+                    data_encerramento_datetime_obj = datetime.fromisoformat(data_encerramento_str.replace('Z', '+00:00')) # Lida com 'Z' se presente
+                    data_encerramento_date_obj = data_encerramento_datetime_obj.date() 
+                    if hoje_date > data_encerramento_date_obj:                    
                         # Se a data de encerramento já passou, vira "Em Julgamento/Propostas Encerradas"
                         situacao_real_calculada = "Em Julgamento/Propostas Encerradas"
                     else:
