@@ -1,29 +1,42 @@
-/* Estilização geral do corpo da página */
+/* ========================================================= */
+/* =============== Estilização Geral das Páginas ============= */
+/* ========================================================= */
+
+/* Estilização do corpo da página (body) */
 body {
     display: flex;
     flex-direction: column;
     min-height: 100vh; /* Garante que o rodapé fique no fim da página, mesmo com pouco conteúdo */
     font-size: 0.95rem;
-    background-color: #0f1f28; /* Fundo do site alterado para verde levemente azul */
+    background-color: #0e1e27; /* Fundo do site alterado para verde levemente azul */
+    font-family: 'Poppins', sans-serif; /* Fonte padrão para todo o site */
 }
+
+/* Estilo para o conteúdo principal, ocupa o espaço restante */
+.main-content {
+    flex-grow: 1; /* Faz o conteúdo principal ocupar o espaço restante */
+    padding-top: 30px; /* Ajusta o padding-top para evitar que o conteúdo fique atrás do cabeçalho ampliado */
+}
+
+/* ========================================================= */
+/* ======================= Cabeçalho ======================= */
+/* ========================================================= */
 
 /* Estilo para o cabeçalho da página */
 header.border-bottom {
     background: linear-gradient(to bottom, #628294, #fafafa); /* Degradê vertical de verde-azulado para azul */
-    box-shadow: 0 2px 4px rgba(160, 160, 160, 0.5); /* Sombra sutil mantida */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Sombra sutil mantida */
     padding: 1.5rem 0; /* Aumenta a altura do cabeçalho com mais padding vertical */
     min-height: 80px; /* Define uma altura mínima para o cabeçalho */
-    /* position: fixed; top: 0; left: 0; right: 0; z-index: 1030; - Descomente para fixar o cabeçalho */
 }
-header.border-bottom .fs-4 {
-    color: #007bff; /* Define a cor da fonte como branco para "RADAR PNCP" */
-    z-index: 1025; /* Um z-index menor que o do Offcanvas (1040+) mas maior que o conteúdo normal */
+body:not(.page-busca-licitacoes) header.border-bottom {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1030; /*  Isso fixar o cabeçalho nas paginas*/
 }
 
-/* Estilo para o conteúdo principal, abaixo do cabeçalho */
-.main-content {
-    flex-grow: 1; /* Faz o conteúdo principal ocupar o espaço restante */
-    padding-top: 30px; /* Ajusta o padding-top para evitar que o conteúdo fique atrás do cabeçalho ampliado */
+/* Cor da fonte para o texto "RADAR PNCP" no cabeçalho */
+header.border-bottom .fs-4 {
+    color: #007bff; /* Define a cor da fonte como azul para "RADAR PNCP" */
+    z-index: 1025; /* Um z-index menor que o do Offcanvas (1040+) mas maior que o conteúdo normal */
 }
 
 /* Estilos para o container do logo no cabeçalho */
@@ -31,7 +44,7 @@ header.border-bottom .fs-4 {
     margin-left: 60px; /* Desloca o conjunto (ícone + texto) para a direita */
     display: flex;
     flex-direction: column; /* Empilha o ícone e o texto verticalmente */
-    align-items: flex-start; /* Centraliza o texto abaixo do ícone */
+    align-items: flex-start; /* Alinha o texto abaixo do ícone à esquerda */
 }
 
 /* Estilo para o subtítulo abaixo do logo */
@@ -43,110 +56,75 @@ header.border-bottom .fs-4 {
     font-style: italic; /* Deixa o texto em itálico */
 }
 
-
-#offcanvasFiltros .filter-dropdown .dropdown-menu {
-    /* Se precisar de ajustes no min-width dos dropdowns internos */
-    min-width: 280px; /* Exemplo, ajuste se os seus já estiverem diferentes */
-}
-
-/* Estilos para os inputs de busca dentro dos dropdowns de filtro no Offcanvas */
-#offcanvasFiltros .dropdown-menu input[type="text"].form-control-sm {
-    margin-bottom: 0.5rem; /* Um pouco de espaço abaixo do input de busca */
-}
-
-/* Manter estilos para .checkbox-container, .tags-container, .tag-item, etc., 
-   pois eles são usados dentro do Offcanvas agora. */
-
-
-/* Estilo para a área de anúncios (exemplo) */
-#espaco-anuncios-lateral {
-    min-height: 300px; /* Apenas para dar um volume ao espaço */
-    /* Adicione outros estilos que desejar */
-}
-
-
-/* Ajustes de responsividade para o botão de filtros e offcanvas */
-@media (max-width: 991.98px) { /* Abaixo de LG, quando o painel lateral fixo some */
-    #coluna-sidebar-esquerda .sticky-top { /* O botão de filtros */
-        position: static !important; /* Remove o sticky para o botão em mobile */
-    }
-    /* A coluna da tabela ocupará toda a largura, pois a coluna da sidebar some. */
-    /* Se #coluna-sidebar-esquerda não tiver d-none d-lg-block,
-       então você precisaria de:
-    #coluna-sidebar-esquerda {
-        display: none; 
-    }
-    #coluna-tabela-principal {
-        width: 100%;
-        flex: 0 0 100%;
-        max-width: 100%;
-    } */
-}
-
-/* Estilos para o cabeçalho mobile */
+/* Estilos para o cabeçalho mobile (visível apenas em telas pequenas) */
 .d-lg-none.text-center.py-3 { /* O container do logo mobile */
     position: relative; /* Para posicionar o botão hamburger absolutamente dentro dele */
 }
 
+/* Estilo para o subtítulo/título mobile */
 .logo-subtitle-mobile {
     font-size: 1.1rem; /* Ajuste o tamanho do subtítulo/título mobile */
     font-weight: 500;
     color: #1f2b38;
 }
 
-/* Se quiser que o menu desktop não apareça em mobile e vice-versa */
-header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
-    /* Já está oculta em mobile por d-none d-lg-flex */
+/* ========================================================= */
+/* ==================== Navegação/Menu ===================== */
+/* ========================================================= */
+
+/* Estilo para o item ativo (página atual) na navegação */
+.nav-pills .nav-link.active {
+    background-color: #007bff; /* Cor de fundo para o item ativo */
+    color: white;
 }
 
-/* Estilo para o link clicável nos filtros (ex.: "Status", "Modalidades") */
-.filter-collapsible .form-label {
-    cursor: pointer;
-    font-weight: 500;
-    color: #333; /* Cor do texto do link */
-}
-.filter-collapsible .form-label:hover {
-    color: #007bff; /* Cor ao passar o mouse */
-}
-.filter-collapsible .bi-chevron-down {
-    transition: transform 0.2s ease-in-out; /* Animação suave da seta */
-}
-.filter-collapsible [aria-expanded="true"] .bi-chevron-down {
-    transform: rotate(180deg); /* Rota a seta ao expandir */
+/* Estilo base dos botões do menu */
+.nav-pills .nav-link {
+    font-family: 'Poppins', sans-serif;   /* Fonte personalizada */
+    font-weight: 700;                     /* Negrito */
+    background-color: #007bff00;           /* Cor azul padrão de fundo (transparente) */
+    color: #0e1e27;                        /* Cor do texto */
+    margin-right: 1rem;                 /* Espaçamento entre os botões */
+    border-radius: 0.5rem;                /* Cantos levemente arredondados */
+    transition: background 0.5s ease;     /* Suaviza mudanças de fundo */
+    position: relative;                   /* Permite posicionar o pseudo-elemento ::before */
+    overflow: hidden;                     /* Garante que o efeito não ultrapasse os limites do botão */
 }
 
-/* Estilo do container de checkboxes (UFs, Modalidades) */
-.checkbox-container {
-    overflow-y: auto;
-    border: 1px solid #ced4da;
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-    background-color: #ffffff; /* Fundo branco para destacar */
+
+/* Quando o mouse passa, revela o efeito */
+.nav-pills .nav-link:hover::before {
+    opacity: 1; /* Torna o gradiente visível no hover */
 }
 
-.checkbox-container .form-check {
-    margin-bottom: 0.2rem;
-}
-.checkbox-container .form-check-label {
-    font-size: 0.9em;
-    font-weight: normal;
-}
-
-/* Estilo para links no container de objetos */
-.objeto-container a {
-    font-size: 0.85em;
-    text-decoration: none;
+/* Ajustes no botão quando em hover */
+.nav-pills .nav-link:hover {
+    background-color: #007bff6b;
+    color: white;  /* Garante que o texto continue branco */
+    z-index: 1;    /* Garante que o conteúdo do botão fique acima do gradiente */
 }
 
-.objeto-container .ver-mais-objeto,
-.objeto-container .ver-menos-objeto {
-    cursor: pointer;
+
+/* ========================================================= */
+/* ========================= Botões ======================== */
+/* ========================================================= */
+
+/* Estilo do botão "Aplicar no corpo" */
+.btn-primary {
+    background: linear-gradient(90deg, #4d10ad, #007bff);
+    border: none;
+    color: white;
+    transition: background 0.9s ease;
 }
 
-/* Estilo do título da coluna da tabela */
-#coluna-tabela h4 {
-    color: #007bff;
+.btn-primary:hover {
+    background: linear-gradient(90deg, #f06f04, #f06f04); /* Gradient "sólido" */
+    color: white;
 }
+
+/* ========================================================= */
+/* ======================== Rodapé ========================= */
+/* ========================================================= */
 
 /* Estilo do rodapé */
 .site-footer {
@@ -156,6 +134,7 @@ header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
     font-size: 0.65em;
     text-align: center;
 }
+
 .site-footer p,
 .site-footer .nav {
     margin-bottom: 0;
@@ -171,30 +150,163 @@ header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
     color: #ffffff;
 }
 
-/* Estilo do painel de detalhes (offcanvas) */
-#detailsPanelContent p {
-    margin-bottom: 0.3rem;
-    font-size: 0.9em;
-    line-height: 1.4;
+
+/* --------------------------------------------- PAGINA RADAR ---------------------------------------- */
+/* ========================================================= */
+/* ============ Painel de Filtros (Offcanvas) ============== */
+/* ========================================================= */
+
+/* Ajustes para o min-width dos dropdowns internos no Offcanvas de filtros */
+#offcanvasFiltros .filter-dropdown .dropdown-menu {
+    min-width: 280px; /* Exemplo, ajuste se os seus já estiverem diferentes */
 }
-#detailsPanelContent strong {
-    font-size: 1em;
+
+/* Estilos para os inputs de busca dentro dos dropdowns de filtro no Offcanvas */
+#offcanvasFiltros .dropdown-menu input[type="text"].form-control-sm {
+    margin-bottom: 0.5rem; /* Um pouco de espaço abaixo do input de busca */
+}
+
+/* Estilo para o link clicável nos filtros (ex.: "Status", "Modalidades") */
+.filter-collapsible .form-label {
+    cursor: pointer;
+    font-weight: 500;
+    color: #333; /* Cor do texto do link */
+}
+
+.filter-collapsible .form-label:hover {
+    color: #f17106; /* Cor ao passar o mouse */
+}
+
+/* Animação suave da seta de expansão/colapso */
+.filter-collapsible .bi-chevron-down {
+    transition: transform 0.2s ease-in-out;
+}
+
+/* Rota a seta ao expandir */
+.filter-collapsible [aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
+}
+
+/* Estilo do container de checkboxes (UFs, Modalidades) */
+.checkbox-container {
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    background-color: #ffffff; /* Fundo branco para destacar */
+}
+
+.checkbox-container .form-check {
+    margin-bottom: 0.2rem;
+}
+
+.checkbox-container .form-check-label {
+    font-size: 0.9em;
+    font-weight: normal;
+}
+
+/* Filtros dentro do Offcanvas de Filtros (Responsividade) */
+@media (max-width: 767.98px) {
+    #offcanvasFiltros .offcanvas-body .form-label {
+        font-size: 0.9em; /* Relativo ao novo body font-size */
+    }
+    #offcanvasFiltros .offcanvas-body .form-control-sm,
+    #offcanvasFiltros .offcanvas-body .checkbox-container .form-check-label,
+    #offcanvasFiltros .offcanvas-body .tag-item {
+        font-size: 0.85em; /* Relativo ao novo body font-size */
+    }
+     #offcanvasFiltros .offcanvas-footer .btn {
+        font-size: 0.9em; /* Botões no footer do offcanvas de filtros */
+    }
+}
+
+/* ========================================================= */
+/* ======================== Tabela Principal =============== */
+/* ========================================================= */
+
+/* Estilo da tabela principal de licitações */
+#licitacoes-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#licitacoes-table th {
+    background-color: #e9ecef;
+    padding: 0.5rem;
+    text-align: left;
+    font-size: 0.9em;
     color: #343a40;
 }
-#detailsPanelContent .badge {
+
+#licitacoes-table td {
+    padding: 0.5rem;
     font-size: 0.85em;
-}
-#detailsPanelContent .small {
-    font-size: 0.8em;
+    border-bottom: 1px solid #dee2e6;
 }
 
-/* Painel detalhes (mobile) */
+/* Estilo específico para a 4ª coluna da tabela (geralmente o status ou valor) */
+#licitacoes-table td:nth-child(4) {
+    font-weight: bold;
+    color: #007bff;
+}
 
+/* Efeito hover nas linhas da tabela */
+#licitacoes-table tr:hover {
+    background-color: #f1f3f5;
+}
 
-/* Responsividade para os controles da tabela */
-@media (max-width: 767.98px) { 
+/* Estilo do cabeçalho da tabela (título "Licitações Encontradas") */
+#licitacoes-header {
+    padding: 1rem;
+    background-color: #ffffff;
+    border-bottom: 1px solid #dee2e6;
+}
+
+#licitacoes-header h4 {
+    color: #007bff;
+    margin: 0;
+    font-size: 1.1em;
+}
+
+/* Controles acima da tabela (Ordenar por, Itens por página) */
+.table-controls-header {
+    display: flex;
+    flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    gap: 10px; /* Espaçamento entre os grupos de controle */
+}
+
+.filter-control-group {
+    display: flex; /* Alinha o label e o select na mesma linha */
+    align-items: center;
+    /* flex-grow: 0; /* Não permite que o grupo cresça */
+    /* flex-shrink: 0; /* Não permite que o grupo encolha além do seu conteúdo */
+}
+
+.filter-control-group label {
+    white-space: nowrap; /* Evita que o label quebre linha */
+}
+
+.filter-control-group .form-select-sm {
+    /* width: auto; /* Já está inline, mas pode ser reforçado aqui */
+    /* Você pode definir um max-width aqui se quiser limitar o quão largos eles podem ficar,
+       mesmo com width: auto. Ex: max-width: 200px; */
+}
+
+/* Estilo para a informação de exibição (Exibindo X-Y de Z) */
+#exibicaoInfo {
+    flex-grow: 1; /* Permite que este div ocupe o espaço central restante */
+    text-align: center;
+    /* min-width: 150px; /* Garante um espaço mínimo para o texto de exibição */
+}
+
+/* Responsividade para os controles da tabela e tabela principal */
+@media (max-width: 767.98px) {
+    /* Reduz a fonte base para mobile. Ajuste este valor! */
     body {
-        font-size: 0.83rem; /* Reduz a fonte base para mobile. Ajuste este valor! */
+        font-size: 0.83rem;
     }
 
     /* Ajuste para títulos principais se necessário */
@@ -219,7 +331,7 @@ header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
     }
 
     /* Tabela principal */
-    #licitacoesTableBody td, 
+    #licitacoesTableBody td,
     #licitacoesTableBody th { /* Se quiser que os headers também diminuam */
         font-size: 0.8em; /* Ajuste */
         padding: 0.4rem; /* Menor padding */
@@ -230,57 +342,11 @@ header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
         padding: 0.2rem 0.4rem;
         font-size: 0.75em; /* Relativo ao novo font-size do body */
     }
-    
-    /* Painel de Detalhes (Offcanvas) */
-    #detailsPanel .offcanvas-title {
-        font-size: 1.1rem;
-    }
-    #detailsPanel #detailsPanelSubtitle {
-        font-size: 0.75em;
-    }
-    #detailsPanelContent p {
-        font-size: 0.85em; /* Ajuste, relativo ao novo body font-size */
-        margin-bottom: 0.3rem;
-    }
-    #detailsPanelContent div[style*="white-space: pre-wrap"], /* Caixas de texto */
-    #detailsPanelItensTableContainer table td,
-    #detailsPanelItensTableContainer table th {
-        font-size: 0.80em; /* Ajuste */
-    }
-    #detailsPanelItensPagination .page-link-sm {
-         font-size: 0.7em;
-    }
 
-
-    /* Filtros dentro do Offcanvas de Filtros */
-    #offcanvasFiltros .offcanvas-body .form-label {
-        font-size: 0.9em; /* Relativo ao novo body font-size */
-    }
-    #offcanvasFiltros .offcanvas-body .form-control-sm,
-    #offcanvasFiltros .offcanvas-body .checkbox-container .form-check-label,
-    #offcanvasFiltros .offcanvas-body .tag-item {
-        font-size: 0.85em; /* Relativo ao novo body font-size */
-    }
-     #offcanvasFiltros .offcanvas-footer .btn {
-        font-size: 0.9em; /* Botões no footer do offcanvas de filtros */
-    }
-    
-    /* Botão principal de abrir filtros (se estiver visível em mobile) */
-    #coluna-sidebar-esquerda .btn-primary, /* Botão sticky da sidebar */
-    .d-lg-none .btn-primary /* Botão que aparece em mobile para abrir filtros (se você tiver um) */
-    { 
-        font-size: 0.9em;
-        padding: 0.5rem 0.75rem;
-    }
-
+    /* Controles da tabela em mobile: empilha os grupos */
     .table-controls-header {
-        /* Mantém flex-direction: row e justify-content-space-between por padrão, 
-           mas o flex-wrap: wrap permitirá que eles quebrem.
-           Se quiser empilhar totalmente:*/
-           flex-direction: column; 
-           align-items: stretch; 
-           
-        
+           flex-direction: column;
+           align-items: stretch;
     }
     .filter-control-group {
         width: 100%; /* Em telas menores, cada grupo ocupa a largura total */
@@ -305,12 +371,56 @@ header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
     }
 }
 
+/* ========================================================= */
+/* ======================== Paginação ====================== */
+/* ========================================================= */
+
+/* Estilo da paginação da tabela principal */
+.pagination {
+    margin-top: 1rem;
+}
+
+.pagination .page-link {
+    color: #007bff;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85em;
+}
+
+.pagination .page-link:hover {
+    background-color: #e9ecef;
+}
+
+/* ========================================================= */
+/* ================= Painel de Detalhes (Offcanvas) ======== */
+/* ========================================================= */
+
+/* Estilo do painel de detalhes (offcanvas) */
+#detailsPanelContent p {
+    margin-bottom: 0.3rem;
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+#detailsPanelContent strong {
+    font-size: 1em;
+    color: #343a40;
+}
+
+#detailsPanelContent .badge {
+    font-size: 0.85em;
+}
+
+#detailsPanelContent .small {
+    font-size: 0.8em;
+}
+
 /* Estilo das caixas de texto em "Justificativa" e "Informação Complementar" */
 #detailsPanelContent div[style*="white-space: pre-wrap"] {
     font-size: 0.88em;
     padding: 8px;
     max-height: 120px;
 }
+
 #detailsPanelContent .justificativa-container a.small {
     font-size: 0.9em;
 }
@@ -348,10 +458,57 @@ header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
     padding-bottom: 0.25rem;
     border-bottom: 1px solid #e9ecef;
 }
+
 .offcanvas-body hr {
     margin-top: 1.25rem;
     margin-bottom: 1.25rem;
 }
+
+/* Responsividade para o Painel de Detalhes (Offcanvas) */
+#detailsPanel.offcanvas-end { /* Ou .offcanvas-start se mudar a origem */
+    /* Largura padrão para telas maiores (ex: desktop) */
+    width: 50vw; /* Ou o valor que você quer para desktop, ex: 700px, 800px, etc. */
+    /* max-width: 900px; /* Um limite máximo para telas muito largas se usar vw */
+}
+
+@media (max-width: 991.98px) { /* Telas médias (tablets) */
+    #detailsPanel.offcanvas-end,
+    #detailsPanel.offcanvas-start {
+        width: 75vw !important; /* Um pouco mais largo em tablets */
+        /* max-width: 600px; /* Um limite se necessário */
+    }
+}
+
+@media (max-width: 767.98px) { /* Telas pequenas (smartphones) */
+    #detailsPanel.offcanvas-end,
+    #detailsPanel.offcanvas-start {
+        width: 95vw !important; /* Quase toda a largura da tela */
+        max-width: none !important; /* Remove o max-width para que o 95vw seja efetivo */
+    }
+    /* Painel de Detalhes (Offcanvas) - Font sizes */
+    #detailsPanel .offcanvas-title {
+        font-size: 1.1rem;
+    }
+    #detailsPanel #detailsPanelSubtitle {
+        font-size: 0.75em;
+    }
+    #detailsPanelContent p {
+        font-size: 0.85em; /* Ajuste, relativo ao novo body font-size */
+        margin-bottom: 0.3rem;
+    }
+    #detailsPanelContent div[style*="white-space: pre-wrap"], /* Caixas de texto */
+    #detailsPanelItensTableContainer table td,
+    #detailsPanelItensTableContainer table th {
+        font-size: 0.80em; /* Ajuste */
+    }
+    #detailsPanelItensPagination .page-link-sm {
+         font-size: 0.7em;
+    }
+}
+
+/* ========================================================= */
+/* ========================== Tags ========================= */
+/* ========================================================= */
 
 /* Estilo das tags de palavra-chave */
 .tags-container {
@@ -381,6 +538,7 @@ header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
     line-height: 1;
     cursor: pointer;
 }
+
 .tag-item .remove-tag:hover {
     opacity: 0.7;
 }
@@ -391,8 +549,25 @@ header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
     margin-bottom: 5px;
     font-size: 0.9em;
 }
+
 #filtrosAtivosContainer strong {
     color: #555;
+}
+
+/* ========================================================= */
+/* ================ Outros dentro da pagina ================ */
+/* ========================================================= */
+
+/* Estilo para a área de anúncios (exemplo) */
+#espaco-anuncios-lateral {
+    min-height: 300px; /* Apenas para dar um volume ao espaço */
+    /* Adicione outros estilos que desejar */
+}
+
+/* Garante que imagens dentro do espaço de anúncios não ultrapassem a largura do container */
+#espaco-anuncios-lateral img {
+    max-width: 100%; /* Garante que a imagem não seja maior que seu container */
+    height: auto;    /* Mantém a proporção da imagem */
 }
 
 /* Estilo do overlay de carregamento */
@@ -409,148 +584,18 @@ header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
     align-items: center;
 }
 
-/* Ajustes de responsividade para telas pequenas */
-@media (max-width: 767.98px) {
-    #painel-filtros-fixo {
-        position: static;
-        height: auto;
-        margin-bottom: 1.5rem;
-    }
-    #conteudo-scroll-filtros {
-        overflow-y: visible;
-        max-height: none;
-    }
-}
-
-/* Estilo do botão "Aplicar Filtros" DEGRADÊ*/
-#painel-filtros-fixo .btn-primary {
-    background: linear-gradient(90deg, #17bdaa, #007bff); /* Degradê de verde-azulado para azul */
-    border: none;
-    font-size: 0.9em;
-}
-#painel-filtros-fixo .btn-primary:hover {
-    background: linear-gradient(90deg, #9e4b05, #ee7007); /* Degradê ao passar o mouse */
-}
-
-/* Estilo da tabela principal de licitações */
-#licitacoes-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-#licitacoes-table th {
-    background-color: #e9ecef;
-    padding: 0.5rem;
-    text-align: left;
-    font-size: 0.9em;
-    color: #343a40;
-}
-#licitacoes-table td {
-    padding: 0.5rem;
+/* Estilo para links no container de objetos */
+.objeto-container a {
     font-size: 0.85em;
-    border-bottom: 1px solid #dee2e6;
-}
-#licitacoes-table td:nth-child(4) {
-    font-weight: bold;
-    color: #007bff;
-}
-#licitacoes-table tr:hover {
-    background-color: #f1f3f5;
+    text-decoration: none;
 }
 
-/* Estilo da paginação da tabela principal */
-.pagination {
-    margin-top: 1rem;
-}
-.pagination .page-link {
-    color: #007bff;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.85em;
-}
-.pagination .page-link:hover {
-    background-color: #e9ecef;
+.objeto-container .ver-mais-objeto,
+.objeto-container .ver-menos-objeto {
+    cursor: pointer;
 }
 
-/* Estilo do cabeçalho da tabela (título "Licitações Encontradas") */
-#licitacoes-header {
-    padding: 1rem;
-    background-color: #ffffff;
-    border-bottom: 1px solid #dee2e6;
-}
-#licitacoes-header h4 {
-    color: #007bff;
-    margin: 0;
-    font-size: 1.1em;
-}
-
-/* Controles acima da tabela (Ordenar por, Itens por página) */
-.table-controls-header {
-    display: flex;
-    flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-    gap: 10px; /* Espaçamento entre os grupos de controle */
-}
-
-.filter-control-group {
-    display: flex; /* Alinha o label e o select na mesma linha */
-    align-items: center;
-    /* flex-grow: 0;  /* Não permite que o grupo cresça */
-    /* flex-shrink: 0; /* Não permite que o grupo encolha além do seu conteúdo */
-}
-
-.filter-control-group label {
-    white-space: nowrap; /* Evita que o label quebre linha */
-}
-
-.filter-control-group .form-select-sm {
-    /* width: auto; /* Já está inline, mas pode ser reforçado aqui */
-    /* Você pode definir um max-width aqui se quiser limitar o quão largos eles podem ficar,
-       mesmo com width: auto. Ex: max-width: 200px; */
-}
-
-#exibicaoInfo {
-    flex-grow: 1; /* Permite que este div ocupe o espaço central restante */
-    text-align: center;
-    /* min-width: 150px; /* Garante um espaço mínimo para o texto de exibição */
-}
-
-
-/* Estilo para o Offcanvas de Detalhes */
-#detailsPanel.offcanvas-end { /* Ou .offcanvas-start se mudar a origem */
-    /* Largura padrão para telas maiores (ex: desktop) */
-    width: 50vw; /* Ou o valor que você quer para desktop, ex: 700px, 800px, etc. */
-    /* max-width: 900px; /* Um limite máximo para telas muito largas se usar vw */
-}
-
-@media (max-width: 991.98px) { /* Telas médias (tablets) */
-    #detailsPanel.offcanvas-end, 
-    #detailsPanel.offcanvas-start {
-        width: 75vw !important; /* Um pouco mais largo em tablets */
-        /* max-width: 600px; /* Um limite se necessário */
-    }
-}
-
-@media (max-width: 767.98px) { /* Telas pequenas (smartphones) */
-    #detailsPanel.offcanvas-end, 
-    #detailsPanel.offcanvas-start {
-        width: 95vw !important; /* Quase toda a largura da tela */
-        max-width: none !important; /* Remove o max-width para que o 95vw seja efetivo */
-    }
-}
-
-/* ESPAÇO DOS ANUNCIOS */
-#espaco-anuncios-lateral {
-    min-height: 300px; /* Para garantir que o espaço exista mesmo sem conteúdo alto */
-    /* Outros estilos como background, padding, etc., você já tem ou pode adicionar */
-    /* Se quiser que as imagens dentro não ultrapassem a largura do container: */
-}
-#espaco-anuncios-lateral img {
-    max-width: 100%; /* Garante que a imagem não seja maior que seu container */
-    height: auto;    /* Mantém a proporção da imagem */
-}
-
-/*BOTAO DE VOLTAR AO TOPO*/
+/* Estilo do botão "Voltar ao Topo" */
 #btnVoltarAoTopo {
     position: fixed;
     bottom: 20px;
@@ -558,8 +603,8 @@ header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
     display: none; /* Inicialmente oculto, JS controla */
     z-index: 1000;
     /* Forçar dimensões para um círculo perfeito */
-    width: 45px;  /* Ajuste o tamanho */
-    height: 45px; /* Ajuste o tamanho (igual à largura) */
+    width: 50px;  /* Ajuste o tamanho */
+    height: 50px; /* Ajuste o tamanho (igual à largura) */
     padding: 0; /* Resetar padding para controlar o tamanho pelo width/height */
     display: flex; /* Para centralizar o ícone */
     align-items: center;
@@ -572,29 +617,26 @@ header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
     line-height: 1; /* Ajuda na centralização vertical do ícone */
 }
 
-/* Estilização do painel de Feedback */
-
+/* ========================================================= */
+/* ===================== Painel de Feedback ================ */
+/* ========================================================= */
 
 /* Container para o painel de feedback na coluna lateral (DESKTOP) */
 #feedback-placeholder-desktop {
     /* A largura já deve ser definida pela coluna Bootstrap pai (col-lg-2 col-md-3) */
-    /* Se o conteúdo interno estiver transbordando, precisamos estilizar o conteúdo */
-    margin-left: auto; 
-    margin-right: auto; 
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Container para o painel de feedback abaixo da tabela (MOBILE) */
 #feedback-placeholder-mobile {
     /* d-lg-none já o oculta no desktop */
-    /* text-center já está no HTML */
-    /* Não precisamos de muito aqui, pois o conteúdo interno será estilizado */
-    margin-left: auto; /* Para centralizar se a coluna pai for flex, mas text-center já deve cuidar */
+    margin-left: auto;
     margin-right: auto;
     max-width: 500px; /* Exemplo: limita a largura no mobile se a coluna for 100% */
 }
 
 /* Estilo para o CONTEÚDO REAL do painel de feedback (que é clonado do template) */
-/* Vamos usar uma classe específica para ele para facilitar */
 .painel-feedback-conteudo {
     padding: 1rem; /* p-3 é 1rem */
     border: 1px solid #dee2e6; /* Cor de borda padrão do Bootstrap */
@@ -607,8 +649,6 @@ header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
 
 /* Estilo para Desktop (quando o painel de feedback está na sidebar) */
 #coluna-sidebar-esquerda .painel-feedback-conteudo {
-    /* Ele já deve herdar a largura da #coluna-sidebar-esquerda. */
-    /* Se estiver vazando, pode ser que não haja um 'width: 100%' implícito. */
     width: 100%; /* Força a ocupar a largura da coluna pai */
     box-sizing: border-box; /* Garante que padding e border não aumentem a largura total */
 }
@@ -632,4 +672,410 @@ header .d-none.d-lg-flex nav { /* A navegação principal do desktop */
 #feedback-placeholder-mobile .painel-feedback-conteudo .btn-sm {
     font-size: 0.85em; /* Ajusta o botão dentro do painel mobile */
     padding: 0.25rem 0.6rem;
+}
+
+/* ========================================================= */
+/* ===================== Responsividade Geral ============== */
+/* ========================================================= */
+
+/* Ajustes de responsividade para o botão de filtros e offcanvas */
+@media (max-width: 991.98px) { /* Abaixo de LG, quando o painel lateral fixo some */
+    #coluna-sidebar-esquerda .sticky-top { /* O botão de filtros */
+        position: static !important; /* Remove o sticky para o botão em mobile */
+    }
+    /* A coluna da tabela ocupará toda a largura, pois a coluna da sidebar some. */
+    /* Se #coluna-sidebar-esquerda não tiver d-none d-lg-block,
+       então precisaria de:
+    #coluna-sidebar-esquerda {
+        display: none;
+    }
+    #coluna-tabela-principal {
+        width: 100%;
+        flex: 0 0 100%;
+        max-width: 100%;
+    } */
+}
+
+/* Ajustes de responsividade para telas pequenas (Painel de Filtros Fixo) */
+@media (max-width: 767.98px) {
+    #painel-filtros-fixo {
+        position: static;
+        height: auto;
+        margin-bottom: 1.5rem;
+    }
+    #conteudo-scroll-filtros {
+        overflow-y: visible;
+        max-height: none;
+    }
+    /* Botão principal de abrir filtros (se estiver visível em mobile) */
+    #coluna-sidebar-esquerda .btn-primary, /* Botão sticky da sidebar */
+    .d-lg-none .btn-primary /* Botão que aparece em mobile para abrir filtros (se você tiver um) */
+    {
+        font-size: 0.9em;
+        padding: 0.5rem 0.75rem;
+    }
+}
+/* ----------------------------------------------------------------------------------------------------------------- */
+
+/* ========================================================= */
+/* ================== ESTILOS DA HOMEPAGE ================== */
+/* ========================================================= */
+
+/* Fora da home, o .site-wrapper é transparente e 100% da largura. */
+.site-wrapper {
+    width: 100%;
+}
+
+/* O fundo do corpo para a home page (as "margens" brancas ou de outra cor) */
+body.page-home {
+    background-color: #ffffff;
+    color: #ffffff; /* Texto padrão na home */
+}
+
+/* APENAS na home, o .site-wrapper se torna a nossa "caixa" de conteúdo */
+body.page-home .site-wrapper {
+    max-width: 1500px; /* Largura máxima da caixa */
+    margin: 2rem auto; /* Centraliza e dá margem no topo/baixo */
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.473); /* Sombra para profundidade */
+    background-color: #0e1e27; /* Fundo da "caixa" de conteúdo */
+    overflow: hidden; /* Importante para o box-shadow e bordas */
+    border-radius: 20px; /* Cantos levemente arredondados */
+    padding: 4rem;
+}
+
+/* Remover o espaçamento padrão que não precisamos mais no modo encaixotado */
+body.page-home .main-content .container-fluid {
+    margin-top: 0 !important;
+}
+
+/* Faz o main herdar o fundo da caixa */
+body.page-home main.main-content {
+    background-color: inherit;
+}
+
+/* Padrão */
+.page-home section {
+    padding: 7rem 0; /* Espaçamento vertical generoso */
+    color: #ffffff; /* Cor de texto padrão para as seções */
+}
+
+/* Cores da fonte */
+body.page-home h1 {
+    color: #007bff;
+    
+
+}
+body.page-home h2 {
+    font-size: 2.75rem;
+    color: #17bdaa;
+}
+body.page-home h3 {
+    color: #17bdaa;
+}
+
+/* Esta classe irá definir a cor padrão para todo o H1 */
+.hero-title {
+    color: #007bff; /* Azul, cor associada ao "RADAR PNCP" e profissionalismo */
+    text-align: center; /* Exemplo: se você quiser centralizar o texto */
+}
+/* Estilo para a parte destacada em laranja */
+.hero-title .destaque-laranja {
+    color: #f06f04; 
+}
+
+
+/* ========================================================= */
+/* =========== PRIMEIRA SEÇÃO (hero) DA HOMEPAGE =========== */
+/* ========================================================= */
+
+.page-home .hero { /* O fundo da seção*/
+    background: linear-gradient(to bottom, #ffffff, #628294); 
+    padding-bottom: 5rem; 
+    display: flex;         /* permite centralizar o conteúdo */
+    justify-content: center;
+}
+
+.page-home .hero .container {
+    max-width: 1200px;
+    width: 100%;
+}
+.page-home .destaque-gratuito {
+    color: #f06f04; /* Laranja para destaque de palavras */
+}
+
+.botao-destaque {
+    padding: 1rem 2.5rem;   /* aumenta altura e largura */
+    font-size: 1.4rem;      /* aumenta o tamanho do texto */
+    font-weight: 600;       /* deixa mais destacado */
+    border-radius: 0.6rem;  /* cantos levemente mais arredondados */
+}
+
+
+/* ========================================================= */
+/* ============= EFEITO ACORDEÃO E LUZ NA BORDA ============ */
+/* ========================================================= */
+
+.accordion-horizontal-container {
+    display: flex;
+    gap: 10px;
+    min-height: 420px;
+}
+
+.accordion-card {
+    flex: 1;
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: flex 0.9s cubic-bezier(0.65, 0, 0.35, 1);
+    position: relative;
+    cursor: pointer;
+    background-color: #33502c; /* Fundo escuro para os cards */
+}
+
+.accordion-card.active {
+    flex: 3; /* largura quando ativo */
+}
+
+/* O efeito de luz agora usa um pseudo-elemento ::before */
+.accordion-card::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 400%; /* Bem grande para cobrir tudo ao girar */
+    height: 400%;
+    background: conic-gradient(from 180deg at 50% 50%, #5d52e5 0%, #db5722 65%, #ebe7ea 70%, #61ff52 50%);
+    z-index: 1;
+    transform-origin: center center;
+    transform: translate(-50%, -50%) rotate(0deg);
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.accordion-card.active::before {
+    opacity: 1;
+    animation: rotateBorder 5s linear infinite;
+}
+
+/* Um "recorte" para criar o efeito de borda, colocado sobre o ::before */
+.accordion-card::after {
+    content: '';
+    position: absolute;
+    inset: 5px; /* A espessura da borda brilhante */
+    background: #0e1e27; /* Mesma cor de fundo do card */
+    border-radius: calc(1rem - 5px);
+    z-index: 2;
+}
+
+.accordion-card .card-content {
+    position: relative;
+    z-index: 3; /* Conteúdo fica acima de tudo */
+    padding: 2rem;
+    height: 100%;
+    color: #fdfdfd; /* cor da font */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.accordion-card .card-content i {
+    font-size: 7rem;
+    transition: transform 0.5s ease;
+}
+
+.accordion-card .card-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-top: 1rem;
+    transition: transform 0.5s ease;
+}
+
+/* O conteúdo oculto do card do acordeão */
+.accordion-card .hidden-content {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.4s ease 0.2s, max-height 0.4s ease 0.2s;
+}
+
+.accordion-card.active .hidden-content {
+    opacity: 1;
+    max-height: 220px;
+}
+
+.accordion-card.active .card-content i,
+.accordion-card.active .card-content h3 {
+    transform: translateY(-50px);
+    color: #ed6f06; /* cor da titulo */
+}
+
+/* Animação de rotação para a borda brilhante */
+@keyframes rotateBorder {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ========================================================= */
+/* =================== ESTILOS DAS SEÇÃO 3 ================= */
+/* ========================================================= */
+
+.page-home .how-it-works {  /* fundo da seção*/
+    background-color: #f1f1f1;
+    color: #0e1e27;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.page-home .step-card {
+    padding: 20px;
+    border-radius: 8px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    /*cursor: default; /* Mostra que não é clicável */
+}
+
+.page-home .step-card:hover {
+    transform: translateY(-10px);
+}
+
+.page-home .step-number {
+    width: 60px;
+    height: 60px;
+    background-color: #17bdaa; /* Cor do Botão */
+    color: #fff;
+    border-radius: 50%;
+    /* Flexbox para centralizar o número perfeitamente */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 auto 1.5rem auto; /* Centraliza o círculo horizontalmente */
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.page-home .step-card:hover .step-number {
+    transform: scale(1.15); /* Aumenta o tamanho do círculo numérico */
+    background-color: #ed6f06;
+}
+
+/* === Estilo das fontes === */
+.page-home .how-it-works .step-card h3 {
+    color: #17bdaa; 
+    transition: color 0.3s ease;
+}
+.page-home .how-it-works .step-card p {
+    color: #0e1e27; /* Cor do texto */
+    transition: color 0.3s ease;
+}
+
+/* === Efeito ao passar o mouse no card === */
+.page-home .how-it-works .step-card:hover h3 {
+    color: #f06f04; 
+}
+.page-home .how-it-works .step-card:hover p {
+    color: #17bdaa;
+}
+
+/* ========================================================= */
+/* ================ ANIMAÇÕES DE SCROLL (AOS) ============== */
+/* ========================================================= */
+
+/* Define o estado inicial dos elementos que serão animados */
+[data-aos="fade-up"] {
+    transform: translateY(50px); /* Começa 50px para baixo */
+    opacity: 0;
+    transition-property: transform, opacity;
+}
+
+[data-aos="fade-in"] {
+    opacity: 0;
+    transition-property: opacity;
+}
+
+[data-aos="zoom-in"] {
+    transform: scale(0.9); /* Começa um pouco menor */
+    opacity: 0;
+    transition-property: transform, opacity;
+}
+
+/* Opcional: Define como os elementos ficam DEPOIS que a animação acontece */
+/* Isso é feito pela classe que o AOS adiciona (ex: .aos-animate) */
+[data-aos].aos-animate {
+    transform: none; /* Reseta qualquer translação/escala */
+    opacity: 1;
+}
+
+
+/* ========================================================= */
+/* ==================== SEÇÃO DOR ARTIGOS ================== */
+/* ========================================================= */
+
+.blog-destaques {
+    background-color: #ffffff;
+}
+
+.blog-destaques .card {
+    border: none;
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.blog-destaques .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 16px rgba(0, 0, 0, 0.15);
+}
+
+.blog-destaques .card-title {
+    color: #007bff;
+    transition: color 0.3s ease;
+}
+
+.blog-destaques .card:hover .card-title {
+    color: #f06f04;
+}
+
+.blog-destaques .card-text {
+    color: #495057;
+}
+
+
+/* ========================================================= */
+/* =================== ESTILO ULTIMA SEÇÃO ================= */
+/* ========================================================= */
+
+.final-cta {
+    background-color: #242323;
+    color: white;
+    padding: 5rem 0;
+} 
+
+/* CASO EU QUEIRA USAR IMAGEM */
+/*
+.final-cta { 
+    background: url('/static/images/imag.png') no-repeat center center;
+    background-size: cover;
+    color: white;
+    padding: 5rem 0;
+} 
+.final-cta::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5); /* camada escura por cima *//*
+    z-index: 0;
+}
+.final-cta .container {
+    position: relative;
+    z-index: 1; /* coloca o conteúdo acima da camada escura *//*
+} */
+
+/* Imagem logo a cima dessa seção (predios)*/
+.faixa-final-cta {
+    width: 100%;
+    height: auto;
+    max-height:250px; /* ajuste conforme a altura desejada */
+    object-fit: cover;
+    display: block;
+    margin-bottom: 0px; /* tira espaçamento entre a imagem e a seção */
 }

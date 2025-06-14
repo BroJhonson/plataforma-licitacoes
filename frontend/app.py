@@ -5,15 +5,15 @@ app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta_muito_segura_aqui' # Mude isso!
 API_BACKEND_URL = "http://127.0.0.1:5000" # URL do seu backend original
 
-                  
+                   
 # Rotas principais que renderiza as Paginas
-@app.route('/')
+@app.route('/radarPNCP')
 def index():
-    return render_template('index.html', page_title="Buscar Licitações", body_class="page-busca-licitacoes")
+    return render_template('radar.html', page_title="Buscar Licitações", body_class="page-busca-licitacoes")
 
-@app.route('/home') 
+@app.route('/') 
 def pagina_home():
-    return render_template('pagina_home.html', page_title="Bem-vindo", body_class="page-home")
+    return render_template('home.html', page_title="Bem-vindo", body_class="page-home")
 
 @app.route('/blog') #Depois modifico isso, ou deixo inativo
 def pagina_blog():

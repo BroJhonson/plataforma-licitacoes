@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (callNow) func.apply(context, args);
         };
     }
+
     // --- LÓGICA PARA POSICIONAR O PAINEL DE FEEDBACK ---
     const templateFeedback = document.getElementById('template-painel-feedback');
     const placeholderDesktop = document.getElementById('feedback-placeholder-desktop');
@@ -77,6 +78,57 @@ document.addEventListener('DOMContentLoaded', function () {
         window.addEventListener('resize', debounce(positionFeedbackPanel, 200)); // Chama no redimensionamento com debounce
     }
     // --- FIM DA LÓGICA DO PAINEL DE FEEDBACK ---
+
+    // FORMATAR DATA E HORA
+    const formatDateTime = (dateTimeString) => {
+        if (!dateTimeString) return 'N/I';
+        try {
+            const dateObj = new Date(dateTimeString);
+            // Verifica se a data é válida
+            if (isNaN(dateObj.getTime())) {
+                // Tenta adicionar 'Z' se for uma string sem fuso e falhou
+                const dateObjUTC = new Date(dateTimeString + 'Z');
+                if (isNaN(dateObjUTC.getTime())) {
+                    console.warn("Data/hora inválida recebida:", dateTimeString);
+                    return 'Data/Hora Inválida';
+                }
+                return dateObjUTC.toLocaleString('pt-BR', {
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit' // Removido 'second' para mais limpeza
+                });
+            }
+            return dateObj.toLocaleString('pt-BR', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit' // Removido 'second' para mais limpeza
+            });
+        } catch (e) {
+            console.error("Erro ao formatar data e hora:", dateTimeString, e);
+            return 'Data/Hora Inválida';
+        }
+    };
+
+    // ======================================== //
+    // ============== HOME PAGE =============== //    
+    if (document.body.classList.contains('page-home')) {
+        console.log("Página Home detectada. Lógica específica da home pode ir aqui.");
+        
+        // --- CÓDIGO DO ACORDEÃO HORIZONTAL ---
+        const accordionCards = document.querySelectorAll('.accordion-card');
+        
+        accordionCards.forEach(card => {
+            card.addEventListener('mouseover', () => {
+                // Remove a classe 'active' de todos os cards
+                accordionCards.forEach(c => c.classList.remove('active'));
+                // Adiciona a classe 'active' apenas no card que está com o mouse sobre
+                card.classList.add('active');
+            });
+        });
+
+        // Seu outro código JS para a home pode vir aqui...
+    }
+
+    // ============================================ //
+    // ======== FUNÇÃO PRINCIPAL DO RADAR ========= //
 
     if (document.body.classList.contains('page-busca-licitacoes')) { //ENTRAR NA PAGINA DO BUSCADOR DE LICITAÇÕES
         console.log("Página de busca de licitações detectada (via body_class). Inicializando funcionalidades...");
@@ -1042,7 +1094,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
 
-            // Formatar datas helper (opcional, mas útil)
+            
             const formatDate = (dateString) => {
                 if (!dateString) return 'N/I';
                 // Adiciona 'Z' para garantir que seja tratada como UTC se não tiver fuso,
@@ -1079,10 +1131,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 <p><strong>Situação Atual:</strong> <span class="badge ${getStatusBadgeClass(lic.situacaoReal)}">${lic.situacaoReal || 'N/I'}</span></p>                         
                 <!-- DESABILITADO PARA TESTAR O DE BAIXO <p><strong>Data Publicação PNCP:</strong> ${lic.dataPublicacaoPncp ? new Date(lic.dataPublicacaoPncp + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/I'}</p>  -->
                 <p><strong>Data Publicação PNCP:</strong> ${formatDate(lic.dataPublicacaoPncp)}</p>
+                
                 <div class="my-2 p-2 border-start border-primary border-3 bg-light-subtle rounded-end">
-                    <p class="mb-1"><strong>Início Recebimento Propostas:</strong> ${formatDate(lic.dataAberturaProposta)}</p>
-                    <p class="mb-0"><strong>Fim Recebimento Propostas:</strong> ${formatDate(lic.dataEncerramentoProposta)}</p>
+                    <p class="mb-1"><strong>Início Recebimento Propostas:</strong> ${formatDateTime(lic.dataAberturaProposta)} (Horário de Brasília)</p>
+                    <p class="mb-0"><strong>Fim Recebimento Propostas:</strong> ${formatDateTime(lic.dataEncerramentoProposta)} (Horário de Brasília)</p>
                 </div>
+
                 <p><strong>Última Atualização:</strong> ${formatDate(lic.dataAtualizacao)}</p>            
                 <p><strong>Valor Total Estimado:</strong> ${lic.valorTotalEstimado === null ? '<span class="text-info fst-italic">Sigiloso</span>' : (lic.valorTotalEstimado ? 
                     `R$ ${parseFloat(lic.valorTotalEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Sigiloso')}</p>
