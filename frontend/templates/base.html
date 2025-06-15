@@ -12,14 +12,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Nosso CSS Personalizado -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        /* Estilos rápidos para layout, podem ir para style.css depois */
-        body { display: flex; flex-direction: column; min-height: 100vh; }
-        .main-content { flex-grow: 1; }
-        .filter-panel { background-color: #f8f9fa; padding: 15px; height: calc(100vh - 150px); overflow-y: auto; /* Ajustar altura conforme cabeçalho/rodapé */}
-        .table-panel { padding: 15px; }        
-        .site-footer { background-color: #343a40; color: white; padding: 5px 0; }
-    </style>
+    
 </head>
 <!-- Botão Voltar ao Topo -->
 <button onclick="scrollToTop()" id="btnVoltarAoTopo" title="Voltar ao topo" 
@@ -27,6 +20,8 @@
         style="position: fixed; bottom: 20px; right: 20px; display: none; z-index: 1000;">
     <i class="bi bi-arrow-up-short" style="font-size: 1.5rem;"></i>
 </button>
+
+
 <!-- templates/base.html -->
 <body class="{{ body_class | default('') }}">
     <header class="border-bottom"> 
@@ -39,11 +34,11 @@
                         <!-- Placeholder para logo diferente se page-busca-licitacoes -->
                         <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RADAR PNCP Logo Busca" height="45" id="logoBuscaLicitacoes" style="display: none;">
                     </a>
-                    {% if body_class == 'page-busca-licitacoes' %}
+                    <!--{% if body_class == 'page-busca-licitacoes' %}
                     <p class="logo-subtitle mb-0" style="font-size: 0.75rem; line-height: 1; margin-top: 2px;">
                         Filtre e escolha suas licitações com muito mais facilidade!
                     </p>
-                    {% endif %}
+                    {% endif %} -->
                 </div>
                     <nav class="ms-md-auto me-md-3"> <!-- me-md-3 para margem à direita em telas médias e acima -->
                         <ul class="nav nav-pills"> <!-- Navbar (Navegação/menu para navegar entre paginas)-->

@@ -6,45 +6,52 @@
 body {
     display: flex;
     flex-direction: column;
-    min-height: 100vh; /* Garante que o rodapé fique no fim da página, mesmo com pouco conteúdo */
+    min-height: 100vh;/* Garante que o rodapé fique no fim da página, mesmo com pouco conteúdo */
     font-size: 0.95rem;
-    background-color: #0e1e27; /* Fundo do site alterado para verde levemente azul */
-    font-family: 'Poppins', sans-serif; /* Fonte padrão para todo o site */
+    font-family: 'Poppins', sans-serif;
+    background-color: #ffffff; /* Fundo branco por padrão (para a home) */
 }
 
 /* Estilo para o conteúdo principal, ocupa o espaço restante */
 .main-content {
     flex-grow: 1; /* Faz o conteúdo principal ocupar o espaço restante */
-    padding-top: 30px; /* Ajusta o padding-top para evitar que o conteúdo fique atrás do cabeçalho ampliado */
+    padding-top: 50px; /* Ajusta o padding-top para evitar que o conteúdo fique atrás do cabeçalho ampliado */
+}
+
+/* O fundo escuro específico da página do Radar */
+body.page-busca-licitacoes {
+    background-color: #0e1e27;
 }
 
 /* ========================================================= */
 /* ======================= Cabeçalho ======================= */
 /* ========================================================= */
 
-/* Estilo para o cabeçalho da página */
+/* Estilo para o cabeçalho das páginas */
 header.border-bottom {
-    background: linear-gradient(to bottom, #628294, #fafafa); /* Degradê vertical de verde-azulado para azul */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Sombra sutil mantida */
-    padding: 1.5rem 0; /* Aumenta a altura do cabeçalho com mais padding vertical */
-    min-height: 80px; /* Define uma altura mínima para o cabeçalho */
-}
-body:not(.page-busca-licitacoes) header.border-bottom {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 1030; /*  Isso fixar o cabeçalho nas paginas*/
+    /* --- Posicionamento e Estrutura --- */
+    position: fixed; /* Fixo no topo de todas as páginas */
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+    
+    /* --- Estilo Visual --- */
+    background-color: rgba(255, 255, 255, 0.356); /* Branco com 85% de opacidade */
+    backdrop-filter: blur(10px); /* Efeito de vidro fosco moderno */
+    -webkit-backdrop-filter: blur(10px); /* Suporte para Safari */
+    box-shadow: 0 1px 15px rgba(0, 0, 0, 0.1); /* Sombra sutil que funciona bem */
+    transition: all 0.3s ease; /* Transição para futuras interações */
+    
 }
 
-/* Cor da fonte para o texto "RADAR PNCP" no cabeçalho */
-header.border-bottom .fs-4 {
-    color: #007bff; /* Define a cor da fonte como azul para "RADAR PNCP" */
-    z-index: 1025; /* Um z-index menor que o do Offcanvas (1040+) mas maior que o conteúdo normal */
-}
-
-/* Estilos para o container do logo no cabeçalho */
+/*------------- Estilo da Logo Etc ------------------- */
+/* Estilos para o container do logo no cabeçalho, ajustar logo com subtitulo */
 .logo-container {
     margin-left: 60px; /* Desloca o conjunto (ícone + texto) para a direita */
     display: flex;
-    flex-direction: column; /* Empilha o ícone e o texto verticalmente */
-    align-items: flex-start; /* Alinha o texto abaixo do ícone à esquerda */
+    align-items: center;
+    gap: 10px;
 }
 
 /* Estilo para o subtítulo abaixo do logo */
@@ -71,25 +78,31 @@ header.border-bottom .fs-4 {
 /* ========================================================= */
 /* ==================== Navegação/Menu ===================== */
 /* ========================================================= */
+.nav-pills {
+    display: flex;
+    gap: 0.6rem; /* <<< CONTROLA O ESPAÇO ENTRE OS BOTÕES DE FORMA SEGURA */
+}
+
 
 /* Estilo para o item ativo (página atual) na navegação */
 .nav-pills .nav-link.active {
-    background-color: #007bff; /* Cor de fundo para o item ativo */
+    background-color: #0d6efd;
     color: white;
 }
 
 /* Estilo base dos botões do menu */
 .nav-pills .nav-link {
-    font-family: 'Poppins', sans-serif;   /* Fonte personalizada */
-    font-weight: 700;                     /* Negrito */
-    background-color: #007bff00;           /* Cor azul padrão de fundo (transparente) */
-    color: #0e1e27;                        /* Cor do texto */
-    margin-right: 1rem;                 /* Espaçamento entre os botões */
-    border-radius: 0.5rem;                /* Cantos levemente arredondados */
-    transition: background 0.5s ease;     /* Suaviza mudanças de fundo */
-    position: relative;                   /* Permite posicionar o pseudo-elemento ::before */
-    overflow: hidden;                     /* Garante que o efeito não ultrapasse os limites do botão */
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    color: #0e1e27;    
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
 }
+/*.nav-pills .nav-link {    
+   /* transition: background 0.5s ease;     /* Suaviza mudanças de fundo */
+   /* position: relative;                   /* Permite posicionar o pseudo-elemento ::before */
+   /* overflow: hidden;                     /* Garante que o efeito não ultrapasse os limites do botão */
+/*}
 
 
 /* Quando o mouse passa, revela o efeito */
@@ -221,6 +234,24 @@ header.border-bottom .fs-4 {
 }
 
 /* ========================================================= */
+/* ====== BOTÃO DE FILTROS STICKY (Painel todo) ====== */
+/* ========================================================= */
+#coluna-sidebar-esquerda {
+    position: sticky; /* Ativa o comportamento "grudento" */
+    top: 120px;       /* Distância do topo = altura do seu header + margem */
+    z-index: 1020;
+    height: calc(100vh - 120px); /* 100% da altura da tela menos o espaço do header/footer */
+}
+
+
+/* Em telas pequenas, desativamos o efeito */
+@media (max-width: 991.98px) {
+    #coluna-sidebar-esquerda .mb-3.sticky-top {
+        position: static;
+    }
+}
+
+/* ========================================================= */
 /* ======================== Tabela Principal =============== */
 /* ========================================================= */
 
@@ -289,11 +320,6 @@ header.border-bottom .fs-4 {
     white-space: nowrap; /* Evita que o label quebre linha */
 }
 
-.filter-control-group .form-select-sm {
-    /* width: auto; /* Já está inline, mas pode ser reforçado aqui */
-    /* Você pode definir um max-width aqui se quiser limitar o quão largos eles podem ficar,
-       mesmo com width: auto. Ex: max-width: 200px; */
-}
 
 /* Estilo para a informação de exibição (Exibindo X-Y de Z) */
 #exibicaoInfo {
@@ -369,6 +395,36 @@ header.border-bottom .fs-4 {
         margin-top: 0.5rem;
         margin-bottom: 0.5rem;
     }
+}
+
+/* ========================================================= */
+/* ======== ESTILO PARA LINHA SELECIONADA NA TABELA ======== */
+/* ========================================================= */
+
+/* Cursor de ponteiro (mantém) */
+#licitacoesTableBody tr {
+    cursor: pointer;
+}
+
+/* Regra mais específica e com !important como garantia */
+#licitacoesTableBody > tr.linha-selecionada {
+    background-color: #80baf3 !important; /* Azul bem claro com !important */
+    color: #0c5460 !important; /* Texto escuro com !important */
+    font-weight: 500;
+}
+
+#licitacoesTableBody > tr.linha-selecionada > td {
+    background-color: transparent !important; /* Força os filhos a não terem cor de fundo listrada */
+}
+
+/* Opcional: Garante que os links dentro da linha selecionada também mudem de cor */
+#licitacoesTableBody tr.linha-selecionada a {
+    color: #0d6efd;
+}
+
+/* Garante que o efeito de hover não sobrescreva a cor da seleção */
+#licitacoesTableBody tr.linha-selecionada:hover {
+    background-color: #c0dffd !important; /* Um tom mais escuro com !important */
 }
 
 /* ========================================================= */
@@ -507,6 +563,68 @@ header.border-bottom .fs-4 {
 }
 
 /* ========================================================= */
+/* ===== BOTÕES PERSONALIZADOS DO PAINEL DE DETALHES ======= */
+/* ========================================================= */
+
+/* --- Estilo base para TODOS os botões no painel --- */
+#detailsPanel .d-flex .btn {
+    padding: 0.6rem 1.5rem;   /* Espaçamento interno (altura e largura) */
+    font-size: 0.9rem;       /* Tamanho da fonte */
+    font-weight: 600;        /* Deixa o texto mais forte */
+    border-radius: 8px;      /* Cantos arredondados */
+    border-width: 2px;       /* Borda um pouco mais grossa */
+    transition: all 0.3s ease-in-out; /* Transição suave para todos os efeitos */
+    min-width: 220px;        /* Garante uma largura mínima para todos */
+}
+
+/* --- 1. Botão Primário (Acessar PNCP) --- */
+#detailsPanel #detailsPanelBtnPncp {
+    background-color: #0d6efd; /* Azul padrão do Bootstrap */
+    border-color: #0d6efd;
+    color: #ffffff;
+}
+/* Efeito Hover do botão Primário */
+#detailsPanel #detailsPanelBtnPncp:hover {
+    background-color: #0b5ed7; /* Azul mais escuro */
+    border-color: #0b5ed7;
+    transform: translateY(-2px); /* Efeito de "levantar" */
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3); /* Sombra azulada */
+}
+
+
+/* --- 2. Botão Secundário (Sistema de Origem) --- */
+#detailsPanel #detailsPanelBtnSistemaOrigem {
+    background-color: transparent;
+    border-color: #6c757d; /* Cinza secundário do Bootstrap */
+    color: #6c757d;
+}
+/* Efeito Hover do botão Secundário */
+#detailsPanel #detailsPanelBtnSistemaOrigem:hover:not(:disabled) { /* O hover só funciona se o botão NÃO estiver desabilitado */
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #ffffff;
+}
+/* Estilo quando está desabilitado (padrão) */
+#detailsPanel #detailsPanelBtnSistemaOrigem:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* --- 3. Botão de Fechar --- */
+/* A classe .btn-secondary já existe no HTML, vamos usá-la */
+#detailsPanel .btn-secondary {
+    background-color: #f8f9fa; /* Um cinza bem claro */
+    border-color: #dee2e6; /* Borda sutil */
+    color: #495057; /* Texto cinza escuro */
+}
+/* Efeito Hover do botão de Fechar */
+#detailsPanel .btn-secondary:hover {
+    background-color: #e9ecef; /* Fundo um pouco mais escuro */
+    border-color: #adb5bd;
+}
+
+/* ========================================================= */
 /* ========================== Tags ========================= */
 /* ========================================================= */
 
@@ -555,7 +673,7 @@ header.border-bottom .fs-4 {
 }
 
 /* ========================================================= */
-/* ================ Outros dentro da pagina ================ */
+/* ============ Outras seções dentro da pagina ============= */
 /* ========================================================= */
 
 /* Estilo para a área de anúncios (exemplo) */
@@ -615,6 +733,38 @@ header.border-bottom .fs-4 {
 #btnVoltarAoTopo i.bi-arrow-up-short {
     font-size: 1.5rem; /* Ajuste o tamanho do ícone se necessário */
     line-height: 1; /* Ajuda na centralização vertical do ícone */
+}
+
+/* ===== ESTILO SUTIL DA BARRA DE ROLAGEM (SCROLLBAR) ====== */
+/* Esconde a barra de rolagem por padrão (para Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+    width: 8px; /* Largura da barra */
+    background: #5c5858de; /* Fundo transparente */
+}
+
+/* Esconde a "trilha" da barra de rolagem */
+::-webkit-scrollbar-track {
+    background: #ffffffc0;
+}
+
+/* Define o estilo da "alça" da barra, que é o que você arrasta */
+::-webkit-scrollbar-thumb {
+    background-color: transparent; /* Totalmente invisível por padrão */
+    border-radius: 10px;
+    border: 3px solid transparent;
+}
+
+/* O truque acontece aqui: no HOVER de um elemento com scroll... */
+#offcanvasFiltros .offcanvas-body:hover::-webkit-scrollbar-thumb,
+#detailsPanelItensTableContainer:hover::-webkit-scrollbar-thumb,
+/* Adicione outros containers com overflow-y: auto aqui */
+.main-content:hover::-webkit-scrollbar-thumb { /* ... aplica o estilo visível na "alça" */
+    background-color: rgba(255, 255, 255, 0.3); /* Cor cinza semi-transparente */
+}
+
+/* Efeito de transição suave ao aparecer */
+::-webkit-scrollbar-thumb {
+    transition: background-color 0.3s ease-in-out;
 }
 
 /* ========================================================= */
@@ -767,10 +917,10 @@ body.page-home h1 {
 }
 body.page-home h2 {
     font-size: 2.75rem;
-    color: #17bdaa;
+    color: #131f1d;
 }
 body.page-home h3 {
-    color: #17bdaa;
+    color: #ffffff;
 }
 
 /* Esta classe irá definir a cor padrão para todo o H1 */
@@ -1044,11 +1194,29 @@ body.page-home h3 {
 /* =================== ESTILO ULTIMA SEÇÃO ================= */
 /* ========================================================= */
 
+.page-home .final-cta h2 {
+    color: #ff7c11; 
+}
+
 .final-cta {
     background-color: #242323;
     color: white;
     padding: 5rem 0;
 } 
+
+.final-cta .paragrafo-cta {
+    font-size: 1.1rem;
+    color: #ffffff;
+    margin-top: 1.5rem;
+}
+
+.final-cta .paragrafo-blog {
+    font-size: 0.8rem;
+    color: #cccccc;
+    margin-top: 2rem;
+    font-style: italic;
+    line-height: 1.6;
+}
 
 /* CASO EU QUEIRA USAR IMAGEM */
 /*
@@ -1070,7 +1238,7 @@ body.page-home h3 {
     z-index: 1; /* coloca o conteúdo acima da camada escura *//*
 } */
 
-/* Imagem logo a cima dessa seção (predios)*/
+/* ==== Imagem logo a cima dessa seção (predios) ==== */
 .faixa-final-cta {
     width: 100%;
     height: auto;

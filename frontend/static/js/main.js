@@ -137,7 +137,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const filtrosAtivosContainer = document.getElementById('filtrosAtivosContainer');
         const filtrosAtivosTexto = document.getElementById('filtrosAtivosTexto');
         const linkLimparFiltrosRapido = document.getElementById('linkLimparFiltrosRapido');
-
         const ufsContainer = document.getElementById('ufsContainerDropdown');
         const municipiosSelect = document.getElementById('municipios');
         const municipiosHelp = document.getElementById('municipiosHelp');
@@ -193,6 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
             { sigla: "RO", nome: "Rondônia" }, { sigla: "RR", nome: "Roraima" }, { sigla: "SC", nome: "Santa Catarina" },
             { sigla: "SP", nome: "São Paulo" }, { sigla: "SE", nome: "Sergipe" }, { sigla: "TO", nome: "Tocantins" }
         ];
+
 
         // FUNÇÃO DE TAGS NAS PALAVRAS-CHAVE
         function renderTags(palavrasArray, containerElement, tipo) { // tipo pode ser 'inclusao' ou 'exclusao'
@@ -408,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
 
-        // --- FUNÇÕES DE INICIALIZAÇÃO E POPULAÇÃO DE FILTROS ---
+        // --- FUNÇÃO DE EXECUSÃO - MODALIDADES ---
         async function popularModalidades() { 
             if (!modalidadesContainer) return; // Se o container não for encontrado, a função para aqui
             modalidadesContainer.innerHTML = '<small class="text-muted">Carregando modalidades...</small>';
@@ -443,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function () {
             updateModalidadeSelectedCount();
         }
 
-
+        // --- FUNÇÃO DE EXECUSÃO - STATUS ---
         async function popularStatus() { 
             if (!statusContainer) return;
             statusContainer.innerHTML = '<small class="text-muted">Carregando status...</small>';
@@ -495,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-
+        // --- FUNÇÃO DE EXECUSÃO - ESTADOS ---
         function popularUFs() { 
             if (!ufsContainer) return;
             ufsContainer.innerHTML = ''; 
@@ -517,7 +517,7 @@ document.addEventListener('DOMContentLoaded', function () {
             updateUFSelectedCount(); 
         }
 
-
+        // --- FUNÇÃO DE EXECUSÃO - ESTADOS E MUNICIPIOS ---
         async function handleUFChange() {       
             updateUFSelectedCount(); // Mantém a chamada para o contador de UF
 
@@ -938,7 +938,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             });
         }
-
+        
+        // --- FUNÇÃO DE LIMPAR FILTROS ---
         function limparFiltros() {        
             if(palavraChaveInclusaoInputField) palavraChaveInclusaoInputField.value = '';
             if(palavraChaveExclusaoInputField) palavraChaveExclusaoInputField.value = '';
@@ -1009,7 +1010,8 @@ document.addEventListener('DOMContentLoaded', function () {
             buscarLicitacoes(1); 
         }
 
-        // --- HANDLERS DE EVENTOS GLOBAIS ---
+
+        // --- HANDLERS (MANIPULADORES) DE EVENTOS GLOBAIS ---
         if (btnBuscarLicitacoes) {
             btnBuscarLicitacoes.addEventListener('click', () => buscarLicitacoes(1));
         }
@@ -1059,7 +1061,31 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        //FUNÇÃO DO PAINEL DETALHES
+        // --- LÓGICA PARA SELECIONAR LINHA DA TABELA ---
+        if (licitacoesTableBody) {
+            licitacoesTableBody.addEventListener('click', function(event) {
+                // Encontra o elemento <tr> que foi clicado
+                const trClicada = event.target.closest('tr');
+        
+                if (!trClicada) return;
+                
+                // Ignora o clique se for em um botão ou link
+                if (event.target.closest('a, button')) {
+                    return;
+                }
+        
+                // Encontra a linha já selecionada e remove a classe
+                const linhaJaSelecionada = licitacoesTableBody.querySelector('.linha-selecionada');
+                if (linhaJaSelecionada) {
+                    linhaJaSelecionada.classList.remove('linha-selecionada');
+                }
+        
+                // Adiciona a classe à nova linha clicada
+                trClicada.classList.add('linha-selecionada');
+            });
+        }
+
+        // FUNÇÃO DO PAINEL DETALHES
         function renderDetailsPanelContent(data) {
             if (!data || !data.licitacao) {
                 detailsPanelContent.innerHTML = '<p class="text-center text-danger">Dados da licitação não encontrados.</p>';
@@ -1377,7 +1403,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Ex: adicionar interatividade aos posts do blog
     }
     
-
+    
         
     // Lógica para o Botão "Voltar ao Topo"
     const btnVoltarAoTopo = document.getElementById('btnVoltarAoTopo');
