@@ -11,14 +11,14 @@
     <div class="site-wrapper">
         <div class="container text-center" data-aos="fade-up">
             <h1 class="hero-title display-4 fw-bold" data-aos="fade-up" data-aos-delay="100">
-                <span class="destaque-laranja">Você encontrou!</span> A ferramenta <span class="destaque-laranja">gratuita</span> que vai <span class="destaque-laranja">facilitar</span> sua busca pelas melhores licitações públicas.
+                Você encontrou! A ferramenta <span class="destaque-laranja">gratuita</span> que vai <span class="destaque-laranja">facilitar</span> sua busca pelas melhores licitações públicas.
             </h1>
             <p class="lead mt-3 texto-subtitulo" data-aos="fade-up" data-aos-delay="300">
                 Busque com precisão, analise com agilidade! O Radar PNCP traz filtros avançados para refinar sua pesquisa, 
                 preview completo dos editais na mesma tela e sistema de favoritos para acompanhar as melhores oportunidades.<br>
                 Menos cliques, mais eficiência.
             </p>
-            <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg mt-4 botao-destaque" data-aos="fade-up" data-aos-delay="500">Acessar</a>
+            <a href="{{ url_for('buscador_licitacoes') }}" class="btn btn-primary btn-lg mt-4 botao-destaque" data-aos="fade-up" data-aos-delay="500">Acessar</a>
         </div>
     </div>
 </section>
@@ -118,7 +118,7 @@
                     <div class="card-body">
                         <h5 class="card-title">Como Encontrar Licitações por Palavra-chave</h5>
                         <p class="card-text">Aprenda a usar filtros estratégicos para encontrar licitações perfeitas para o seu negócio.</p>
-                        <a href="#" class="btn btn-outline-primary">Ler mais</a>
+                        <a href="{{ url_for('pagina_post_blog', post_slug='como-encontrar-licitacoes-por-palavra-chave') }}" class="btn btn-outline-primary">Ler mais</a>
                     </div>
                 </div>
             </div>
@@ -129,7 +129,7 @@
                     <div class="card-body">
                         <h5 class="card-title">Nova Lei de Licitações: O Que Você Precisa Saber</h5>
                         <p class="card-text">Entenda o impacto da nova legislação e como se adaptar a tempo para aproveitar as mudanças.</p>
-                        <a href="#" class="btn btn-outline-primary">Ler mais</a>
+                        <a href="{{ url_for('pagina_post_blog', post_slug='nova-lei-de-licitacoes-o-que-voce-precisa-saber') }}" class="btn btn-outline-primary">Ler mais</a>
                     </div>
                 </div>
             </div>
@@ -140,7 +140,7 @@
                     <div class="card-body">
                         <h5 class="card-title">Erros Comuns em Propostas de Licitação</h5>
                         <p class="card-text">Evite armadilhas que podem desclassificar sua empresa nas licitações públicas.</p>
-                        <a href="#" class="btn btn-outline-primary">Ler mais</a>
+                        <a href="{{ url_for('pagina_post_blog', post_slug='erros-comuns-em-propostas-de-licitacao') }}" class="btn btn-outline-primary">Ler mais</a>
                     </div>
                 </div>
             </div>
@@ -155,7 +155,7 @@
     <div class="container">
         <h2 class="display-5 fw-bold">Pronto para fechar mais negócios com o setor público?</h2>
         <p class="lead mt-3 paragrafo-cta">Não precisa de cartão de crédito, login ou cadastro. É só acessar e começar a usar!</p>
-        <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg mt-4">Usar o Radar PNCP Gratuitamente</a>
+        <a href="{{ url_for('buscador_licitacoes') }}" class="btn btn-primary btn-lg mt-4">Usar o Radar PNCP Gratuitamente</a>
 
         <div class="mt-4"> <!-- segundo botão -->
             <a href="{{ url_for('pagina_blog') }}" class="btn btn-outline-light btn-sm">Veja mais artigos</a>

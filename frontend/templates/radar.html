@@ -4,18 +4,18 @@
 {% block title %}Busca de Licitações - RADAR PNCP{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-3">
-    <div class="row gx-lg-4"> <!-- gx-lg-4 para espaçamento entre colunas em telas grandes -->
+<div class="row gx-lg-4"> <!-- gx-lg-4 para espaçamento entre colunas em telas grandes -->
 
-        <!-- Coluna da Esquerda: Botão de Filtros e Espaço para Anúncios -->
-        <div class="col-lg-2 col-md-3" id="coluna-sidebar-esquerda">
-            <!-- Botão para Abrir o Offcanvas de Filtros -->
-            <div class="mb-3 sticky-top" style="top: 20px; z-index: 1020;">
-                <button class="btn btn-primary w-100" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFiltros" aria-controls="offcanvasFiltros">
-                    <i class="bi bi-filter"></i> Filtros
-                </button>
-            </div>
+    <!-- COLUNA DA ESQUERDA: Botão de Filtros e Espaço para Anúncios -->
+    <div class="col-lg-2 col-md-3" id="coluna-sidebar-esquerda">
+        <!-- Botão para Abrir o Offcanvas de Filtros --> 
+        <div class="mb-3" id="sticky-filter-button-wrapper"> <!-- ID para estilizar Somente o botão -->
+            <button class="btn btn-primary w-100" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFiltros" aria-controls="offcanvasFiltros">
+                <i class="bi bi-filter"></i> Filtros 
+            </button>
+        </div>
 
+        <div id="conteudo-rolavel-sidebar">
             <!-- ESPAÇO PARA ANÚNCIOS -->
             <div id="espaco-anuncios-lateral" class="mt-3 p-3 border rounded bg-light text-center d-none d-md-block"> <!--PARA VISUALIZAR EM MOBILE SO BASTA REMOVER "d-none d-md-block" -->
                 <p class="text-muted"><em>Seja visto por milhares de potenciais clientes</em></p>
@@ -23,98 +23,113 @@
                 <!-- <img src="https://via.placeholder.com/200x350?text=Anuncio+Lateral" alt="Anúncio Lateral" class="img-fluid"> --- PARA ANUNCIAR POR LINK URL  -->
             </div>
 
+            <!-- CAIXA DE LICITAÇÕES SALVAS/FAVORITAS -->
+            <div id="painel-licitacoes-salvas" class="mt-3 d-none d-lg-block"> <!-- Visível só no desktop -->
+                <div class="p-3 border rounded bg-light shadow-sm">
+                    <h6 class="mb-3"><i class="bi bi-star-fill text-warning"></i> Licitações Favoritas</h6>
+                    <ul class="list-group list-group-flush" id="lista-favoritos-sidebar">
+                        <!-- Itens favoritos serão inseridos aqui por JS -->
+                        <li class="list-group-item text-muted small">Nenhuma licitação favoritada ainda.</li>
+                    </ul>
+                    <!-- (Opcional) Link para uma página completa de favoritos -->
+                    <!-- <a href="/meus-favoritos" class="btn btn-sm btn-outline-secondary w-100 mt-2">Ver Todos</a> -->
+                </div>
+            </div>
+
             <!-- PLACEHOLDER PARA FEEDBACK NO DESKTOP (VISÍVEL APENAS EM TELAS MAIORES) -->
             <div id="feedback-placeholder-desktop" class="d-none d-lg-block mt-3">
                 <!-- O JS colocará o conteúdo do feedback aqui -->
-            </div>        
+            </div> 
         </div>
-        
 
-        <!-- Coluna da Direita: Tabela de Licitações -->
-        <!-- Mantém as classes col-lg-10 col-md-9 para ocupar o espaço que você já definiu -->
-        <div class="col-lg-10 col-md-9" id="coluna-tabela-principal">
-            <div class="p-3 border rounded bg-white shadow-sm">
-                <!-- Área de Filtros Ativos (como antes) -->
-                <div id="filtrosAtivosContainer" class="mb-2 p-2 border rounded bg-light-subtle small" style="display: none;">
-                    <strong>Filtros Aplicados:</strong> <span id="filtrosAtivosTexto"></span>
-                    <a href="#" id="linkLimparFiltrosRapido" class="ms-2 text-decoration-none">(Limpar todos)</a>
-                </div>
+    </div>
+    
 
-                <!-- Título da Tabela e Controles (como antes) -->
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4><i class="bi bi-list-ul"></i> Licitações Encontradas <span id="totalRegistrosInfo" class="badge bg-secondary ms-2">0</span></h4>
-                    <div>
-                        <button class="btn btn-sm btn-outline-primary me-2" id="btnAtualizarTabela" title="Atualizar">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mb-2 table-controls-header">
-                    <div class="filter-control-group"> <!-- Novo wrapper para o grupo de ordenação -->
-                        <label for="ordenarPor" class="form-label form-label-sm mb-0 me-1">Ordem:</label>
-                        <select class="form-select form-select-sm" id="ordenarPor" style="width: auto; min-width: 160px;"> 
-                            <!-- Ajuste min-width conforme necessário, ou remova se controlado por CSS -->
-                            <option value="dataAtualizacao_DESC" selected>Mais Recentes</option>
-                            <option value="dataAtualizacao_ASC">Mais Antigas</option>
-                        </select>
-                    </div>
-
-                    <div id="exibicaoInfo" class="text-center mx-2">
-                        <!-- Ex: "Exibindo 1-10 de 100" -->
-                    </div>
-
-                    <div class="filter-control-group"> <!-- Novo wrapper para o grupo de itens por página -->
-                        <label for="itensPorPagina" class="form-label form-label-sm mb-0 me-1">Exibindo:</label>
-                        <select class="form-select form-select-sm" id="itensPorPagina" style="width: auto; min-width: 75px;">
-                            <!-- Ajuste min-width conforme necessário, ou remova se controlado por CSS -->
-                            <option value="10" selected>10</option>
-                            <option value="20">20</option>
-                            <option value="50">50</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Tabela Responsiva (como antes) -->
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover table-sm">
-                        <thead>
-                            <tr>
-                                <th>Município/UF</th>
-                                <th>Objeto da Compra</th>
-                                <th>Órgão</th>
-                                <th>Status</th>
-                                <th>Valor (R$)</th>
-                                <th>Modalidade</th>
-                                <th>Atualização</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="licitacoesTableBody">
-                            <tr><td colspan="8" class="text-center">Nenhuma licitação encontrada ou aguardando filtros...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Paginação -->
-                <nav aria-label="Navegação das licitações"><ul class="pagination justify-content-center" id="paginationControls"></ul></nav>
-            
-                <!-- PLACEHOLDER PARA FEEDBACK NO MOBILE (VISÍVEL APENAS EM TELAS MENORES) -->
-                <div id="feedback-placeholder-mobile" class="d-lg-none mt-4 text-center"> 
-                    <!-- O JS colocará o conteúdo do feedback aqui -->
-                </div>
-                
+    <!-- COLUNA DA DIREITA: Tabela de Licitações -->
+    <div class="col-lg-10 col-md-9" id="coluna-tabela-principal">
+        <div class="p-3 border rounded bg-white shadow-sm">
+            <!-- Área de Filtros Ativos (como antes) -->
+            <div id="filtrosAtivosContainer" class="mb-2 p-2 border rounded bg-light-subtle small" style="display: none;">
+                <strong>Filtros Aplicados:</strong> <span id="filtrosAtivosTexto"></span>
+                <a href="#" id="linkLimparFiltrosRapido" class="ms-2 text-decoration-none">(Limpar todos)</a>
             </div>
+
+            <!-- Título da Tabela e Controles (como antes) -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4><i class="bi bi-list-ul"></i> Licitações Encontradas <span id="totalRegistrosInfo" class="badge bg-secondary ms-2">0</span></h4>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary me-2" id="btnAtualizarTabela" title="Atualizar">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2 table-controls-header">
+                <div class="filter-control-group"> 
+                    <label for="ordenarPor" class="form-label form-label-sm mb-0 me-1">Ordem:</label>
+                    <select class="form-select form-select-sm" id="ordenarPor" style="width: auto; min-width: 160px;"> 
+                        <!-- Ajuste min-width conforme necessário, ou remova se controlado por CSS -->
+                        <option value="dataAtualizacao_DESC" selected>Mais Recentes</option>
+                        <option value="dataAtualizacao_ASC">Mais Antigas</option>
+                    </select>
+                </div>
+
+                <div id="exibicaoInfo" class="text-center mx-2">
+                    <!-- Ex: "Exibindo 1-10 de 100" -->
+                </div>
+
+                <div class="filter-control-group"> 
+                    <label for="itensPorPagina" class="form-label form-label-sm mb-0 me-1">Exibindo:</label>
+                    <select class="form-select form-select-sm" id="itensPorPagina" style="width: auto; min-width: 75px;">
+                        <!-- Ajuste min-width conforme necessário, ou remova se controlado por CSS -->
+                        <option value="10" selected>10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tabela Responsiva (como antes) -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <th>Município/UF</th>
+                            <th>Objeto da Compra</th>
+                            <th>Órgão</th>
+                            <th>Status</th>
+                            <th>Valor (R$)</th>
+                            <th>Modalidade</th>
+                            <th>Atualização</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="licitacoesTableBody">
+                        <tr><td colspan="8" class="text-center">Nenhuma licitação encontrada ou aguardando filtros...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            <nav aria-label="Navegação das licitações"><ul class="pagination justify-content-center" id="paginationControls"></ul></nav>
+        
+            <!-- PLACEHOLDER PARA FEEDBACK NO MOBILE (VISÍVEL APENAS EM TELAS MENORES) -->
+            <div id="feedback-placeholder-mobile" class="d-lg-none mt-4 text-center"> 
+                <!-- O JS colocará o conteúdo do feedback aqui -->
+            </div>
+            
         </div>
     </div>
 </div>
 
+
 <!-- Offcanvas para Filtros (Este é o painel de filtros que desliza) -->
 <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasFiltros" aria-labelledby="offcanvasFiltrosLabel" style="width: 85vw; max-width: 340px;">
     <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="offcanvasFiltrosLabel"><i class="bi bi-filter"></i> Filtros</h5>
+        <h5 class="offcanvas-title" id="offcanvasFiltrosLabel"><i class="bi bi-filter"></i> Filtros 
+                <span style="font-size: 10px; color: gray;">(Ctrl+Enter/Aplicar os filtros)</span></h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
-    <div class="offcanvas-body">
+    <div class="offcanvas-body" id="offcanvasFiltrosBody">
         <!-- ===== TODO O CONTEÚDO DOS FILTROS ===== -->
         
         <!-- Filtro: Status (Situação da Contratação) - Colapsável -->
@@ -142,7 +157,7 @@
             <div class="collapse" id="collapseModalidadesOffcanvas">
                 <div class="mt-2">
                     <input type="text" id="modalidadeSearchInput" class="form-control form-control-sm mb-2" placeholder="Buscar modalidade...">
-                    <div id="modalidadesContainerDropdown"> <!-- ID do container dos checkboxes de modalidade -->
+                    <div id="modalidadesContainerDropdown"> 
                         <small class="text-muted">Carregando modalities...</small>
                     </div>
                 </div>
@@ -177,7 +192,7 @@
                 </button>
                 <div class="dropdown-menu p-2" aria-labelledby="dropdownUfsButton" style="min-width: 280px; max-height: 300px; overflow-y: auto;">
                     <input type="text" id="ufSearchInput" class="form-control form-control-sm mb-2" placeholder="Buscar UF...">
-                    <div id="ufsContainerDropdown"> <!-- ID do container dos checkboxes de UF -->
+                    <div id="ufsContainerDropdown"> 
                         <small class="text-muted">Carregando UFs...</small>
                     </div>
                 </div>
@@ -193,7 +208,7 @@
                 </button>
                 <div class="dropdown-menu p-2" aria-labelledby="dropdownMunicipiosButton" style="min-width: 280px; max-height: 300px; overflow-y: auto;">
                     <input type="text" id="municipioSearchInput" class="form-control form-control-sm mb-2" placeholder="Buscar município...">
-                    <div id="municipiosContainerDropdown"> <!-- ID do container dos checkboxes de Município -->
+                    <div id="municipiosContainerDropdown"> 
                         <small class="text-muted">Selecione uma UF primeiro</small>
                     </div>
                 </div>
@@ -248,9 +263,13 @@
 <!-- Painel Lateral de Detalhes (Bootstrap Offcanvas) -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="detailsPanel" aria-labelledby="detailsPanelLabel">
     <div class="offcanvas-header">
-        <div>
+        <div class="me-auto"> <!-- Ocupa o espaço à esquerda -->
             <h5 class="offcanvas-title mb-0" id="detailsPanelLabel">Detalhes da Licitação</h5>
-            <small id="detailsPanelSubtitle" class="text-muted d-block"></small> <!-- NOVO: Elemento para o Subtítulo -->
+            <small id="detailsPanelSubtitle" class="text-muted d-block"></small> 
+        </div>
+        <!-- Espaço para o Ícone de Favorito -->
+        <div id="detailsPanelFavoriteIconContainer" class="ms-2">
+            <!-- O JS inserirá o ícone/botão aqui -->
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
@@ -261,14 +280,14 @@
             <hr>
             <h5>Itens da Contratação</h5>
             <div id="detailsPanelItensTableContainer" class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                <table class="table table-sm table-bordered table-striped"> <!-- Adicionado table-striped -->
+                <table class="table table-sm table-bordered table-striped"> 
                     <thead>
                         <tr>
                             <th>Item</th>
                             <th>Descrição</th>
                             <th class="text-end">Qtde.</th>
                             <th class="text-end">Vl. Unit.</th>
-                            <th class="text-end">Vl. Total</th> <!-- Nova Coluna -->
+                            <th class="text-end">Vl. Total</th> 
                         </tr>
                     </thead>
                     <tbody id="detailsPanelItensTableBody">

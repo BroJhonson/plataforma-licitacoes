@@ -79,6 +79,39 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     // --- FIM DA LÓGICA DO PAINEL DE FEEDBACK ---
 
+    // ========= GERENCIADOR DE COOKIES ========= // 
+    const COOKIE_CONSENT_KEY = 'radarPncpCookieConsent';
+
+    const banner = document.getElementById('cookieConsentBanner');
+    const btnAceitar = document.getElementById('btnAceitarCookies');
+
+    // Verifica se o consentimento já foi dado
+    const consentimentoDado = localStorage.getItem(COOKIE_CONSENT_KEY);
+
+    // Se não há consentimento registrado E o banner existe
+    if (!consentimentoDado && banner) {
+        // Mostra o banner com um pequeno atraso para não ser tão abrupto
+        setTimeout(() => {
+            banner.classList.add('show');
+        }, 500); // 0.5 segundo
+    }
+    
+    // Se o botão de aceitar existe, adiciona o evento de clique
+    if (btnAceitar) {
+        btnAceitar.addEventListener('click', () => {
+            // 1. Grava o consentimento no localStorage
+            // Salvamos 'true' e a data, para futuras auditorias ou expiração
+            localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify({accepted: true, timestamp: new Date().toISOString()}));
+            
+            // 2. Esconde o banner
+            if (banner) {
+                banner.classList.remove('show');
+            }
+            console.log("Consentimento de cookies aceito e gravado.");
+        });
+    }
+    // --- FIM DO GERENCIADOR DE COOKIES ---
+
     // FORMATAR DATA E HORA
     const formatDateTime = (dateTimeString) => {
         if (!dateTimeString) return 'N/I';
@@ -107,6 +140,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
+
     // ======================================== //
     // ============== HOME PAGE =============== //    
     if (document.body.classList.contains('page-home')) {
@@ -122,10 +156,57 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Adiciona a classe 'active' apenas no card que está com o mouse sobre
                 card.classList.add('active');
             });
-        });
-
-        // Seu outro código JS para a home pode vir aqui...
+        });        
     }
+
+    // ======================================== //
+    // ========= GERENCIAR FAVORITOS ========== // 
+    const FAVORITOS_KEY = 'radarPncpFavoritos';
+
+    function getFavoritos() {
+        const favoritosJson = localStorage.getItem(FAVORITOS_KEY);
+        try {
+            // Tenta parsear, se for inválido ou não existir, retorna array vazio
+            return favoritosJson ? JSON.parse(favoritosJson) : [];
+        } catch (e) {
+            console.error("Erro ao parsear favoritos do localStorage:", e);
+            localStorage.removeItem(FAVORITOS_KEY); // Remove item corrompido
+            return [];
+        }
+    }
+
+    function adicionarFavorito(pncpId) {
+        if (!pncpId) return false;
+        let favoritos = getFavoritos();
+        if (!favoritos.includes(pncpId)) {
+            favoritos.push(pncpId);
+            localStorage.setItem(FAVORITOS_KEY, JSON.stringify(favoritos));
+            console.log("Adicionado aos favoritos:", pncpId, "Lista atual:", favoritos);
+            return true;
+        }
+        console.log(pncpId, "já era favorito.");
+        return false; // Já era favorito
+    }
+
+    function removerFavorito(pncpId) {
+        if (!pncpId) return false;
+        let favoritos = getFavoritos();
+        const index = favoritos.indexOf(pncpId);
+        if (index > -1) {
+            favoritos.splice(index, 1);
+            localStorage.setItem(FAVORITOS_KEY, JSON.stringify(favoritos));
+            console.log("Removido dos favoritos:", pncpId, "Lista atual:", favoritos);
+            return true;
+        }
+        console.log(pncpId, "não encontrado nos favoritos para remover.");
+        return false; // Não era favorito
+    }
+
+    function isFavorito(pncpId) {
+        if (!pncpId) return false;
+        return getFavoritos().includes(pncpId);
+    }
+    // --- FIM DAS FUNÇÕES DE FAVORITOS ---
 
     // ============================================ //
     // ======== FUNÇÃO PRINCIPAL DO RADAR ========= //
@@ -138,13 +219,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const filtrosAtivosTexto = document.getElementById('filtrosAtivosTexto');
         const linkLimparFiltrosRapido = document.getElementById('linkLimparFiltrosRapido');
         const ufsContainer = document.getElementById('ufsContainerDropdown');
-        const municipiosSelect = document.getElementById('municipios');
         const municipiosHelp = document.getElementById('municipiosHelp');
         const modalidadesContainer = document.getElementById('modalidadesContainerDropdown'); 
         const statusContainer = document.getElementById('statusContainer');
         const statusWarning = document.getElementById('statusWarning');
-        const palavraChaveInclusaoInput = document.getElementById('palavraChaveInclusao');
-        const palavraChaveExclusaoInput = document.getElementById('palavraChaveExclusao');
         const dataPubInicioInput = document.getElementById('dataPubInicio');
         const dataPubFimInput = document.getElementById('dataPubFim');
         const dataAtualizacaoInicioInput = document.getElementById('dataAtualizacaoInicio'); // Você precisará adicionar este input no HTML
@@ -159,18 +237,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const exibicaoInfo = document.getElementById('exibicaoInfo');
         const ordenarPorSelect = document.getElementById('ordenarPor');
         const itensPorPaginaSelect = document.getElementById('itensPorPagina');
-        const palavraChaveInclusaoInputField = document.getElementById('palavraChaveInclusaoInput'); // Novo ID
-        //const btnAddPalavraInclusao = document.getElementById('btnAddPalavraInclusao');
+        const palavraChaveInclusaoInputField = document.getElementById('palavraChaveInclusaoInput'); // Novo ID        
         const tagsPalavraInclusaoContainer = document.getElementById('tagsPalavraInclusaoContainer');
-        const palavraChaveExclusaoInputField = document.getElementById('palavraChaveExclusaoInput'); // Novo ID
-        //const btnAddPalavraExclusao = document.getElementById('btnAddPalavraExclusao');
+        const palavraChaveExclusaoInputField = document.getElementById('palavraChaveExclusaoInput'); // Novo ID        
         const tagsPalavraExclusaoContainer = document.getElementById('tagsPalavraExclusaoContainer');
         const loadingOverlay = document.getElementById('loadingOverlay');
+        const listaFavoritosSidebar = document.getElementById('lista-favoritos-sidebar'); // lISTAR OS fAVORITOS        
+        const detailsPanelElement = document.getElementById('detailsPanel'); 
+        const offcanvasFiltrosBody = document.getElementById('offcanvasFiltrosBody'); //Funcionalidade de ctrl+enter no painel de filtros
 
         if(linkLimparFiltrosRapido) { // Garante que o elemento existe
             linkLimparFiltrosRapido.addEventListener('click', function(e){
-                e.preventDefault(); // Previne o comportamento padrão do link (navegar para #)
-                console.log("Link Limpar Filtros Rápido clicado"); // Para debug
+                e.preventDefault(); // Previne o comportamento padrão do link (navegar para #)                
                 limparFiltros(); // Chama a função principal de limpar filtros
             });
         }
@@ -193,6 +271,34 @@ document.addEventListener('DOMContentLoaded', function () {
             { sigla: "SP", nome: "São Paulo" }, { sigla: "SE", nome: "Sergipe" }, { sigla: "TO", nome: "Tocantins" }
         ];
 
+        // Função Ctrl + Enter aplica filtro
+        if (offcanvasFiltrosBody) { // Garante que o container dos filtros existe
+                        
+            offcanvasFiltrosBody.addEventListener('keydown', function(event) {
+                // event.key === 'Enter' verifica se a tecla Enter foi pressionada.
+                // event.ctrlKey verifica se a tecla Ctrl está pressionada.
+                // event.metaKey verifica se a tecla Command (Cmd) está pressionada no Mac.
+                
+                if ((event.key === 'Enter' || event.key === 'NumpadEnter') && (event.ctrlKey || event.metaKey)) {
+                    console.log("Ctrl+Enter pressionado, aplicando filtros...");
+                    
+                    // Previne o comportamento padrão do Enter (ex: submeter um formulário se houver)
+                    event.preventDefault(); 
+                    
+                    // Chama a sua função de buscar licitações, passando a primeira página
+                    buscarLicitacoes(1); 
+
+                    // Opcional: Fechar o Offcanvas de filtros após aplicar
+                    const offcanvasFiltrosElement = document.getElementById('offcanvasFiltros');
+                    if (offcanvasFiltrosElement) {
+                        const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasFiltrosElement);
+                        if (bsOffcanvas) {
+                            bsOffcanvas.hide();
+                        }
+                    }
+                }
+            });
+        }
 
         // FUNÇÃO DE TAGS NAS PALAVRAS-CHAVE
         function renderTags(palavrasArray, containerElement, tipo) { // tipo pode ser 'inclusao' ou 'exclusao'
@@ -407,7 +513,197 @@ document.addEventListener('DOMContentLoaded', function () {
             });        
         }
 
+        // ====================== FAVORITOS ====================== //
+        // --- FUNÇÃO PARA ATUALIZAR A UI DO BOTÃO DE FAVORITO --- //
+        function atualizarBotaoFavoritoUI(buttonElement, pncpId) {
+            if (!buttonElement || !pncpId) return;
+            const ehFavoritoAgora = isFavorito(pncpId);
+            const icon = buttonElement.querySelector('i');
 
+            buttonElement.title = ehFavoritoAgora ? 'Desfavoritar' : 'Favoritar';
+
+           // Lógica para o ícone (estrela cheia/vazia)
+            if (icon) {
+                if (ehFavoritoAgora) {
+                    icon.classList.remove('bi-star');
+                    icon.classList.add('bi-star-fill'); // Estrela cheia
+                    // Para o botão de detalhes que é btn-link, a cor da estrela já é text-warning.
+                    // Para o botão da tabela, vamos garantir que ele pareça 'ativo' ou diferente.
+                    if (!buttonElement.classList.contains('btn-link')) { // Se NÃO for o botão de detalhes (ou seja, é o da tabela)
+                        buttonElement.classList.remove('btn-outline-warning');
+                        buttonElement.classList.add('btn-warning', 'active'); // Mantém o fundo amarelo para o botão da tabela
+                    } else { // Se FOR o botão de detalhes (btn-link)
+                        buttonElement.classList.add('active'); // Só adiciona 'active' para indicar o estado
+                    }
+                } else { // Não é favorito
+                    icon.classList.remove('bi-star-fill');
+                    icon.classList.add('bi-star'); // Estrela vazia
+                    if (!buttonElement.classList.contains('btn-link')) { // Botão da tabela
+                        buttonElement.classList.remove('btn-warning', 'active');
+                        buttonElement.classList.add('btn-outline-warning');
+                    } else { // Botão de detalhes
+                        buttonElement.classList.remove('active');
+                    }
+                }
+            }
+        }
+
+        // --- HANDLER PARA O CLIQUE NO BOTÃO DE FAVORITAR ---
+        function handleFavoritarClick(event) { // Sempre espera o evento da delegação
+            const button = event.target.closest('.btn-favoritar'); // Pega o botão com a classe .btn-favoritar
+            if (!button) return; 
+
+            const pncpId = button.dataset.pncpId;
+            if (!pncpId) return;
+
+            let alterou = false;
+            if (isFavorito(pncpId)) {
+                alterou = removerFavorito(pncpId);
+            } else {
+                alterou = adicionarFavorito(pncpId);
+            }
+
+            if (alterou) {
+                atualizarBotaoFavoritoUI(button, pncpId); // Atualiza o botão clicado
+
+                // Sincronizar UI de outros botões para o mesmo PNCP ID
+                // Primeiro, o botão na tabela (se não for o que foi clicado)
+                const btnNaTabela = licitacoesTableBody.querySelector(`.btn-favoritar[data-pncp-id="${pncpId}"]`);
+                if (btnNaTabela && btnNaTabela !== button) {
+                    atualizarBotaoFavoritoUI(btnNaTabela, pncpId);
+                }
+                // Segundo, o botão nos detalhes (se não for o que foi clicado)
+                const btnNosDetalhes = document.getElementById('detailsPanelFavoriteBtn');
+                if (btnNosDetalhes && btnNosDetalhes !== button && btnNosDetalhes.dataset.pncpId === pncpId) {
+                    atualizarBotaoFavoritoUI(btnNosDetalhes, pncpId);
+                }
+
+                renderizarFavoritosSidebar();
+            }
+        }
+        
+        // --- CONFIGURAR EVENT LISTENERS ---
+        if (licitacoesTableBody) {
+            licitacoesTableBody.addEventListener('click', handleFavoritarClick);
+        }
+        if (detailsPanelElement) { // Delegação no corpo do painel de detalhes
+            detailsPanelElement.addEventListener('click', function(event) {
+                // Verifica se o clique foi no botão de favorito (que agora está no header)
+                // O ID #detailsPanelFavoriteBtn é importante aqui.
+                const favoriteButton = event.target.closest('#detailsPanelFavoriteBtn');
+                if (favoriteButton) {
+                    handleFavoritarClick(event); // Passa o evento para o handler
+                }
+                // Se tiver outros botões com .btn-favoritar no painel de detalhes, eles também seriam pegos
+                // pela condição mais genérica event.target.closest('.btn-favoritar') se preferir
+            });
+        }      
+
+        if (listaFavoritosSidebar) {
+            // Listener para botões .btn-remover-fav-sidebar e links .sidebar-fav-link
+            listaFavoritosSidebar.addEventListener('click', function(event) {
+                const removeButton = event.target.closest('.btn-remover-fav-sidebar');
+                const linkLicitacao = event.target.closest('.sidebar-fav-link');
+
+                if (removeButton) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const pncpId = removeButton.dataset.pncpId;
+                    if (pncpId) {
+                        removerFavorito(pncpId);
+                        renderizarFavoritosSidebar();
+                        // Atualizar botões na tabela e detalhes
+                        const btnNaTabela = licitacoesTableBody.querySelector(`.btn-favoritar[data-pncp-id="${pncpId}"]`);
+                        if (btnNaTabela) atualizarBotaoFavoritoUI(btnNaTabela, pncpId);
+                        const btnNosDetalhes = document.getElementById('detailsPanelFavoriteBtn');
+                        if (btnNosDetalhes && btnNosDetalhes.dataset.pncpId === pncpId) atualizarBotaoFavoritoUI(btnNosDetalhes, pncpId);
+                    }
+                } else if (linkLicitacao) {
+                    event.preventDefault();
+                    const pncpId = linkLicitacao.dataset.pncpId;
+                    // Abrir painel de detalhes para este PNCP ID
+                    const fakeButton = document.createElement('button'); // Simula o botão original de detalhes
+                    fakeButton.dataset.pncpId = pncpId;
+                    const fakeEvent = { currentTarget: fakeButton, target: fakeButton };
+                    handleDetalhesClick(fakeEvent); // Sua função handleDetalhesClick espera um evento ou um elemento
+                }
+            });
+        }
+
+        // Cache para dados de licitações (para não buscar toda hora só para a sidebar)
+        let cacheLicitacoesSidebar = {}; 
+
+        async function renderizarFavoritosSidebar() {
+            if (!listaFavoritosSidebar) return;
+
+            const favoritosIds = getFavoritos(); // Função que lê do localStorage
+            listaFavoritosSidebar.innerHTML = ''; // Limpa antes de popular
+
+            if (favoritosIds.length === 0) {
+                listaFavoritosSidebar.innerHTML = '<li class="list-group-item text-muted small">Nenhuma licitação favoritada ainda.</li>';
+                return;
+            }
+
+            // Mostra um loader simples
+            listaFavoritosSidebar.innerHTML = '<li class="list-group-item text-muted small"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>Carregando...</li>';
+        
+            let contentRendered = false;
+
+            for (const pncpId of favoritosIds) {
+                let licData = cacheLicitacoesSidebar[pncpId];
+
+                if (!licData) {
+                    try {
+                        const response = await fetch(`/api/frontend/licitacao/${encodeURIComponent(pncpId)}`);
+                        if (response.ok) {
+                            const fullData = await response.json();
+                            if (fullData.licitacao) {
+                                licData = fullData.licitacao;
+                                cacheLicitacoesSidebar[pncpId] = licData;
+                            }
+                        } else {
+                            console.warn(`Sidebar Favoritos: Erro ${response.status} ao buscar ${pncpId}`);
+                        }
+                    } catch (error) {
+                        console.error(`Sidebar Favoritos: Exceção ao buscar ${pncpId}:`, error);
+                    }
+                }
+
+                if (licData) {
+                    if (!contentRendered) { // Limpa o "Carregando..." apenas uma vez quando o primeiro item for renderizado
+                        listaFavoritosSidebar.innerHTML = ''; 
+                        contentRendered = true;
+                    }
+                    const li = document.createElement('li');
+                    li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center', 'py-1', 'px-1'); // Reduzido padding
+                    li.style.fontSize = "0.78em";
+
+                    const linkLicitacao = document.createElement('a');
+                    linkLicitacao.href = "#";
+                    linkLicitacao.classList.add('text-decoration-none', 'text-dark', 'flex-grow-1', 'me-1', 'sidebar-fav-link');
+                    const objeto = licData.objetoCompra || licData.numeroControlePNCP;
+                    linkLicitacao.textContent = objeto.length > 45 ? objeto.substring(0, 42) + '...' : objeto; // Limita o texto
+                    linkLicitacao.title = objeto;
+                    linkLicitacao.dataset.pncpId = pncpId; // Guardar o ID para o handler
+
+                    const btnRemoverFavSidebar = document.createElement('button');
+                    btnRemoverFavSidebar.classList.add('btn', 'btn-sm', 'btn-outline-danger', 'p-0', 'px-1', 'btn-remover-fav-sidebar');
+                    btnRemoverFavSidebar.innerHTML = '<i class="bi bi-x-lg" style="font-size: 0.7em;"></i>'; // Ícone 'x' menor
+                    btnRemoverFavSidebar.title = "Remover dos Favoritos";
+                    btnRemoverFavSidebar.dataset.pncpId = pncpId;
+                    
+                    li.appendChild(linkLicitacao);
+                    li.appendChild(btnRemoverFavSidebar);
+                    listaFavoritosSidebar.appendChild(li);
+                }
+            }
+            if (!contentRendered && favoritosIds.length > 0) { // Se houve IDs mas nenhum dado foi carregado
+                listaFavoritosSidebar.innerHTML = '<li class="list-group-item text-danger small fst-italic">Erro ao carregar dados dos favoritos.</li>';
+            }
+        }
+
+        
+        // ------------------------------------------------------ //
         // --- FUNÇÃO DE EXECUSÃO - MODALIDADES ---
         async function popularModalidades() { 
             if (!modalidadesContainer) return; // Se o container não for encontrado, a função para aqui
@@ -754,6 +1050,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function renderLicitacoesTable(licitacoes) {
+            if(!licitacoesTableBody) return; //Proteção - Adicionado quando adicionamos a função favoritos
             licitacoesTableBody.innerHTML = ''; 
             if (!licitacoes || licitacoes.length === 0) {
                 licitacoesTableBody.innerHTML = `<tr><td colspan="8" class="text-center">Nenhuma licitação encontrada para os filtros aplicados.</td></tr>`;
@@ -770,19 +1067,48 @@ document.addEventListener('DOMContentLoaded', function () {
                     objetoHtml = `<span class="objeto-curto">${objetoCurto}... <a href="#" class="ver-mais-objeto" data-objeto-completo="${lic.id}">Ver mais</a></span>
                                 <span class="objeto-completo d-none">${objetoCompleto} <a href="#" class="ver-menos-objeto" data-objeto-completo="${lic.id}">Ver menos</a></span>`;
                 }
+
+                // --- LÓGICA PARA VALOR TOTAL ESTIMADO ---
+                let valorEstimadoDisplay = 'N/I'; // Default se não for nem sigiloso nem um número
+                if (lic.valorTotalEstimado === null) {
+                    valorEstimadoDisplay = '<span class="text-info fst-italic">Sigiloso</span>';
+                } else if (lic.valorTotalEstimado !== undefined && lic.valorTotalEstimado !== '' && !isNaN(parseFloat(lic.valorTotalEstimado))) {
+                    // Verifica se não é undefined, não é string vazia, e é um número
+                    valorEstimadoDisplay = `R$ ${parseFloat(lic.valorTotalEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                } else if (typeof lic.valorTotalEstimado === 'string' && lic.valorTotalEstimado.trim() === '') {                    
+                    // Se string vazia será "Sigiloso":
+                    valorEstimadoDisplay = '<span class="text-info fst-italic">Sigiloso</span>';
+                } else if (!lic.valorTotalEstimado && lic.valorTotalEstimado !== 0) { // Cobre null, undefined, ""
+                    // Se quiser que string vazia ou valor inválido seja Sigiloso também:
+                    valorEstimadoDisplay = '<span class="text-info fst-italic">Sigiloso</span>';
+                }
+
+                // FAVORITO 
+                const ehFavorito = isFavorito(lic.numeroControlePNCP); // Verifica se é FAVORITO
+                const btnFavoritoHtml = `
+                    <button class="btn btn-sm ${ehFavorito ? 'btn-warning active' : 'btn-outline-warning'} btn-favoritar" 
+                            title="${ehFavorito ? 'Desfavoritar' : 'Favoritar'}" data-pncp-id="${lic.numeroControlePNCP}">
+                        <i class="bi ${ehFavorito ? 'bi-star-fill' : 'bi-star'}"></i>
+                    </button>
+                `;
+                
+                // A ORDEM DA LINHA DENTRO DA TABELA.
                 tr.innerHTML = `
-                    <td>${lic.unidadeOrgaoMunicipioNome || 'N/I'}/${lic.unidadeOrgaoUfSigla || 'N/I'}</td>
-                    
+                    <td class="align-middle">${lic.unidadeOrgaoMunicipioNome || 'N/I'}/${lic.unidadeOrgaoUfSigla || 'N/I'}</td>                    
                     <td><div class="objeto-container" data-lic-id="${lic.id}">${objetoHtml}</div></td>
-                    <td>${lic.orgaoEntidadeRazaoSocial || 'N/I'}</td>
-                    <td><span class="badge ${statusBadgeClass}">${lic.situacaoReal || lic.situacaoCompraNome || 'N/I'}</span></td>
-                    <td>${lic.valorTotalEstimado === null ? '<span class="text-info fst-italic">Sigiloso</span>' : (lic.valorTotalEstimado ? 
-                        `R$ ${parseFloat(lic.valorTotalEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/I')}</td>
-                    <td>${lic.modalidadeNome || 'N/I'}</td>
-                    <td>${lic.dataAtualizacao ? new Date(lic.dataAtualizacao + 'T00:00:00Z').toLocaleDateString('pt-BR') : 'N/I'}</td> 
-                    <td>
-                        <a href="${lic.link_portal_pncp || '#'}" class="btn btn-sm btn-outline-primary" title="Acessar PNCP" target="_blank" ${!lic.link_portal_pncp ? 'disabled' : ''}><i class="bi bi-box-arrow-up-right"></i></a>
-                        <button class="btn btn-sm btn-info btn-detalhes" title="Mais Detalhes" data-pncp-id="${lic.numeroControlePNCP}"><i class="bi bi-eye-fill"></i></button>
+                    <td class="align-middle">${lic.orgaoEntidadeRazaoSocial || 'N/I'}</td>
+                    <td class="align-middle"><span class="badge ${statusBadgeClass}">${lic.situacaoReal || lic.situacaoCompraNome || 'N/I'}</span></td>
+                    <td class="align-middle">${valorEstimadoDisplay}</td> 
+                    <td class="align-middle">${lic.modalidadeNome || 'N/I'}</td>
+                    <td class="align-middle">${lic.dataAtualizacao ? new Date(lic.dataAtualizacao + 'T00:00:00Z').toLocaleDateString('pt-BR') : 'N/I'}</td> 
+                   
+                    <td class="text-nowrap align-middle"> <!-- Botões -->
+                        <!-- DETALHES -->
+                        <button class="btn btn-sm btn-info btn-detalhes" title="Mais Detalhes" data-pncp-id="${lic.numeroControlePNCP}"><i class="bi bi-eye-fill"></i></button>                                                
+                        <!-- FAVORITO -->
+                        ${btnFavoritoHtml}
+                        <!-- ACESSAR PNCP -->
+                       <!-- <a href="${lic.link_portal_pncp || '#'}" class="btn btn-sm btn-outline-primary" title="Acessar PNCP" target="_blank" ${!lic.link_portal_pncp ? 'disabled aria-disabled="true"' : ''}><i class="bi bi-box-arrow-up-right"></i></a> -->
                     </td>
                 `;
                 licitacoesTableBody.appendChild(tr);
@@ -998,15 +1324,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
                     
             console.log("Filtros limpos, buscando licitações...");        
-            atualizarExibicaoFiltrosAtivos(); 
-
-            // Event listener para o link de limpar rápido
-            if(linkLimparFiltrosRapido) {
-                linkLimparFiltrosRapido.addEventListener('click', function(e){
-                    e.preventDefault();
-                    limparFiltros(); // Chama a função principal de limpar filtros
-                });
-            }
+            atualizarExibicaoFiltrosAtivos();             
             buscarLicitacoes(1); 
         }
 
@@ -1026,8 +1344,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Placeholder para função de detalhes
-        const detailsPanelElement = document.getElementById('detailsPanel');
-        const detailsPanel = detailsPanelElement ? new bootstrap.Offcanvas(detailsPanelElement) : null;
+        const detailsPanelBody  = document.getElementById('detailsPanel');
+        const detailsPanel = detailsPanelBody  ? new bootstrap.Offcanvas(detailsPanelBody ) : null;
         const detailsPanelContent = document.getElementById('detailsPanelContent');
         // ... (outros elementos do painel de detalhes)
 
@@ -1087,6 +1405,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // FUNÇÃO DO PAINEL DETALHES
         function renderDetailsPanelContent(data) {
+            if(!detailsPanelElement) return; // Proteção - Adicionado qnd adicionou função favorito
+
             if (!data || !data.licitacao) {
                 detailsPanelContent.innerHTML = '<p class="text-center text-danger">Dados da licitação não encontrados.</p>';
                 return;
@@ -1094,6 +1414,31 @@ document.addEventListener('DOMContentLoaded', function () {
             const lic = data.licitacao;
             const detailsPanelSubtitle = document.getElementById('detailsPanelSubtitle'); // Subtítulo (Edital)
             const detailsPanelLabel = document.getElementById('detailsPanelLabel');
+
+
+            // FAVORITO dentro dos detalhes
+            const favoriteIconContainer = document.getElementById('detailsPanelFavoriteIconContainer');
+            if (favoriteIconContainer) {
+                favoriteIconContainer.innerHTML = ''; // Limpa anterior
+                if (lic && lic.numeroControlePNCP) {
+                    const ehFavorito = isFavorito(lic.numeroControlePNCP);
+                    const favButton = document.createElement('button');
+                    
+                    favButton.id = 'detailsPanelFavoriteBtn'; 
+                    favButton.classList.add('btn', 'btn-link', 'text-warning', 'p-0', 'btn-favoritar'); 
+                    favButton.style.fontSize = '1.5rem'; 
+                    
+                    favButton.dataset.pncpId = lic.numeroControlePNCP;
+                    favButton.title = ehFavorito ? 'Desfavoritar' : 'Favoritar'; // O title é importante para acessibilidade e tooltip
+                    
+                    // APENAS O ÍCONE AQUI
+                    favButton.innerHTML = `<i class="bi ${ehFavorito ? 'bi-star-fill' : 'bi-star'}"></i>`;
+                    
+                    favoriteIconContainer.appendChild(favButton);
+                }
+            }            
+            //-----------------------------------------------------------------------------------
+
 
             let tituloPrincipal = `Detalhes: ${lic.numeroControlePNCP || 'N/I'}`; // Fallback
             if (lic.unidadeOrgaoNome) {
@@ -1118,8 +1463,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     detailsPanelSubtitle.style.display = 'none'; // Oculta se não houver edital
                 }
             }
-
-
             
             const formatDate = (dateString) => {
                 if (!dateString) return 'N/I';
@@ -1144,8 +1487,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <p><strong>Órgão:</strong> ${lic.orgaoEntidadeRazaoSocial || 'N/I'}</p>
                 <p><strong>Unidade Compradora:</strong> ${lic.unidadeOrgaoNome || 'N/I'}</p>
                 <p><strong>Município/UF:</strong> ${lic.unidadeOrgaoMunicipioNome || 'N/I'}/${lic.unidadeOrgaoUfSigla || 'N/I'}</p>
-                <p><strong>Modalidade:</strong> ${lic.modalidadeNome || 'N/I'}</p>    
-                <!-- DESABILITADO PARA TESTAR O DE BAIXO <p><strong>Amparo Legal:</strong> ${lic.amparoLegalNome || 'N/I'}</p> -->
+                <p><strong>Modalidade:</strong> ${lic.modalidadeNome || 'N/I'}</p>                    
                 ${lic.amparoLegalNome ? `<p><strong>Amparo Legal:</strong> ${lic.amparoLegalNome}</p>` : ''}
                 ${
                     lic.valorTotalHomologado
@@ -1154,15 +1496,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 ${lic.modoDisputaNome ? `<p><strong>Modo de Disputa:</strong> ${lic.modoDisputaNome}</p>` : '<p class="text-muted small"><small><strong>Modo de Disputa:</strong> (Não informado)</small></p>'}
                 ${lic.tipolnstrumentoConvocatorioNome ? `<p><strong>Tipo:</strong> ${lic.tipolnstrumentoConvocatorioNome}</p>` : '<p class="text-muted small"><small><strong>Tipo:</strong> (Não informado)</small></p>'}
-                <p><strong>Situação Atual:</strong> <span class="badge ${getStatusBadgeClass(lic.situacaoReal)}">${lic.situacaoReal || 'N/I'}</span></p>                         
-                <!-- DESABILITADO PARA TESTAR O DE BAIXO <p><strong>Data Publicação PNCP:</strong> ${lic.dataPublicacaoPncp ? new Date(lic.dataPublicacaoPncp + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/I'}</p>  -->
-                <p><strong>Data Publicação PNCP:</strong> ${formatDate(lic.dataPublicacaoPncp)}</p>
-                
+                <p><strong>Situação Atual:</strong> <span class="badge ${getStatusBadgeClass(lic.situacaoReal)}">${lic.situacaoReal || 'N/I'}</span></p>                
+                <p><strong>Data Publicação PNCP:</strong> ${formatDate(lic.dataPublicacaoPncp)}</p>                
                 <div class="my-2 p-2 border-start border-primary border-3 bg-light-subtle rounded-end">
                     <p class="mb-1"><strong>Início Recebimento Propostas:</strong> ${formatDateTime(lic.dataAberturaProposta)} (Horário de Brasília)</p>
                     <p class="mb-0"><strong>Fim Recebimento Propostas:</strong> ${formatDateTime(lic.dataEncerramentoProposta)} (Horário de Brasília)</p>
                 </div>
-
                 <p><strong>Última Atualização:</strong> ${formatDate(lic.dataAtualizacao)}</p>            
                 <p><strong>Valor Total Estimado:</strong> ${lic.valorTotalEstimado === null ? '<span class="text-info fst-italic">Sigiloso</span>' : (lic.valorTotalEstimado ? 
                     `R$ ${parseFloat(lic.valorTotalEstimado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Sigiloso')}</p>
@@ -1216,9 +1555,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
 
-
-
-            //DEBUG
+  
+            // Botão acessar PNCP -Controle para testar se o link é funcional
             const btnPncp = document.getElementById('detailsPanelBtnPncp');
             if (btnPncp) {
                 if (lic.link_portal_pncp && lic.link_portal_pncp.trim() !== "") {
@@ -1252,7 +1590,7 @@ document.addEventListener('DOMContentLoaded', function () {
             renderDetailsPanelArquivos(data.arquivos || []);
         }
 
-        // Placeholder para renderizar itens e arquivos no painel de detalhes (a ser implementado)
+        // Placeholder para renderizar itens e arquivos no painel de detalhes
         let currentDetalhesItens = [];
         let currentDetalhesItensPage = 1;
         const ITENS_POR_PAGINA_DETALHES = 5;
@@ -1282,12 +1620,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
             pageItens.forEach(item => {
                 const tr = document.createElement('tr');
+                // --- LÓGICA PARA VALOR UNITÁRIO ESTIMADO DO ITEM ---
+                let valorUnitarioDisplay = 'N/I';
+                if (item.valorUnitarioEstimado === null) {
+                    valorUnitarioDisplay = '<span class="text-info fst-italic">Sigiloso</span>';
+                } else if (item.valorUnitarioEstimado !== undefined && item.valorUnitarioEstimado !== '' && !isNaN(parseFloat(item.valorUnitarioEstimado))) {
+                    valorUnitarioDisplay = parseFloat(item.valorUnitarioEstimado).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+                }
+                // --- LÓGICA PARA VALOR TOTAL DO ITEM ---
+                let valorTotalItemDisplay = 'N/I';
+                if (item.valorTotal === null) {
+                    valorTotalItemDisplay = '<span class="text-info fst-italic">Sigiloso</span>';
+                } else if (item.valorTotal !== undefined && item.valorTotal !== '' && !isNaN(parseFloat(item.valorTotal))) {
+                    valorTotalItemDisplay = parseFloat(item.valorTotal).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+                }
+
                 tr.innerHTML = `
                     <td>${item.numeroItem || 'N/I'}</td>
                     <td>${item.descricao || 'N/I'}</td>
                     <td>${item.quantidade || 'N/I'}</td>
-                    <td>${item.valorUnitarioEstimado ? parseFloat(item.valorUnitarioEstimado).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}) : 'N/I'}</td>
-                    <td>${item.valorTotal ? parseFloat(item.valorTotal).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}) : 'N/I'}</td>
+                    <td class="text-end">${valorUnitarioDisplay}</td>
+                    <td class="text-end">${valorTotalItemDisplay}</td>
                 `;
                 tableBody.appendChild(tr);
             });
@@ -1356,11 +1709,8 @@ document.addEventListener('DOMContentLoaded', function () {
             await popularModalidades(); 
             await popularStatus();   
             buscarLicitacoes(1);   
-
-            const defaultStatusChecked = document.querySelector('.filter-status:checked'); // acho q nem preciso mais dessas const
-            const palavraChaveInicial = palavraChaveInclusaoInput ? palavraChaveInclusaoInput.value.trim() : "";
-
-            
+            renderizarFavoritosSidebar();
+                       
             setupFilterSearch('ufSearchInput', 'ufsContainerDropdown', '.form-check');
             setupFilterSearch('modalidadeSearchInput', 'modalidadesContainerDropdown', '.form-check');
             setupFilterSearch('municipioSearchInput', 'municipiosContainerDropdown', '.form-check');

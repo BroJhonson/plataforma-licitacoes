@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify # jsonify adicionado
 import requests # Para chamar a API do backend RADAR PNCP e IBGE
+from markupsafe import Markup, escape 
 
 app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta_muito_segura_aqui' # Mude isso!
@@ -7,52 +8,112 @@ API_BACKEND_URL = "http://127.0.0.1:5000" # URL do seu backend original
 
                    
 # Rotas principais que renderiza as Paginas
-@app.route('/radarPNCP')
-def index():
-    return render_template('radar.html', page_title="Buscar Licitações", body_class="page-busca-licitacoes")
-
 @app.route('/') 
-def pagina_home():
-    return render_template('home.html', page_title="Bem-vindo", body_class="page-home")
+def inicio():
+    return render_template('index.html', page_title="Bem-vindo ao RADAR PNCP", body_class="page-home")
 
-@app.route('/blog') #Depois modifico isso, ou deixo inativo
+@app.route('/radarPNCP')
+def buscador_licitacoes():
+    return render_template('radar.html', page_title="Buscar Licitações - RADAR PNCP", body_class="page-busca-licitacoes")
+
+# app.py (no topo ou antes das rotas do blog)
+posts_blog_exemplo = [
+    {
+        "id": 1, 
+        "slug": "como-encontrar-licitacoes-por-palavra-chave", # Usar letras minúsculas, sem espaços (hífens são bons)
+        "titulo": "Como Encontrar Licitações por Palavra-chave",
+        "data": "06/06/2024", # Mantenha o formato que desejar
+        "resumo": "Aprenda a usar filtros estratégicos para encontrar licitações perfeitas para o seu negócio.",
+        "imagem_destaque": "artigo1.jpg", # Nome do arquivo da imagem
+        "conteudo_completo": """<h2>Entendendo a Busca por Palavra-Chave</h2>
+            <p>A busca por palavra-chave é uma das ferramentas mais poderosas ao procurar licitações. 
+            No entanto, para ser eficaz, é preciso estratégia...</p>
+            <p>Imagine que você vende 'equipamentos de informática'. Digitar apenas 'informática' pode trazer
+            milhares de resultados, incluindo serviços de manutenção que não são seu foco.</p>
+            <h3>Dicas para Otimizar sua Busca:</h3>
+            <ul>
+                <li><strong>Seja Específico:</strong> Em vez de "material", tente "material de escritório" ou "material de construção".</li>
+                <li><strong>Use Múltiplas Palavras (com vírgula no Radar PNCP):</strong> "consultoria ambiental, licenciamento" para encontrar ambos.</li>
+                <li><strong>Pense em Sinônimos:</strong> Se você oferece "treinamento", tente também "capacitação", "curso".</li>
+                <li><strong>Utilize Palavras de Exclusão:</strong> Se você vende produtos novos, pode querer excluir termos como "usado" ou "reparo".</li>
+            </ul>
+            <p>No nosso sistema Radar PNCP, a interface de tags para palavras-chave (que estamos desenvolvendo!) 
+            facilitará ainda mais esse processo, permitindo adicionar e remover termos de forma visual e intuitiva.</p>
+            <p>Lembre-se também de combinar o filtro de palavras-chave com outros filtros como UF, modalidade e status 
+            para refinar ainda mais seus resultados e encontrar as oportunidades que realmente importam para o seu negócio.</p>
+        """
+    },
+    {
+        "id": 2, 
+        "slug": "nova-lei-de-licitacoes-o-que-voce-precisa-saber",
+        "titulo": "Nova Lei de Licitações: O Que Você Precisa Saber",
+        "data": "07/06/2024",
+        "resumo": "Entenda o impacto da nova legislação e como se adaptar a tempo para aproveitar as mudanças.",
+        "imagem_destaque": "artigo2.jpg",
+        "conteudo_completo": """<h2>Principais Mudanças da Lei 14.133/2021</h2>
+            <p>A Nova Lei de Licitações e Contratos Administrativos (Lei nº 14.133/2021) trouxe modernização e 
+            novos paradigmas para as compras públicas no Brasil...</p>
+            <p>Alguns pontos de destaque incluem:</p>
+            <ul>
+                <li><strong>Novas Modalidades:</strong> Como o diálogo competitivo.</li>
+                <li><strong>Portal Nacional de Contratações Públicas (PNCP):</strong> Centralização das informações.</li>
+                <li><strong>Foco no Planejamento:</strong> Ênfase na fase preparatória das licitações.</li>
+                <li><strong>Critérios de Julgamento:</strong> Além do menor preço, o maior desconto, melhor técnica ou conteúdo artístico, etc.</li>
+            </ul>
+            <p>Adaptar-se a essa nova realidade é fundamental. Isso inclui revisar processos internos, capacitar equipes
+            e entender os novos instrumentos como o Estudo Técnico Preliminar (ETP) e o Termo de Referência.</p>
+        """
+    },
+    {
+        "id": 3, 
+        "slug": "erros-comuns-em-propostas-de-licitacao",
+        "titulo": "Erros Comuns em Propostas de Licitação e Como Evitá-los",
+        "data": "08/06/2024",
+        "resumo": "Evite armadilhas que podem desclassificar sua empresa nas licitações públicas.",
+        "imagem_destaque": "artigo3.jpg",
+        "conteudo_completo": """<h2>Não Deixe que Pequenos Erros Custem Grandes Oportunidades</h2>
+            <p>Participar de licitações pode ser um processo complexo, e pequenos descuidos na elaboração da proposta
+            podem levar à desclassificação. Conhecer os erros mais comuns é o primeiro passo para evitá-los.</p>
+            <h3>Principais Armadilhas:</h3>
+            <ol>
+                <li><strong>Documentação Incompleta ou Vencida:</strong> Certidões negativas, balanços, atestados de capacidade técnica. Tudo deve estar rigorosamente em dia e conforme solicitado no edital.</li>
+                <li><strong>Não Atender às Especificações Técnicas:</strong> O produto ou serviço ofertado deve corresponder exatamente ao que foi descrito no Termo de Referência ou Projeto Básico. Qualquer desvio pode ser motivo para desclassificação.</li>
+                <li><strong>Erros na Planilha de Preços:</strong> Cálculos incorretos, omissão de custos, ou preços inexequíveis (muito baixos) ou excessivos.</li>
+                <li><strong>Perda de Prazos:</strong> Tanto para envio de propostas quanto para recursos ou envio de documentação complementar.</li>
+                <li><strong>Assinaturas Ausentes ou Inválidas:</strong> Propostas e declarações devem ser devidamente assinadas por quem tem poderes para tal.</li>
+            </ol>
+            <p>A atenção aos detalhes, uma leitura minuciosa do edital e um bom planejamento são seus maiores aliados para evitar esses erros e aumentar suas chances de sucesso.</p>
+        """
+    }
+]
+
+@app.route('/blog')
 def pagina_blog():
-    # Para um blog real, você buscaria posts de um banco de dados ou CMS.
-    # Por agora, vamos usar dados de exemplo.
-    posts_exemplo = [
-        {
-            "id": 1, "slug": "importancia-de-acompanhar-licitacoes",
-            "titulo": "A Importância de Acompanhar Licitações Públicas",
-            "data": "05/06/2024",
-            "resumo": "Descubra por que monitorar o PNCP pode abrir novas oportunidades para seu negócio e como nossa ferramenta pode ajudar.",
-            "conteudo_completo": "Conteúdo completo do post sobre a importância..." # Para uma página de post individual
-        },
-        {
-            "id": 2, "slug": "dicas-para-vencer-licitacoes",
-            "titulo": "5 Dicas Essenciais para Preparar Propostas Vencedoras",
-            "data": "28/05/2024",
-            "resumo": "Aprenda estratégias chave para aumentar suas chances de sucesso em processos licitatórios.",
-            "conteudo_completo": "Conteúdo completo do post sobre dicas para vencer..."
-        },
-        # Adicione mais posts de exemplo se desejar
-    ]
-    return render_template('pagina_blog.html', posts=posts_exemplo, page_title="Nosso Blog", body_class="page-blog")
+    return render_template('pagina_blog.html', posts=posts_blog_exemplo, page_title="Nosso Blog", body_class="page-blog")
 
-# (Opcional) Rota para um post individual do blog
 @app.route('/blog/<string:post_slug>')
 def pagina_post_blog(post_slug):
-    # Lógica para encontrar o post pelo slug (você precisaria implementar isso)
-    # Por agora, apenas um exemplo.
-    posts_exemplo = [
-        {"id": 1, "slug": "importancia-de-acompanhar-licitacoes", "titulo": "A Importância de Acompanhar Licitações Públicas", "data": "05/06/2024", "conteudo_completo": "Este é o conteúdo completo sobre a importância de acompanhar licitações..."},
-        {"id": 2, "slug": "dicas-para-vencer-licitacoes", "titulo": "5 Dicas Essenciais para Preparar Propostas Vencedoras", "data": "28/05/2024", "conteudo_completo": "Aqui detalhamos as 5 dicas essenciais..."}
-    ]
-    post_encontrado = next((post for post in posts_exemplo if post["slug"] == post_slug), None)
+    print(f"Recebido slug da URL: '{post_slug}'") # DEBUG
+    
+    post_encontrado = None # Inicializa como None
+
+    for p_exemplo in posts_blog_exemplo:
+        print(f"Comparando '{post_slug}' com slug do post da lista: '{p_exemplo.get('slug')}'") # DEBUG
+        if p_exemplo.get("slug") == post_slug:
+            post_encontrado = p_exemplo
+            print(f"Match! Post encontrado: {p_exemplo['titulo']}") # DEBUG
+            break # IMPORTANTE: Sai do loop assim que encontrar o post correto
     
     if post_encontrado:
-        return render_template('pagina_post_individual.html', post=post_encontrado, page_title=post_encontrado["titulo"])
+        return render_template('pagina_post_individual.html', 
+                               post=post_encontrado, 
+                               page_title=post_encontrado["titulo"], 
+                               body_class="page-post-individual")
     else:
-        return render_template('404.html', page_title="Post não encontrado", body_class="page-error"), 404 # Um template 404 genérico
+        print(f"Post com slug '{post_slug}' NÃO encontrado na lista!") # DEBUG
+
+        return render_template('404.html', page_title="Post não encontrado", body_class="page-error"), 404
+        #return "Post não encontrado", 404 # Simples por enquanto, Ou redirecione para a lista do blog
 
 
 @app.route('/contato')
@@ -190,6 +251,14 @@ def api_get_referencia_statuscompra():
     except ValueError:
         return jsonify({"erro_frontend": "Resposta inválida (JSON) da API de status compra.", "status_code": 500}), 500
 
+# Filtro personalizado nl2br PARA QUEBRA DE LINHA DOS PARAGRAFOS
+def nl2br_filter(value):
+    if value is None:
+        return ''
+    # Escapa o HTML para segurança, substitui \n por <br>\n, e marca como Markup seguro
+    return Markup(str(escape(value)).replace('\n', '<br>\n'))
+
+app.jinja_env.filters['nl2br'] = nl2br_filter # Registra o filtro
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

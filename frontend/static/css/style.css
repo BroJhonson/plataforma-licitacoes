@@ -15,7 +15,7 @@ body {
 /* Estilo para o conteúdo principal, ocupa o espaço restante */
 .main-content {
     flex-grow: 1; /* Faz o conteúdo principal ocupar o espaço restante */
-    padding-top: 50px; /* Ajusta o padding-top para evitar que o conteúdo fique atrás do cabeçalho ampliado */
+    padding-top: 70px; /* Ajusta o padding-top para evitar que o conteúdo fique atrás do cabeçalho ampliado */
 }
 
 /* O fundo escuro específico da página do Radar */
@@ -163,6 +163,68 @@ header.border-bottom {
     color: #ffffff;
 }
 
+/* ========================================================= */
+/* ============== BANNER DE CONSENTIMENTO DE COOKIES ======= */
+/* ========================================================= */
+
+.cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(14, 30, 39, 0.95); /* Fundo escuro semi-transparente */
+    color: #f8f9fa; /* Texto claro */
+    padding: 1rem 1.5rem;
+    z-index: 1050; /* Garante que fique acima de quase tudo */
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.2);
+
+    /* Animação de entrada */
+    transform: translateY(100%);
+    transition: transform 0.5s ease-in-out;
+}
+
+/* Classe que o JS vai adicionar para mostrar o banner */
+.cookie-banner.show {
+    transform: translateY(0);
+}
+
+.cookie-banner .cookie-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 1rem;
+}
+
+.cookie-banner .cookie-text {
+    margin: 0;
+    font-size: 0.9rem;
+    flex-grow: 1; /* Permite que o texto ocupe o espaço disponível */
+}
+
+.cookie-banner .cookie-text a {
+    color: #f7931a; /* Cor laranja de destaque */
+    text-decoration: underline;
+}
+
+.cookie-banner .cookie-actions button {
+    white-space: nowrap; /* Impede que o texto do botão quebre linha */
+}
+
+/* Responsividade para telas menores */
+@media (max-width: 768px) {
+    .cookie-banner .cookie-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    .cookie-banner .cookie-actions {
+        margin-top: 1rem;
+    }
+}
 
 /* --------------------------------------------- PAGINA RADAR ---------------------------------------- */
 /* ========================================================= */
@@ -234,21 +296,57 @@ header.border-bottom {
 }
 
 /* ========================================================= */
-/* ====== BOTÃO DE FILTROS STICKY (Painel todo) ====== */
+/* ============ CONTROLE DO PAINEL DA ESQUERDA ============= */
 /* ========================================================= */
+
+/* ------ SOMENTE BOTÃO FILTRO FIXO ------- */
+/*#coluna-sidebar-esquerda {
+    position: relative; /* Ou static. Apenas para garantir um contexto de posicionamento se necessário, mas não obrigatório. */    
+/*}
+#sticky-filter-button-wrapper {
+  /*  position: -webkit-sticky; /* Safari */
+  /*  position: sticky;    
+  /*  top: 70px; /* Distancia do cabeçallho */                   
+  /*  padding-bottom: 10px; /* Pequeno espaço abaixo do botão antes do conteúdo rolável começar a passar por baixo */
+  /*  /*z-index: 1020; /* Para ficar acima do conteúdo rolável da sidebar */
+  /*  padding-top: 5px; /* Pequeno espaço acima do botão se quiser */
+  /*  z-index: 1000; /* Um z-index menor que o Offcanvas de filtros (1040) e Offcanvas de detalhes */
+/*} */
+
+/* --------- COLUNA INTEIRA FIXA ---------- */
 #coluna-sidebar-esquerda {
-    position: sticky; /* Ativa o comportamento "grudento" */
-    top: 120px;       /* Distância do topo = altura do seu header + margem */
-    z-index: 1020;
-    height: calc(100vh - 120px); /* 100% da altura da tela menos o espaço do header/footer */
+    position: -webkit-sticky; /* Suporte para Safari */
+    position: sticky;
+    top: 70px; /* Distância do cabeçalho fixo */
+    height: calc(100vh - 70px); /* Garante que a sidebar ocupe a altura da tela menos o cabeçalho */
+    overflow-y: auto; /* Permite rolagem interna se o conteúdo for maior que a altura */
+    z-index: 1000; /* Menor que o offcanvas de filtros (1040) e detalhes */
+}
+#sticky-filter-button-wrapper {
+    padding-bottom: 10px; /* Mantém espaço abaixo do botão, se desejar */
+    padding-top: 5px; /* Mantém espaço acima do botão, se desejar */
 }
 
 
-/* Em telas pequenas, desativamos o efeito */
-@media (max-width: 991.98px) {
-    #coluna-sidebar-esquerda .mb-3.sticky-top {
-        position: static;
+/* Responsividade para o botão sticky e conteúdo da sidebar em telas pequenas */
+@media (max-width: 991.98px) { /* Abaixo de 'lg' (quando a sidebar vira offcanvas) */
+    #sticky-filter-button-wrapper {
+        position: static; /* Remove o sticky */
+        background-color: transparent; /* Remove o fundo extra */
+        padding-bottom: 0;
     }
+        
+    /* Se você tem um BOTÃO SEPARADO que aparece SÓ NO MOBILE para abrir o offcanvas,
+       e quer OCULTAR a #coluna-sidebar-esquerda inteira no mobile, use:*/
+    /*#coluna-sidebar-esquerda {
+        display: none !important; 
+    }
+    #coluna-tabela-principal {
+        width: 100% !important;
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    } */
+    
 }
 
 /* ========================================================= */
@@ -383,7 +481,7 @@ header.border-bottom {
         margin-bottom: 0;
     }
     .filter-control-group .form-select-sm {
-        /* Se você quiser que o select ocupe o espaço restante no grupo: */
+        /* Se quiser que o select ocupe o espaço restante no grupo: */
         /* flex-grow: 1; */
         /* Ou mantenha width: auto com um min/max-width se necessário */
         min-width: 0; /* Resetar min-width do desktop se necessário */
@@ -401,14 +499,14 @@ header.border-bottom {
 /* ======== ESTILO PARA LINHA SELECIONADA NA TABELA ======== */
 /* ========================================================= */
 
-/* Cursor de ponteiro (mantém) */
-#licitacoesTableBody tr {
-    cursor: pointer;
-}
+/* Cursor de ponteiro (Efeito de dedinho) */
+/*#licitacoesTableBody tr {
+    cursor: pointer; 
+}*/
 
 /* Regra mais específica e com !important como garantia */
 #licitacoesTableBody > tr.linha-selecionada {
-    background-color: #80baf3 !important; /* Azul bem claro com !important */
+    background-color: #6082f0 !important; /* Azul bem claro com !important */
     color: #0c5460 !important; /* Texto escuro com !important */
     font-weight: 500;
 }
@@ -419,12 +517,12 @@ header.border-bottom {
 
 /* Opcional: Garante que os links dentro da linha selecionada também mudem de cor */
 #licitacoesTableBody tr.linha-selecionada a {
-    color: #0d6efd;
+    color: #f8f8f8;
 }
 
 /* Garante que o efeito de hover não sobrescreva a cor da seleção */
 #licitacoesTableBody tr.linha-selecionada:hover {
-    background-color: #c0dffd !important; /* Um tom mais escuro com !important */
+    background-color: #80baf3 !important; /* Um tom mais escuro com !important */ 
 }
 
 /* ========================================================= */
@@ -765,6 +863,39 @@ header.border-bottom {
 /* Efeito de transição suave ao aparecer */
 ::-webkit-scrollbar-thumb {
     transition: background-color 0.3s ease-in-out;
+}
+
+/* ================= PAINEL DE FAVORITOS ================= */
+
+/* Painel de Licitações Salvas na Sidebar */
+#painel-licitacoes-salvas .p-3 { /* O wrapper interno */
+    display: flex; /* Para permitir que o <ul> cresça e o footer (se houver) fique no final */
+    flex-direction: column;
+    
+}
+
+#lista-favoritos-sidebar {
+    max-height: 160px; /* <<< Defina a altura máxima desejada para a lista antes do scroll */
+    overflow-y: auto;  /* <<< Adiciona a barra de rolagem vertical quando necessário */
+    margin-bottom: 0; /* Remove margem inferior padrão do list-group se houver */
+    flex-grow: 1; /* Se o painel .p-3 for flex-column, permite que a lista ocupe espaço */
+}
+
+/* Ajuste fino nos itens da lista da sidebar de favoritos, se necessário */
+#lista-favoritos-sidebar .list-group-item {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    padding-left: 0.5rem; /* Menor padding lateral se os botões ficarem apertados */
+    padding-right: 0.5rem;
+    /* font-size já foi definido em JS como 0.78em */
+}
+
+#lista-favoritos-sidebar .list-group-item .sidebar-fav-link {
+    /* Estilos para o link (nome da licitação) */
+    white-space: nowrap;      /* Impede que o texto do link quebre linha */
+    overflow: hidden;         /* Esconde o texto que transborda */
+    text-overflow: ellipsis;  /* Adiciona "..." no final do texto cortado */
+    display: block; /* Para o ellipsis funcionar bem */
 }
 
 /* ========================================================= */
@@ -1246,4 +1377,70 @@ body.page-home h3 {
     object-fit: cover;
     display: block;
     margin-bottom: 0px; /* tira espaçamento entre a imagem e a seção */
+}
+
+
+
+/* ========================================================================= */
+/* =================== ESTILOS DO BLOG ===================== */
+/* ========================================================= */
+
+/* Estilos para a Página de Listagem do Blog (pagina_blog.html) */
+.page-blog .blog-post-summary {
+    /* Adiciona um leve efeito de card sem usar a classe .card diretamente */
+    padding: 1.5rem;
+    background-color: #fff; /* Se o fundo do blog for diferente do corpo */
+    border-radius: 0.25rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.page-blog .blog-post-summary:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.page-blog .blog-post-title a {
+    color: #212529; /* Cor padrão para títulos de link */
+}
+.page-blog .blog-post-title a:hover {
+    color: #007bff; /* Cor de hover */
+}
+
+.page-blog .blog-post-meta {
+    font-size: 0.85em;
+}
+
+/* Estilos para a Página de Post Individual (pagina_post_individual.html) */
+.page-post-individual .blog-post-full header .blog-post-title {
+    color: #343a40;
+}
+
+.page-post-individual .blog-post-meta {
+    font-size: 0.9em;
+}
+
+.page-post-individual .post-content-body {
+    font-size: 1.05rem; /* Tamanho de fonte ligeiramente maior para leitura */
+    line-height: 1.7;
+    color: #333;
+}
+
+.page-post-individual .post-content-body p {
+    margin-bottom: 1.25rem;
+}
+
+.page-post-individual .post-content-body img { /* Imagens dentro do post */
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.25rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Estilos para Breadcrumb (opcional, Bootstrap já estiliza) */
+.breadcrumb {
+    font-size: 0.9em;
+}
+.breadcrumb-item a {
+    text-decoration: none;
 }

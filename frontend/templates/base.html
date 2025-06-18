@@ -21,6 +21,18 @@
     <i class="bi bi-arrow-up-short" style="font-size: 1.5rem;"></i>
 </button>
 
+<!-- =============== BANNER DE CONSENTIMENTO DE COOKIES ====== -->
+<div id="cookieConsentBanner" class="cookie-banner">
+    <div class="cookie-content">
+        <p class="cookie-text">
+            Usamos cookies e armazenamento local para aprimorar sua experiência, como salvar suas licitações favoritas e filtros aplicados. Ao continuar, você concorda com o uso dessas tecnologias. Saiba mais em nossa 
+            <a href="{{ url_for('pagina_politica_cookies') }}">Política de Cookies</a>.
+        </p>
+        <div class="cookie-actions">
+            <button id="btnAceitarCookies" class="btn btn-primary btn-sm">Aceitar e Fechar</button>
+        </div>
+    </div>
+</div>
 
 <!-- templates/base.html -->
 <body class="{{ body_class | default('') }}">
@@ -29,21 +41,16 @@
                <!-- Estrutura para Desktop -->
             <div class="d-none d-lg-flex flex-wrap align-items-center justify-content-between py-2">
                 <div class="logo-container" style="height: 45px; overflow: visible;">
-                    <a href="{{ url_for('pagina_home') }}">
+                    <a href="{{ url_for('inicio') }}">
                         <img src="{{ url_for('static', filename='images/logo.finnd.png') }}" alt="RADAR PNCP Logo Desktop" height="45" id="logoDesktop">
                         <!-- Placeholder para logo diferente se page-busca-licitacoes -->
                         <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RADAR PNCP Logo Busca" height="45" id="logoBuscaLicitacoes" style="display: none;">
-                    </a>
-                    <!--{% if body_class == 'page-busca-licitacoes' %}
-                    <p class="logo-subtitle mb-0" style="font-size: 0.75rem; line-height: 1; margin-top: 2px;">
-                        Filtre e escolha suas licitações com muito mais facilidade!
-                    </p>
-                    {% endif %} -->
+                    </a>                    
                 </div>
                     <nav class="ms-md-auto me-md-3"> <!-- me-md-3 para margem à direita em telas médias e acima -->
                         <ul class="nav nav-pills"> <!-- Navbar (Navegação/menu para navegar entre paginas)-->
-                            <li class="nav-item"><a href="{{ url_for('pagina_home') }}" class="nav-link {% if request.endpoint == 'pagina_home' %}active{% endif %}">INICIO</a></li>
-                            <li class="nav-item"><a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">RADAR PNCP</a></li>
+                            <li class="nav-item"><a href="{{ url_for('inicio') }}" class="nav-link {% if request.endpoint == 'inicio' %}active{% endif %}">INICIO</a></li>
+                            <li class="nav-item"><a href="{{ url_for('buscador_licitacoes') }}" class="nav-link {% if request.endpoint == 'buscador_licitacoes' %}active{% endif %}">RADAR PNCP</a></li>
                             <li class="nav-item"><a href="{{ url_for('pagina_blog') }}" class="nav-link {% if request.endpoint == 'pagina_blog' %}active{% endif %}">BLOG</a></li>
                             <li class="nav-item"><a href="{{ url_for('pagina_contato') }}" class="nav-link {% if request.endpoint == 'pagina_contato' %}active{% endif %}">CONTATO</a></li>
                         </ul>
@@ -53,7 +60,7 @@
 
             <!-- Estrutura para Mobile (visível apenas abaixo de lg) -->
             <div class="d-lg-none text-center py-3">
-                <a href="{{ url_for('pagina_home') }}">
+                <a href="{{ url_for('inicio') }}">
                     <img src="{{ url_for('static', filename='images/logo.finnd.png') }}" alt="RADAR PNCP Logo Mobile" height="50" class="mb-2" id="logoMobile">
                     <!-- Placeholder para logo diferente se page-busca-licitacoes -->
                     <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RADAR PNCP Logo Busca Mobile" height="50" class="mb-2" id="logoBuscaLicitacoesMobile" style="display: none;">
@@ -70,8 +77,8 @@
                         <i class="bi bi-list"></i> Menu
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mobileMenuButton">
-                        <li><a class="dropdown-item {% if request.endpoint == 'pagina_home' %}active{% endif %}" href="{{ url_for('pagina_home') }}">INICIO</a></li>
-                        <li><a class="dropdown-item {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">RADAR PNCP</a></li>
+                        <li><a class="dropdown-item {% if request.endpoint == 'inicio' %}active{% endif %}" href="{{ url_for('inicio') }}">INICIO</a></li>
+                        <li><a class="dropdown-item {% if request.endpoint == 'buscador_licitacoes' %}active{% endif %}" href="{{ url_for('buscador_licitacoes') }}">RADAR PNCP</a></li>
                         <li><a class="dropdown-item {% if request.endpoint == 'pagina_blog' %}active{% endif %}" href="{{ url_for('pagina_blog') }}">BLOG</a></li>
                         <li><a class="dropdown-item {% if request.endpoint == 'pagina_contato' %}active{% endif %}" href="{{ url_for('pagina_contato') }}">CONTATO</a></li>
                     </ul>
