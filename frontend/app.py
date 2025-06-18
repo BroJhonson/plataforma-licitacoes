@@ -1,6 +1,13 @@
-from flask import Flask, render_template, request, jsonify # jsonify adicionado
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash #Esses tres ultimos é para o furmulario de email
 import requests # Para chamar a API do backend RADAR PNCP e IBGE
 from markupsafe import Markup, escape 
+# --- NOVAS IMPORTAÇÕES PARA ENVIO DE E-MAIL ---
+import smtplib
+from email.mime.text import MIMEText
+import os # Para ler variáveis de ambiente
+from dotenv import load_dotenv # Para carregar o arquivo .env
+
+load_dotenv() # Carrega as variáveis do arquivo .env para o ambiente
 
 app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta_muito_segura_aqui' # Mude isso!
@@ -15,7 +22,7 @@ def inicio():
 @app.route('/radarPNCP')
 def buscador_licitacoes():
     return render_template('radar.html', page_title="Buscar Licitações - RADAR PNCP", body_class="page-busca-licitacoes")
-
+ 
 # app.py (no topo ou antes das rotas do blog)
 posts_blog_exemplo = [
     {
@@ -86,7 +93,7 @@ posts_blog_exemplo = [
         """
     }
 ]
-
+        
 @app.route('/blog')
 def pagina_blog():
     return render_template('pagina_blog.html', posts=posts_blog_exemplo, page_title="Nosso Blog", body_class="page-blog")
@@ -250,6 +257,79 @@ def api_get_referencia_statuscompra():
         return jsonify({"erro_frontend": f"Erro ao buscar status compra: {e}", "status_code": 503}), 503
     except ValueError:
         return jsonify({"erro_frontend": "Resposta inválida (JSON) da API de status compra.", "status_code": 500}), 500
+
+# --- ROTA PARA PROCESSAR O FORMULÁRIO DE CONTATO ---
+@app.route('/processar-contato', methods=['POST']) # Só aceita requisições POST
+def processar_contato():
+    if request.method == 'POST':
+        nome = request.form.get('nome_contato')
+        email_usuario = request.form.get('email_usuario')
+        assunto = request.form.get('assunto_contato')
+        mensagem = request.form.get('mensagem_contato')
+
+        # Validação simples no servidor
+        if not nome or not email_usuario or not assunto or not mensagem:
+            flash('Erro: Todos os campos do formulário são obrigatórios.', 'danger')
+            return redirect(url_for('pagina_contato'))
+
+        # Configurações do e-mail (lidas do .env)
+        email_remetente = os.getenv('EMAIL_REMETENTE')
+        senha_remetente = os.getenv('SENHA_EMAIL_REMETENTE') 
+        email_destinatario = os.getenv('EMAIL_DESTINATARIO_FEEDBACK')
+
+        # --- DEBUG: Verificar variáveis ---
+        print(f"DEBUG: EMAIL_REMETENTE lido do env = '{email_remetente}'")
+        print(f"DEBUG: SENHA_EMAIL_REMETENTE lida do env = '{senha_remetente}' (Comprimento: {len(senha_remetente) if senha_remetente else 0})")
+        print(f"DEBUG: EMAIL_DESTINATARIO_FEEDBACK lido do env = '{email_destinatario}'")
+        # --- FIM DEBUG ---
+
+        if not all([email_remetente, senha_remetente, email_destinatario]):
+            print("ALERTA DE CONFIGURAÇÃO: As variáveis de ambiente para e-mail não estão definidas no arquivo .env!")
+            flash('Desculpe, ocorreu um erro técnico ao tentar enviar sua mensagem. Por favor, tente mais tarde.', 'danger')
+            return redirect(url_for('pagina_contato'))
+
+        # Montar o corpo do e-mail
+        corpo_email = f"""
+        Nova mensagem recebida do formulário de contato do site RADAR PNCP:
+
+        Nome: {nome}
+        E-mail do Remetente: {email_usuario}
+        Assunto: {assunto}
+        -----------------------------------------
+        Mensagem:
+        {mensagem}
+        -----------------------------------------
+        """
+        
+        msg = MIMEText(corpo_email)
+        msg['Subject'] = f'Novo Contato Radar PNCP: {assunto}'
+        msg['From'] = email_remetente # Pode personalizar o nome do remetente
+        msg['To'] = email_destinatario
+        # Adicionar o e-mail do usuário como 'Reply-To' para facilitar a resposta
+        if email_usuario:
+            msg.add_header('reply-to', email_usuario)
+
+        try:
+            # Exemplo para Gmail (use SSL)
+            print(f"Tentando enviar e-mail de {email_remetente} para {email_destinatario} via smtp.gmail.com:465")
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+                # server.set_debuglevel(1) # Descomente para ver logs detalhados da conexão SMTP
+                server.login(email_remetente, senha_remetente)
+                server.sendmail(email_remetente, email_destinatario, msg.as_string())
+            print("E-mail de contato enviado com sucesso!")
+            flash('Sua mensagem foi enviada com sucesso! Entraremos em contato em breve, se necessário.', 'success')
+        except smtplib.SMTPAuthenticationError:
+            print("Erro de autenticação SMTP. Verifique usuário/senha ou configurações 'App menos seguro'/'Senha de App' do Gmail.")
+            flash('Erro de autenticação ao enviar o e-mail. Verifique as configurações do servidor.', 'danger')
+        except Exception as e:
+            print(f"Ocorreu um erro geral ao enviar e-mail: {e}")
+            flash(f'Desculpe, ocorreu um erro ao enviar sua mensagem. Tente novamente mais tarde.', 'danger')
+        
+        return redirect(url_for('pagina_contato')) # Redireciona de volta para a página de contato
+
+    # Se alguém tentar acessar /processar-contato via GET, apenas redireciona.
+    return redirect(url_for('pagina_contato'))
+
 
 # Filtro personalizado nl2br PARA QUEBRA DE LINHA DOS PARAGRAFOS
 def nl2br_filter(value):

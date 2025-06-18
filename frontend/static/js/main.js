@@ -146,17 +146,48 @@ document.addEventListener('DOMContentLoaded', function () {
     if (document.body.classList.contains('page-home')) {
         console.log("Página Home detectada. Lógica específica da home pode ir aqui.");
         
-        // --- CÓDIGO DO ACORDEÃO HORIZONTAL ---
         const accordionCards = document.querySelectorAll('.accordion-card');
-        
-        accordionCards.forEach(card => {
-            card.addEventListener('mouseover', () => {
-                // Remove a classe 'active' de todos os cards
-                accordionCards.forEach(c => c.classList.remove('active'));
-                // Adiciona a classe 'active' apenas no card que está com o mouse sobre
-                card.classList.add('active');
+        const isMobile = () => window.innerWidth <= 767;
+
+        const setupAccordionListeners = () => {
+            // Remove listeners antigos para evitar duplicação ao redimensionar
+            accordionCards.forEach(card => {
+                card.removeEventListener('mouseover', handleMouseOver);
+                card.removeEventListener('click', handleClick);
             });
-        });        
+
+            if (isMobile()) {
+                // Em mobile, usa o evento de CLIQUE
+                accordionCards.forEach(card => card.addEventListener('click', handleClick));
+            } else {
+                // Em desktop, usa o evento de MOUSEOVER
+                accordionCards.forEach(card => card.addEventListener('mouseover', handleMouseOver));
+            }
+        };
+
+        function handleMouseOver() {
+            // 'this' se refere ao card que acionou o evento
+            accordionCards.forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+        }
+
+        function handleClick() {
+            // Verifica se o card clicado já está ativo
+            const isAlreadyActive = this.classList.contains('active');
+            
+            // Remove 'active' de todos
+            accordionCards.forEach(c => c.classList.remove('active'));
+
+            // Se não estava ativo, ativa-o. (Isso cria um efeito de "toggle")
+            if (!isAlreadyActive) {
+                this.classList.add('active');
+            }
+        }
+
+        // Configura os listeners na carga inicial da página
+        setupAccordionListeners();
+        // E reconfigura se o usuário redimensionar a janela (ex: virar o tablet)
+        window.addEventListener('resize', debounce(setupAccordionListeners, 250));
     }
 
     // ======================================== //
@@ -599,59 +630,73 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }      
 
-        if (listaFavoritosSidebar) {
-            // Listener para botões .btn-remover-fav-sidebar e links .sidebar-fav-link
-            listaFavoritosSidebar.addEventListener('click', function(event) {
-                const removeButton = event.target.closest('.btn-remover-fav-sidebar');
-                const linkLicitacao = event.target.closest('.sidebar-fav-link');
+        document.addEventListener('click', function(event) {
+            // Verifica se o elemento clicado (ou um de seus pais) é o botão de remover
+            const removeButton = event.target.closest('.btn-remover-fav-sidebar');
 
-                if (removeButton) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    const pncpId = removeButton.dataset.pncpId;
-                    if (pncpId) {
-                        removerFavorito(pncpId);
-                        renderizarFavoritosSidebar();
-                        // Atualizar botões na tabela e detalhes
-                        const btnNaTabela = licitacoesTableBody.querySelector(`.btn-favoritar[data-pncp-id="${pncpId}"]`);
-                        if (btnNaTabela) atualizarBotaoFavoritoUI(btnNaTabela, pncpId);
-                        const btnNosDetalhes = document.getElementById('detailsPanelFavoriteBtn');
-                        if (btnNosDetalhes && btnNosDetalhes.dataset.pncpId === pncpId) atualizarBotaoFavoritoUI(btnNosDetalhes, pncpId);
-                    }
-                } else if (linkLicitacao) {
-                    event.preventDefault();
-                    const pncpId = linkLicitacao.dataset.pncpId;
-                    // Abrir painel de detalhes para este PNCP ID
-                    const fakeButton = document.createElement('button'); // Simula o botão original de detalhes
-                    fakeButton.dataset.pncpId = pncpId;
-                    const fakeEvent = { currentTarget: fakeButton, target: fakeButton };
-                    handleDetalhesClick(fakeEvent); // Sua função handleDetalhesClick espera um evento ou um elemento
+            if (removeButton) {
+                event.preventDefault();
+                event.stopPropagation();
+                const pncpId = removeButton.dataset.pncpId;
+                if (pncpId) {
+                    removerFavorito(pncpId); // Remove do localStorage
+                    renderizarFavoritosSidebar(); // Re-renderiza AMBAS as listas
+                    
+                    // Atualiza o estado visual dos botões de favoritar na tabela e nos detalhes
+                    const btnNaTabela = licitacoesTableBody.querySelector(`.btn-favoritar[data-pncp-id="${pncpId}"]`);
+                    if (btnNaTabela) atualizarBotaoFavoritoUI(btnNaTabela, pncpId);
+
+                    const btnNosDetalhes = document.getElementById('detailsPanelFavoriteBtn');
+                    if (btnNosDetalhes && btnNosDetalhes.dataset.pncpId === pncpId) atualizarBotaoFavoritoUI(btnNosDetalhes, pncpId);
                 }
-            });
-        }
+            }
+
+            // Lógica para clicar no link e abrir detalhes (pode ser mantida aqui também)
+            const linkLicitacao = event.target.closest('.sidebar-fav-link');
+            if(linkLicitacao) {
+                event.preventDefault();
+                const pncpId = linkLicitacao.dataset.pncpId;
+                const fakeButton = document.createElement('button');
+                fakeButton.dataset.pncpId = pncpId;
+                const fakeEvent = { currentTarget: fakeButton };
+                handleDetalhesClick(fakeEvent);
+            }
+        });
 
         // Cache para dados de licitações (para não buscar toda hora só para a sidebar)
         let cacheLicitacoesSidebar = {}; 
 
         async function renderizarFavoritosSidebar() {
-            if (!listaFavoritosSidebar) return;
-
-            const favoritosIds = getFavoritos(); // Função que lê do localStorage
-            listaFavoritosSidebar.innerHTML = ''; // Limpa antes de popular
-
-            if (favoritosIds.length === 0) {
-                listaFavoritosSidebar.innerHTML = '<li class="list-group-item text-muted small">Nenhuma licitação favoritada ainda.</li>';
+            // Pega as duas listas possíveis. Uma pode não existir dependendo do layout (desktop/mobile).
+            const listaSidebar = document.getElementById('lista-favoritos-sidebar');
+            const listaOffcanvas = document.getElementById('lista-favoritos-offcanvas');
+            
+            // Se nenhum dos dois lugares para renderizar os favoritos for encontrado, não faz nada.
+            if (!listaSidebar && !listaOffcanvas) {
                 return;
             }
 
-            // Mostra um loader simples
-            listaFavoritosSidebar.innerHTML = '<li class="list-group-item text-muted small"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>Carregando...</li>';
-        
+            const favoritosIds = getFavoritos();
+
+            // Cria as mensagens padrão uma vez
+            const msgVazio = '<li class="list-group-item text-muted small">Nenhuma licitação favoritada ainda.</li>';
+            const msgLoader = '<li class="list-group-item text-muted small"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>Carregando...</li>';
+            const msgErro = '<li class="list-group-item text-danger small fst-italic">Erro ao carregar dados dos favoritos.</li>';
+            
+            // Prepara as listas (com verificação se elas existem)
+            if (listaSidebar) listaSidebar.innerHTML = msgLoader;
+            if (listaOffcanvas) listaOffcanvas.innerHTML = msgLoader;
+            
+            if (favoritosIds.length === 0) {
+                if (listaSidebar) listaSidebar.innerHTML = msgVazio;
+                if (listaOffcanvas) listaOffcanvas.innerHTML = msgVazio;
+                return;
+            }
+            
             let contentRendered = false;
 
             for (const pncpId of favoritosIds) {
                 let licData = cacheLicitacoesSidebar[pncpId];
-
                 if (!licData) {
                     try {
                         const response = await fetch(`/api/frontend/licitacao/${encodeURIComponent(pncpId)}`);
@@ -661,49 +706,46 @@ document.addEventListener('DOMContentLoaded', function () {
                                 licData = fullData.licitacao;
                                 cacheLicitacoesSidebar[pncpId] = licData;
                             }
-                        } else {
-                            console.warn(`Sidebar Favoritos: Erro ${response.status} ao buscar ${pncpId}`);
                         }
                     } catch (error) {
-                        console.error(`Sidebar Favoritos: Exceção ao buscar ${pncpId}:`, error);
+                        console.error("Erro ao buscar favorito para sidebar:", error);
                     }
                 }
 
                 if (licData) {
-                    if (!contentRendered) { // Limpa o "Carregando..." apenas uma vez quando o primeiro item for renderizado
-                        listaFavoritosSidebar.innerHTML = ''; 
+                    if (!contentRendered) {
+                        // Limpa o "Carregando..."
+                        if (listaSidebar) listaSidebar.innerHTML = '';
+                        if (listaOffcanvas) listaOffcanvas.innerHTML = '';
                         contentRendered = true;
                     }
-                    const li = document.createElement('li');
-                    li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center', 'py-1', 'px-1'); // Reduzido padding
-                    li.style.fontSize = "0.78em";
 
-                    const linkLicitacao = document.createElement('a');
-                    linkLicitacao.href = "#";
-                    linkLicitacao.classList.add('text-decoration-none', 'text-dark', 'flex-grow-1', 'me-1', 'sidebar-fav-link');
                     const objeto = licData.objetoCompra || licData.numeroControlePNCP;
-                    linkLicitacao.textContent = objeto.length > 45 ? objeto.substring(0, 42) + '...' : objeto; // Limita o texto
-                    linkLicitacao.title = objeto;
-                    linkLicitacao.dataset.pncpId = pncpId; // Guardar o ID para o handler
-
-                    const btnRemoverFavSidebar = document.createElement('button');
-                    btnRemoverFavSidebar.classList.add('btn', 'btn-sm', 'btn-outline-danger', 'p-0', 'px-1', 'btn-remover-fav-sidebar');
-                    btnRemoverFavSidebar.innerHTML = '<i class="bi bi-x-lg" style="font-size: 0.7em;"></i>'; // Ícone 'x' menor
-                    btnRemoverFavSidebar.title = "Remover dos Favoritos";
-                    btnRemoverFavSidebar.dataset.pncpId = pncpId;
+                    const itemHtml = `
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-1 px-1" style="font-size: 0.78em;">
+                            <a href="#" class="text-decoration-none text-dark flex-grow-1 me-1 sidebar-fav-link" title="${objeto}" data-pncp-id="${pncpId}">
+                                ${objeto.length > 45 ? objeto.substring(0, 42) + '...' : objeto}
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger p-0 px-1 btn-remover-fav-sidebar" title="Remover dos Favoritos" data-pncp-id="${pncpId}">
+                                <i class="bi bi-x-lg" style="font-size: 0.7em;"></i>
+                            </button>
+                        </li>
+                    `;
                     
-                    li.appendChild(linkLicitacao);
-                    li.appendChild(btnRemoverFavSidebar);
-                    listaFavoritosSidebar.appendChild(li);
+                    // Adiciona o item em AMBAS as listas, se elas existirem
+                    if (listaSidebar) listaSidebar.insertAdjacentHTML('beforeend', itemHtml);
+                    if (listaOffcanvas) listaOffcanvas.insertAdjacentHTML('beforeend', itemHtml);
                 }
             }
-            if (!contentRendered && favoritosIds.length > 0) { // Se houve IDs mas nenhum dado foi carregado
-                listaFavoritosSidebar.innerHTML = '<li class="list-group-item text-danger small fst-italic">Erro ao carregar dados dos favoritos.</li>';
-            }
-        }
 
-        
+            if (!contentRendered && favoritosIds.length > 0) {
+                if (listaSidebar) listaSidebar.innerHTML = msgErro;
+                if (listaOffcanvas) listaOffcanvas.innerHTML = msgErro;
+            }
+        }      
         // ------------------------------------------------------ //
+
+
         // --- FUNÇÃO DE EXECUSÃO - MODALIDADES ---
         async function popularModalidades() { 
             if (!modalidadesContainer) return; // Se o container não for encontrado, a função para aqui
@@ -1094,15 +1136,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 // A ORDEM DA LINHA DENTRO DA TABELA.
                 tr.innerHTML = `
-                    <td class="align-middle">${lic.unidadeOrgaoMunicipioNome || 'N/I'}/${lic.unidadeOrgaoUfSigla || 'N/I'}</td>                    
-                    <td><div class="objeto-container" data-lic-id="${lic.id}">${objetoHtml}</div></td>
-                    <td class="align-middle">${lic.orgaoEntidadeRazaoSocial || 'N/I'}</td>
-                    <td class="align-middle"><span class="badge ${statusBadgeClass}">${lic.situacaoReal || lic.situacaoCompraNome || 'N/I'}</span></td>
-                    <td class="align-middle">${valorEstimadoDisplay}</td> 
-                    <td class="align-middle">${lic.modalidadeNome || 'N/I'}</td>
-                    <td class="align-middle">${lic.dataAtualizacao ? new Date(lic.dataAtualizacao + 'T00:00:00Z').toLocaleDateString('pt-BR') : 'N/I'}</td> 
-                   
-                    <td class="text-nowrap align-middle"> <!-- Botões -->
+                    <td data-label="Município/UF" class="align-middle">${lic.unidadeOrgaoMunicipioNome || 'N/I'}/${lic.unidadeOrgaoUfSigla || 'N/I'}</td>
+                    <td data-label="Objeto"><div class="objeto-container" data-lic-id="${lic.id}">${objetoHtml}</div></td>
+                    <td data-label="Órgão" class="align-middle">${lic.orgaoEntidadeRazaoSocial || 'N/I'}</td>
+                    <td data-label="Status" class="align-middle"><span class="badge ${statusBadgeClass}">${lic.situacaoReal || lic.situacaoCompraNome || 'N/I'}</span></td>
+                    <td data-label="Valor (R$)" class="align-middle">${valorEstimadoDisplay}</td>
+                    <td data-label="Modalidade" class="align-middle">${lic.modalidadeNome || 'N/I'}</td>
+                    <td data-label="Atualização" class="align-middle">${lic.dataAtualizacao ? new Date(lic.dataAtualizacao + 'T00:00:00Z').toLocaleDateString('pt-BR') : 'N/I'}</td>
+                    <td data-label="Ações" class="text-nowrap align-middle"> <!-- Botões -->
                         <!-- DETALHES -->
                         <button class="btn btn-sm btn-info btn-detalhes" title="Mais Detalhes" data-pncp-id="${lic.numeroControlePNCP}"><i class="bi bi-eye-fill"></i></button>                                                
                         <!-- FAVORITO -->
@@ -1110,7 +1151,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <!-- ACESSAR PNCP -->
                        <!-- <a href="${lic.link_portal_pncp || '#'}" class="btn btn-sm btn-outline-primary" title="Acessar PNCP" target="_blank" ${!lic.link_portal_pncp ? 'disabled aria-disabled="true"' : ''}><i class="bi bi-box-arrow-up-right"></i></a> -->
                     </td>
-                `;
+                `;                
                 licitacoesTableBody.appendChild(tr);
             });
             
@@ -1636,11 +1677,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 tr.innerHTML = `
-                    <td>${item.numeroItem || 'N/I'}</td>
-                    <td>${item.descricao || 'N/I'}</td>
-                    <td>${item.quantidade || 'N/I'}</td>
-                    <td class="text-end">${valorUnitarioDisplay}</td>
-                    <td class="text-end">${valorTotalItemDisplay}</td>
+                    <td data-label="Item">${item.numeroItem || 'N/I'}</td>
+                    <td data-label="Descrição">${item.descricao || 'N/I'}</td>
+                    <td data-label="Qtde." class="text-end">${item.quantidade || 'N/I'}</td>
+                    <td data-label="Vl. Unit." class="text-end">${valorUnitarioDisplay}</td>
+                    <td data-label="Vl. Total" class="text-end">${valorTotalItemDisplay}</td>
                 `;
                 tableBody.appendChild(tr);
             });

@@ -16,6 +16,8 @@ body {
 .main-content {
     flex-grow: 1; /* Faz o conteúdo principal ocupar o espaço restante */
     padding-top: 70px; /* Ajusta o padding-top para evitar que o conteúdo fique atrás do cabeçalho ampliado */
+    position: relative; /* Necessário para que o z-index funcione */
+    z-index: 5;         /* Um valor baixo, apenas para garantir que fique acima do fundo */
 }
 
 /* O fundo escuro específico da página do Radar */
@@ -37,7 +39,7 @@ header.border-bottom {
     z-index: 1030;
     
     /* --- Estilo Visual --- */
-    background-color: rgba(255, 255, 255, 0.356); /* Branco com 85% de opacidade */
+    background-color: rgba(255, 255, 255, 0.616); /* Branco com 85% de opacidade */
     backdrop-filter: blur(10px); /* Efeito de vidro fosco moderno */
     -webkit-backdrop-filter: blur(10px); /* Suporte para Safari */
     box-shadow: 0 1px 15px rgba(0, 0, 0, 0.1); /* Sombra sutil que funciona bem */
@@ -296,6 +298,28 @@ header.border-bottom {
 }
 
 /* ========================================================= */
+/* ===== AJUSTE DE ALTURA E POSIÇÃO DOS OFFCANVAS (DESKTOP) ==== */
+/* ========================================================= */
+
+/* Aplicado apenas em telas grandes (desktop) */
+@media (min-width: 992px) {
+    
+    /* Seleciona TODOS os offcanvas na página do radar */
+    .page-busca-licitacoes .offcanvas {
+        /* Pega a altura do header (aprox. 100px) e a desconta da altura total */
+        height: calc(100vh - 70px); /* << AJUSTE O '100px' SE A ALTURA DO SEU HEADER MUDAR */
+        
+        /* Empurra o topo do offcanvas para baixo, para começar logo após o header */
+        top: 70px; /* << ESTE VALOR DEVE SER IGUAL AO DO CÁLCULO ACIMA */
+    }
+    
+    /* Opcional: Remove a sombra superior que pode parecer estranha */
+    .page-busca-licitacoes .offcanvas-header {
+        box-shadow: none; 
+    }
+}
+
+/* ========================================================= */
 /* ============ CONTROLE DO PAINEL DA ESQUERDA ============= */
 /* ========================================================= */
 
@@ -314,39 +338,36 @@ header.border-bottom {
 /*} */
 
 /* --------- COLUNA INTEIRA FIXA ---------- */
-#coluna-sidebar-esquerda {
+/*#coluna-sidebar-esquerda {
     position: -webkit-sticky; /* Suporte para Safari */
-    position: sticky;
+  /*  position: sticky;
     top: 70px; /* Distância do cabeçalho fixo */
-    height: calc(100vh - 70px); /* Garante que a sidebar ocupe a altura da tela menos o cabeçalho */
-    overflow-y: auto; /* Permite rolagem interna se o conteúdo for maior que a altura */
-    z-index: 1000; /* Menor que o offcanvas de filtros (1040) e detalhes */
-}
+  /*  height: calc(100vh - 70px); /* Garante que a sidebar ocupe a altura da tela menos o cabeçalho */
+  /*  overflow-y: auto; /* Permite rolagem interna se o conteúdo for maior que a altura */
+  /*  z-index: 1000; /* Menor que o offcanvas de filtros (1040) e detalhes */
+/*}
 #sticky-filter-button-wrapper {
     padding-bottom: 10px; /* Mantém espaço abaixo do botão, se desejar */
-    padding-top: 5px; /* Mantém espaço acima do botão, se desejar */
-}
+/*    padding-top: 5px; /* Mantém espaço acima do botão, se desejar */
+/*}*/
 
 
-/* Responsividade para o botão sticky e conteúdo da sidebar em telas pequenas */
-@media (max-width: 991.98px) { /* Abaixo de 'lg' (quando a sidebar vira offcanvas) */
-    #sticky-filter-button-wrapper {
-        position: static; /* Remove o sticky */
-        background-color: transparent; /* Remove o fundo extra */
-        padding-bottom: 0;
+@media (min-width: 992px) {
+
+    /* A coluna da esquerda inteira fica "grudenta" no topo */
+    #coluna-sidebar-esquerda {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 85px;  /* Distância do topo = altura do header + margem */
+        align-self: flex-start; /* Impede que estique verticalmente */
     }
-        
-    /* Se você tem um BOTÃO SEPARADO que aparece SÓ NO MOBILE para abrir o offcanvas,
-       e quer OCULTAR a #coluna-sidebar-esquerda inteira no mobile, use:*/
-    /*#coluna-sidebar-esquerda {
-        display: none !important; 
+
+    /* O conteúdo DENTRO da sidebar é que terá a rolagem */
+    #conteudo-rolavel-sidebar {
+        /* Altura máxima é a da janela, menos o espaço para o header e para o botão de filtros */
+        max-height: calc(100vh - 150px); /* Ajuste o 150px se necessário */
+        overflow-y: auto; /* Adiciona scroll somente se o conteúdo for maior que a altura */
     }
-    #coluna-tabela-principal {
-        width: 100% !important;
-        flex: 0 0 100% !important;
-        max-width: 100% !important;
-    } */
-    
 }
 
 /* ========================================================= */
@@ -837,12 +858,12 @@ header.border-bottom {
 /* Esconde a barra de rolagem por padrão (para Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
     width: 8px; /* Largura da barra */
-    background: #5c5858de; /* Fundo transparente */
+    background: #0e1e2700; /* Fundo transparente */
 }
 
 /* Esconde a "trilha" da barra de rolagem */
 ::-webkit-scrollbar-track {
-    background: #ffffffc0;
+    background: #ffffff00;
 }
 
 /* Define o estilo da "alça" da barra, que é o que você arrasta */
@@ -857,7 +878,7 @@ header.border-bottom {
 #detailsPanelItensTableContainer:hover::-webkit-scrollbar-thumb,
 /* Adicione outros containers com overflow-y: auto aqui */
 .main-content:hover::-webkit-scrollbar-thumb { /* ... aplica o estilo visível na "alça" */
-    background-color: rgba(255, 255, 255, 0.3); /* Cor cinza semi-transparente */
+    background-color: rgba(255, 255, 255, 0); /* Cor cinza semi-transparente */
 }
 
 /* Efeito de transição suave ao aparecer */
@@ -875,7 +896,7 @@ header.border-bottom {
 }
 
 #lista-favoritos-sidebar {
-    max-height: 160px; /* <<< Defina a altura máxima desejada para a lista antes do scroll */
+    max-height: 150px; /* <<< Defina a altura máxima desejada para a lista antes do scroll */
     overflow-y: auto;  /* <<< Adiciona a barra de rolagem vertical quando necessário */
     margin-bottom: 0; /* Remove margem inferior padrão do list-group se houver */
     flex-grow: 1; /* Se o painel .p-3 for flex-column, permite que a lista ocupe espaço */
@@ -919,13 +940,14 @@ header.border-bottom {
 
 /* Estilo para o CONTEÚDO REAL do painel de feedback (que é clonado do template) */
 .painel-feedback-conteudo {
-    padding: 1rem; /* p-3 é 1rem */
+    padding: 0.5rem; /* p-3 é 1rem */
     border: 1px solid #dee2e6; /* Cor de borda padrão do Bootstrap */
     border-radius: 0.25rem;
     background-color: #f8f9fa; /* bg-light */
     text-align: center;
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Sombra sutil */
     margin-bottom: 1rem; /* Espaço abaixo dele */
+    font-size: 0.8rem;
 }
 
 /* Estilo para Desktop (quando o painel de feedback está na sidebar) */
@@ -996,6 +1018,94 @@ header.border-bottom {
         padding: 0.5rem 0.75rem;
     }
 }
+
+/* ========================================================= */
+/* =========== RESPONSIVIDADE - PÁGINA DO RADAR ============ */
+/* ========================================================= */
+
+/* Por padrão, o painel de detalhes (mesmo escondido) não deve roubar cliques */
+/* Esconde TODOS os offcanvas (seja de filtros ou detalhes) por padrão 
+   e impede que eles "roubem" cliques quando não estão visíveis. */
+.offcanvas {
+    visibility: hidden; /* Fica completamente invisível e não interativo */
+    pointer-events: none; /* Dupla garantia de que não recebe cliques */
+}
+/* Quando o Bootstrap adiciona a classe .show para abrir um offcanvas... */
+.offcanvas.show {
+    visibility: visible;  /* Torna-o visível novamente */
+    pointer-events: auto;   /* Permite que ele e seus botões recebam cliques */
+}
+/* Opcional, mas recomendado: Garante que o backdrop também só exista quando necessário. */
+/* O Bootstrap cuida disso, mas essa regra reforça o comportamento. */
+.offcanvas-backdrop {
+    display: none;
+}
+.offcanvas-backdrop.show {
+    display: block;
+}
+
+@media (max-width: 991.98px) { /* Afeta tablets e celulares */
+
+    /* Esconde o cabeçalho da tabela no mobile, pois os rótulos estarão nos cards */
+    .table-responsive thead {
+        display: none;
+    }
+
+    /* Transforma a linha da tabela em um "card" */
+    .table-responsive tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    /* Remove a borda padrão do bootstrap */
+    .table-responsive td {
+        border: none;
+        border-bottom: 1px solid #eee; /* Linha sutil para separar os campos do card */
+        display: block;
+        text-align: right; /* Alinha o conteúdo à direita */
+        padding-left: 50%; /* Dá espaço para o rótulo à esquerda */
+        position: relative;
+    }
+    
+    /* A mágica acontece aqui: cria o rótulo usando o atributo data-label */
+    .table-responsive td::before {
+        content: attr(data-label); /* Pega o texto do atributo data-label */
+        position: absolute;
+        left: 10px;
+        width: calc(50% - 20px);
+        padding-right: 10px;
+        text-align: left;
+        font-weight: 600; /* Deixa o rótulo em negrito */
+        color: #343a40;
+    }
+
+    /* Ajuste específico para a coluna de ações */
+    .table-responsive td[data-label="Ações"] {
+        text-align: center; /* Centraliza os botões */
+        padding-left: 0; /* Remove o padding especial */
+    }
+    .table-responsive td[data-label="Ações"]::before {
+        display: none; /* Não precisa de rótulo para a coluna de ações */
+    }
+
+    /* Ajuste para a coluna de objeto, que pode ter muito texto */
+     .table-responsive td[data-label="Objeto"] {
+        text-align: left;
+        padding-left: 10px;
+    }
+    .table-responsive td[data-label="Objeto"]::before {
+        position: static; /* Faz o rótulo se comportar como texto normal */
+        display: block;   /* Coloca o rótulo em sua própria linha */
+        margin-bottom: 5px;
+        width: auto;
+    }
+}
+
+
+
 /* ----------------------------------------------------------------------------------------------------------------- */
 
 /* ========================================================= */
@@ -1016,12 +1126,12 @@ body.page-home {
 /* APENAS na home, o .site-wrapper se torna a nossa "caixa" de conteúdo */
 body.page-home .site-wrapper {
     max-width: 1500px; /* Largura máxima da caixa */
-    margin: 2rem auto; /* Centraliza e dá margem no topo/baixo */
+    margin: 1rem auto; /* Centraliza e dá margem no topo/baixo */
     box-shadow: 0 10px 50px rgba(0, 0, 0, 0.473); /* Sombra para profundidade */
     background-color: #0e1e27; /* Fundo da "caixa" de conteúdo */
     overflow: hidden; /* Importante para o box-shadow e bordas */
     border-radius: 20px; /* Cantos levemente arredondados */
-    padding: 4rem;
+    padding: 2rem;
 }
 
 /* Remover o espaçamento padrão que não precisamos mais no modo encaixotado */
@@ -1379,68 +1489,261 @@ body.page-home h3 {
     margin-bottom: 0px; /* tira espaçamento entre a imagem e a seção */
 }
 
-
-
-/* ========================================================================= */
-/* =================== ESTILOS DO BLOG ===================== */
+/* ========================================================= */
+/* =========== RESPONSIVIDADE - DA PAGINA HOME ============= */
 /* ========================================================= */
 
-/* Estilos para a Página de Listagem do Blog (pagina_blog.html) */
-.page-blog .blog-post-summary {
-    /* Adiciona um leve efeito de card sem usar a classe .card diretamente */
-    padding: 1.5rem;
-    background-color: #fff; /* Se o fundo do blog for diferente do corpo */
-    border-radius: 0.25rem;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    transition: box-shadow 0.2s ease-in-out;
+@media (max-width: 767.98px) { /* Estilos para tablets pequenos e celulares */
+
+    /* --- AJUSTES DOS TEXTOS --- */    
+    /* 1. Hero Section */
+    .page-home .hero-title {
+        font-size: 2rem; /* Reduz o tamanho do título principal */
+    }
+    .page-home .texto-subtitulo {
+        font-size: 1rem; /* Reduz o subtítulo */
+    }
+    .page-home .botao-destaque {
+        font-size: 1.1rem; /* Reduz um pouco o botão */
+        padding: 0.8rem 1.8rem;
+    }
+
+    /* 2. Transformando o Acordeão Horizontal em Vertical */
+    .accordion-horizontal-container {
+        flex-direction: column; /* Empilha os cards */
+        min-height: auto;       /* Remove a altura mínima fixa */
+        gap: 1rem;
+    }
+    .accordion-card,
+    .accordion-card.active {
+        flex: 1; /* Reseta a propriedade flex para que todos tenham o mesmo tamanho */
+        min-height: 100px; /* Uma altura mínima para os cards fechados */
+        transition: min-height 0.5s ease; /* Anima a altura */
+    }
+    .accordion-card.active {
+        min-height: 350px; /* Altura do card quando expandido */
+    }
+    /* Ajusta o conteúdo para o layout vertical */
+    .accordion-card.active .card-content h3 {
+        transform: translateY(0); /* Remove o efeito de mover para cima */
+    }
+    .accordion-card .hidden-content {
+        /* Garante que o conteúdo não espere para aparecer no mobile */
+        transition-delay: 0s; 
+    }
+
+    /* 3. Ajustes de Títulos e Seções */
+    .page-home section {
+        padding: 3rem 0; /* Diminui o espaçamento vertical das seções no mobile */
+    }
+    body.page-home h2 {
+        font-size: 1.8rem; /* Reduz o tamanho de todos os títulos H2 na home mobile */
+    }
+    /* Centraliza os textos nos cards de "Por que gratuito" */
+    .page-home .how-it-works .step-card {
+        text-align: center;
+    } 
+
+
+    /* =========== RESPONSIVIDADE - DA PAGINA RADAR ============= */
+    
+    /* --- Tabela de Itens Responsiva no Painel de Detalhes --- */
+    #detailsPanelItensTableContainer thead {
+        display: none; /* Esconde o cabeçalho da tabela de itens */
+    }
+    #detailsPanelItensTableContainer tr {
+        display: block;
+        border-bottom: 2px solid #0d6efd; /* Borda azul para separar os cards de itens */
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    #detailsPanelItensTableContainer td {
+        display: block;
+        text-align: right; /* Alinha o valor à direita */
+        border: none;
+        padding-left: 50%;
+        position: relative;
+    }
+    #detailsPanelItensTableContainer td::before {
+        content: attr(data-label); /* Cria o rótulo */
+        position: absolute;
+        left: 0;
+        width: 50%;
+        padding-right: 10px;
+        text-align: left;
+        font-weight: 600;
+    }
+    /* Caso especial para a descrição, que pode ser longa */
+    #detailsPanelItensTableContainer td[data-label="Descrição"] {
+        text-align: left;
+        padding-left: 0;
+        white-space: normal; /* Permite quebra de linha */
+    }
+    #detailsPanelItensTableContainer td[data-label="Descrição"]::before {
+        position: static;
+        display: block;
+        margin-bottom: 5px;
+    }
 }
 
-.page-blog .blog-post-summary:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+/* --- Esconde o cabeçalho no Mobile na Página do Radar --- */
+@media (max-width: 991.98px) {
+    .page-busca-licitacoes header.border-bottom {
+        position: static; /* Remove a posição fixa, fazendo-o rolar com a página */
+    }
+    /* Remove o padding-top extra que não é mais necessário */
+    .page-busca-licitacoes .main-content {
+        padding-top: 1rem !important; 
+    }
+    
 }
 
-.page-blog .blog-post-title a {
-    color: #212529; /* Cor padrão para títulos de link */
+/* --- Estilo dos Botões Flutuantes --- */
+.botoes-flutuantes-mobile {
+    position: fixed; /* Fixo na tela */
+    top: 90px;       /* Distância do topo */
+    left: 0px;      /* Distância da esquerda */
+    z-index: 1040;   /* Z-index alto para ficar sobre o conteúdo */
+    display: flex;
+    flex-direction: column;
 }
-.page-blog .blog-post-title a:hover {
-    color: #007bff; /* Cor de hover */
+.btn-flutuante {
+    width: 40px;
+    height: 40px;
+    border-radius: 30%; /* Deixa os botões redondos */
+    font-size: 1.2rem;   /* Aumenta o tamanho do ícone */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+/* Opcional: Efeito hover */
+.btn-flutuante:hover {
+    transform: scale(1.1);
 }
 
-.page-blog .blog-post-meta {
-    font-size: 0.85em;
+/* ===== CORREÇÃO DE SOBREPOSIÇÃO MOBILE ===== */
+/* Aplicado em telas de tablet e menores, onde as colunas se empilham */
+@media (max-width: 991.98px) {    
+    /* Força a coluna da sidebar a se comportar como um bloco normal e ocupar 100% da largura */
+    #coluna-sidebar-esquerda {
+        flex: 0 0 100%;  /* Garante que não tente ser flexível */
+        max-width: 100%; /* Ocupa a largura total */
+        width: 100%;
+        position: relative; /* Garante que não tenha um posicionamento absoluto/fixo estranho */
+        z-index: 1;         /* Define um z-index baixo para garantir que não flutue sobre outros elementos */
+        margin-bottom: 1rem; /* Adiciona um espaço abaixo dela antes da tabela */
+    }
+    /* Força a coluna da tabela a fazer o mesmo, garantindo o empilhamento correto */
+    #coluna-tabela-principal {
+        flex: 0 0 100%;
+        max-width: 100%;
+        width: 100%;
+        z-index: 2; /* Garante que a tabela tenha prioridade sobre a sidebar, se houver sobreposição */
+    }
 }
 
-/* Estilos para a Página de Post Individual (pagina_post_individual.html) */
-.page-post-individual .blog-post-full header .blog-post-title {
+
+/* ========================================================= */
+/* ============= ESTILOS DAS PÁGINAS DE CONTEÚDO (blog)=========== */
+/* ========================================================= */
+
+/* Fundo padrão para páginas de texto (Blog, Contato, Políticas) */
+.page-blog .main-content,
+.page-contato .main-content,
+.page-post-individual .main-content,
+.page-politica .main-content {
+    background-color: #fdfdfd;
+}
+
+/* --- Estilos da Lista do Blog (pagina_blog.html) --- */
+.blog-post-summary {
+    transition: background-color 0.3s ease;
+}
+.blog-post-summary:hover {
+    background-color: #f8f9fa; /* Fundo sutil no hover */
+}
+.blog-list-image {
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+}
+
+/* --- Estilos do Post Individual (pagina_post_individual.html) --- */
+.page-post-individual .post-content-body {
+    font-size: 1.1rem; /* Tamanho de fonte confortável para leitura */
+    line-height: 1.8;  /* Espaçamento entre linhas generoso */
     color: #343a40;
 }
-
-.page-post-individual .blog-post-meta {
-    font-size: 0.9em;
+/* Estilização de elementos comuns dentro do conteúdo de um post */
+.post-content-body p {
+    margin-bottom: 1.5rem;
 }
-
-.page-post-individual .post-content-body {
-    font-size: 1.05rem; /* Tamanho de fonte ligeiramente maior para leitura */
-    line-height: 1.7;
-    color: #333;
-}
-
-.page-post-individual .post-content-body p {
-    margin-bottom: 1.25rem;
-}
-
-.page-post-individual .post-content-body img { /* Imagens dentro do post */
-    max-width: 100%;
-    height: auto;
-    border-radius: 0.25rem;
-    margin-top: 1rem;
+.post-content-body h2,
+.post-content-body h3,
+.post-content-body h4 {
+    margin-top: 2.5rem;
     margin-bottom: 1rem;
+    font-weight: 600;
 }
-
-/* Estilos para Breadcrumb (opcional, Bootstrap já estiliza) */
-.breadcrumb {
+.post-content-body a {
+    text-decoration: underline;
+    color: #0d6efd;
+}
+.post-content-body blockquote {
+    border-left: 4px solid #0d6efd;
+    padding-left: 1rem;
+    margin: 2rem 0;
+    font-style: italic;
+    color: #6c757d;
+}
+.post-content-body ul,
+.post-content-body ol {
+    padding-left: 2rem;
+    margin-bottom: 1.5rem;
+}
+.post-content-body code {
+    background-color: #e9ecef;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
     font-size: 0.9em;
 }
-.breadcrumb-item a {
-    text-decoration: none;
+
+/* --- Estilos do Formulário de Contato --- */
+.page-contato .card {
+    border: none;
+}
+
+
+/* ========================================================= */
+/* ===== RESPONSIVIDADE - POST INDIVIDUAL E PÁGINAS DE CONTEÚDO ====== */
+/* ========================================================= */
+@media (max-width: 767.98px) {
+    /* --- Ajuste Geral do Container em Telas Pequenas --- */
+    .page-post-individual .container,
+    .page-blog .container,
+    .page-contato .container,
+    .page-politica .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    /* --- Título do Post Individual --- */
+    .page-post-individual .blog-post-title {
+        font-size: 1.8rem; /* Reduz o tamanho do título principal do post */
+        line-height: 1.3;
+    }
+
+    /* --- Corpo do Conteúdo do Post --- */
+    .page-post-individual .post-content-body {
+        font-size: 1rem;     /* Tamanho de fonte ideal para leitura mobile */
+        line-height: 1.7;    /* Espaçamento confortável entre as linhas */
+    }
+
+    /* --- Garante que imagens dentro do conteúdo do post sejam responsivas --- */
+    .post-content-body img {
+        max-width: 100%; /* A imagem nunca será mais larga que seu container */
+        height: auto;    /* Mantém a proporção da imagem */
+        border-radius: 8px; /* Adiciona cantos arredondados sutis */
+    }
 }

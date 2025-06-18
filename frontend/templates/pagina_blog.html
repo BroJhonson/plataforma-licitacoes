@@ -14,22 +14,30 @@
 
             {% if posts %}
                 {% for post in posts %}
-                <!-- DEBUG SLUG: {{ post.slug }} -->
-                <article class="blog-post-summary mb-5 pb-3 border-bottom position-relative">
-                    {% if post.imagem_destaque %}
-                        <a href="{{ url_for('pagina_post_blog', post_slug=post.slug) }}">
-                            <img src="{{ url_for('static', filename='images/' + post.imagem_destaque) }}" alt="{{ post.titulo }}" class="img-fluid rounded mb-3" style="max-height: 200px; width: 100%; object-fit: cover;">
-                        </a>
-                    {% endif %}
-                    <h2 class="h3 blog-post-title mb-1">
-                        <a href="{{ url_for('pagina_post_blog', post_slug=post.slug) }}" class="text-decoration-none link-dark stretched-link">{{ post.titulo }}</a>
-                    </h2>
-                    <p class="blog-post-meta text-muted mb-2">
-                        <small><i class="bi bi-calendar3"></i> Publicado em: {{ post.data }}</small>
-                    </p>
-                    <p class="card-text">{{ post.resumo }}</p>
-                    {# O stretched-link no título já torna o card clicável, mas podemos manter um botão se preferir #}
-                    {# <a href="{{ url_for('pagina_post_blog', post_slug=post.slug) }}" class="btn btn-sm btn-outline-primary">Leia mais <i class="bi bi-arrow-right-short"></i></a> #}
+                <!-- Cada artigo é um 'article' -->
+                <article class="blog-post-summary mb-5 pb-5 border-bottom position-relative">
+                    <div class="row g-0">
+                        <!-- Coluna da Imagem -->
+                        <div class="col-md-4 mb-3 mb-md-0">
+                            {% if post.imagem_destaque %}
+                                <a href="{{ url_for('pagina_post_blog', post_slug=post.slug) }}">
+                                    <!-- CORREÇÃO AQUI: Caminho da imagem corrigido -->
+                                    <img src="{{ url_for('static', filename='images/' + post.imagem_destaque) }}" alt="{{ post.titulo }}" class="img-fluid rounded blog-list-image">
+                                </a>
+                            {% endif %}
+                        </div>
+                        <!-- Coluna do Texto -->
+                        <div class="col-md-8 ps-md-4">
+                            <h2 class="h4 blog-post-title mb-1">
+                                <!-- O stretched-link faz todo o card ser clicável -->
+                                <a href="{{ url_for('pagina_post_blog', post_slug=post.slug) }}" class="text-decoration-none link-dark stretched-link">{{ post.titulo }}</a>
+                            </h2>
+                            <p class="blog-post-meta text-muted mb-2">
+                                <small><i class="bi bi-calendar3"></i> Publicado em: {{ post.data }}</small>
+                            </p>
+                            <p class="card-text">{{ post.resumo }}</p>
+                        </div>
+                    </div>
                 </article>
                 {% endfor %}
             {% else %}
@@ -38,17 +46,6 @@
                 </div>
             {% endif %}
 
-            <!-- (Opcional) Paginação para o blog aqui se houver muitos posts -->
-            {# 
-            <nav aria-label="Navegação do Blog">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item disabled"><a class="page-link" href="#">Anterior</a></li>
-                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">Próxima</a></li>
-                </ul>
-            </nav>
-            #}
         </div>
     </div>
 </div>

@@ -5,13 +5,25 @@
 
 {% block content %}
 <div class="row gx-lg-4"> <!-- gx-lg-4 para espaçamento entre colunas em telas grandes -->
+    
+    <!-- ============ BOTÕES FLUTUANTES (SOMENTE MOBILE) ========= -->
+    <div class="botoes-flutuantes-mobile d-lg-none">
+        <!-- Botão de Filtros Flutuante -->
+        <button class="btn btn-primary btn-flutuante" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFiltros" aria-controls="offcanvasFiltros">
+            <i class="bi bi-filter"></i>
+        </button>
+        <!-- Botão de Favoritos Flutuante -->
+        <button class="btn btn-warning btn-flutuante mt-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFavoritos" aria-controls="offcanvasFavoritos">
+            <i class="bi bi-star-fill"></i>
+        </button>
+    </div>
 
-    <!-- COLUNA DA ESQUERDA: Botão de Filtros e Espaço para Anúncios -->
-    <div class="col-lg-2 col-md-3" id="coluna-sidebar-esquerda">
-        <!-- Botão para Abrir o Offcanvas de Filtros --> 
-        <div class="mb-3" id="sticky-filter-button-wrapper"> <!-- ID para estilizar Somente o botão -->
+    <!-- Coluna da Esquerda (agora o botão só aparece no desktop) -->
+    <div class="col-lg-2 col-md-3 d-none d-lg-block" id="coluna-sidebar-esquerda">
+        
+        <div class="sticky-top-wrapper">
             <button class="btn btn-primary w-100" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFiltros" aria-controls="offcanvasFiltros">
-                <i class="bi bi-filter"></i> Filtros 
+                <i class="bi bi-filter"></i> Filtros
             </button>
         </div>
 
@@ -118,6 +130,20 @@
             </div>
             
         </div>
+    </div>
+</div>
+
+<!-- Offcanvas para Favoritos Para Mobile-->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasFavoritos" aria-labelledby="offcanvasFavoritosLabel" style="width: 85vw; max-width: 340px;">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasFavoritosLabel"><i class="bi bi-star-fill text-warning"></i> Licitações Favoritas</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <p class="text-muted small">Suas licitações salvas aparecerão aqui. Clique em uma para ver os detalhes.</p>
+        <ul class="list-group list-group-flush" id="lista-favoritos-offcanvas">
+            <!-- O seu JavaScript `renderizarFavoritosSidebar()` já vai popular esta lista -->
+        </ul>
     </div>
 </div>
 
@@ -312,8 +338,8 @@
 <!-- TEMPLATE DO CONTEÚDO DO PAINEL DE FEEDBACK (FICARÁ OCULTO E SERÁ CLONADO PELO JS) -->
 <template id="template-painel-feedback">
     <div class="painel-feedback-conteudo">
-        <h6>Ajude-nos a melhorar!</h6>
-        <p><small>Sua opinião é importante para nós!</small></p>
+        <h6>Viu algo errado ou pensou em algo legal?</h6>
+        <p><small>Conta pra gente, sua opinião vale muito!</small></p>
         <a href="{{ url_for('pagina_contato') }}" class="btn btn-info btn-sm">Deixe seu Feedback</a>
     </div>
 </template>
