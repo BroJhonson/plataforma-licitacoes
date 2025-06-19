@@ -11,23 +11,13 @@ from dotenv import load_dotenv  # Para carregar o arquivo .env
 load_dotenv()  # Carrega as variáveis do arquivo .env para o ambiente
 
 from flask_sqlalchemy import SQLAlchemy
-# --- LÓGICA DO BANCO DE DADOS (VERSÃO SQLITE PERSISTENTE) ---
+# --- LÓGICA DO BANCO DE DADOS  ---
 
-# 1. Definimos o caminho onde o Disco Persistente será montado no Render.
-#    O padrão '/var/data' é uma boa prática.
-DATA_DIR = '/var/data'
+# Define o caminho para o arquivo do banco de dados na mesma pasta do app.py
+basedir = os.path.abspath(os.path.dirname(__file__))
+db_path = os.path.join(basedir, "database.db")
 
-# 2. Criamos o caminho completo para o nosso arquivo de banco de dados.
-#    Ex: /var/data/licitacoes.db
-db_path = os.path.join(DATA_DIR, 'licitacoes.db')
-
-# 3. Medida de segurança: Se o diretório do disco ainda não existir, o código o cria.
-#    Isso evita erros na primeira vez que a aplicação rodar.
-if not os.path.exists(DATA_DIR):
-    os.makedirs(DATA_DIR)
-
-# 4. Finalmente, configuramos o Flask para usar este caminho.
-#    O formato com três barras 'sqlite:///' é importante para caminhos absolutos.
+# Configura a URL do banco de dados na aplicação Flask
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
