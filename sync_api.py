@@ -15,6 +15,7 @@ DATABASE_PATH = os.path.join(BASE_DIR, 'database.db')
 TAMANHO_PAGINA_SYNC  = 50 # OBRIGATORIO
 LIMITE_PAGINAS_TESTE_SYNC = 1 # OBRIGATORIO. Mudar para None para buscar todas.
 CODIGOS_MODALIDADE = [5, 6, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13 ] # (OBRIGATORIO)
+DIAS_JANELA_SINCRONIZACAO = 365 #Periodo da busca
 API_BASE_URL = "https://pncp.gov.br/api/consulta" # (URL base da API do PNCP)      
 API_BASE_URL_PNCP_API = "https://pncp.gov.br/pncp-api"   # Para itens e arquivos    ## PARA TODOS OS LINKS DE ARQUIVOS E ITENS USAR PAGINAÇÃO SE NECESSARIO ##
 ENDPOINT_PROPOSTAS_ABERTAS = "/v1/contratacoes/proposta" # (Endpoint específico)
@@ -572,7 +573,7 @@ def sync_licitacoes_ultima_janela_anual():
 
     agora = datetime.now()
     data_fim_periodo_dt = agora
-    data_inicio_periodo_dt = agora - timedelta(days=365) # Últimos 12 meses
+    data_inicio_periodo_dt = agora - timedelta(days=DIAS_JANELA_SINCRONIZACAO) # Últimos 12 meses
 
     data_inicio_api_str = format_datetime_for_api(data_inicio_periodo_dt)
     data_fim_api_str = format_datetime_for_api(data_fim_periodo_dt)
@@ -648,6 +649,6 @@ def sync_licitacoes_ultima_janela_anual():
 
 
 if __name__ == '__main__':
-    print("Iniciando script de sincronização (janela anual de atualizações)...")
+    print("Iniciando script de sincronização (janela de {DIAS_JANELA_SINCRONIZACAO} dias de atualizações)...")
     sync_licitacoes_ultima_janela_anual()
     print("Script de sincronização finalizado.")
