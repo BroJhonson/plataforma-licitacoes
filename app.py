@@ -10,24 +10,10 @@ from dotenv import load_dotenv  # Para carregar o arquivo .env
 
 load_dotenv()  # Carrega as variáveis do arquivo .env para o ambiente
 
-from flask_sqlalchemy import SQLAlchemy
-# --- LÓGICA DO BANCO DE DADOS  ---
-
-# Define o caminho para o arquivo do banco de dados na mesma pasta do app.py
-basedir = os.path.abspath(os.path.dirname(__file__))
-db_path = os.path.join(basedir, "database.db")
-
-# Configura a URL do banco de dados na aplicação Flask
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)
-# --- FIM DA LÓGICA DO BANCO DE DADOS ---
-
-
 # --- Configurações ---
 app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta_muito_segura_aqui'  # Mude isso!
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_PATH = os.path.join(BASE_DIR, 'database.db')
