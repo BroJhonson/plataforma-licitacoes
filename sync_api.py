@@ -6,14 +6,7 @@ import json # (Para lidar com dados JSON da API, embora 'requests' já faça mui
 import os # (Para caminhos de arquivo)
 import time
 from datetime import datetime, date, timedelta # (Para trabalhar com datas)
-# -- CONFIGURAÇÃO DE PROXY PARA PYTHONANYWHERE --
-# Necessário para contas gratuitas acessarem APIs fora da whitelist
-proxy_url = "http://proxy.server:3128"
-proxies = {
-   "http": proxy_url,
-   "https": proxy_url,
-}
-# -- FIM DA CONFIGURAÇÃO DE PROXY --
+
 
 
 # --- Configurações ---
@@ -38,7 +31,7 @@ def fetch_itens_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina=1, ta
     headers = {'Accept': 'application/json'}
     print(f"ITENS: Buscando em {url} com params {params}")
     try:
-        response = requests.get(url, params=params, headers=headers, timeout=60, proxies=proxies)
+        response = requests.get(url, params=params, headers=headers, timeout=60)
         response.raise_for_status()
         if response.status_code == 204: return [] # Retorna lista vazia
         return response.json() 
@@ -55,7 +48,7 @@ def fetch_arquivos_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina=1,
     headers = {'Accept': 'application/json'}
     print(f"ARQUIVOS: Buscando em {url} com params {params}")
     try:
-        response = requests.get(url, params=params, headers=headers, timeout=60, proxies=proxies)
+        response = requests.get(url, params=params, headers=headers, timeout=60)
         response.raise_for_status()
         if response.status_code == 204: return [] # Retorna lista vazia        
         return response.json() 
@@ -166,7 +159,7 @@ def fetch_licitacoes_por_atualizacao(data_inicio_str, data_fim_str, codigo_modal
     print(f"SYNC ATUALIZACAO: Buscando em {url_api_pncp} com params {params_api}")
     
     try:
-        response = requests.get(url_api_pncp, params=params_api, timeout=120, proxies=proxies)
+        response = requests.get(url_api_pncp, params=params_api, timeout=120)
         response.raise_for_status()
         if response.status_code == 204:
             return None, 0
