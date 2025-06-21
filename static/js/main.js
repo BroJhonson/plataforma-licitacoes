@@ -302,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function () {
             { sigla: "SP", nome: "São Paulo" }, { sigla: "SE", nome: "Sergipe" }, { sigla: "TO", nome: "Tocantins" }
         ];
 
-        // Função Ctrl + Enter aplica filtro
+        // Função Ctrl + Enter aplica filtroe para limpeza de filtros individuais
         if (offcanvasFiltrosBody) { // Garante que o container dos filtros existe
                         
             offcanvasFiltrosBody.addEventListener('keydown', function(event) {
@@ -326,6 +326,47 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (bsOffcanvas) {
                             bsOffcanvas.hide();
                         }
+                    }
+                }
+            });
+        
+            offcanvasFiltrosBody.addEventListener('click', function(event) {
+                // Verifica se o elemento clicado é o nosso botão de limpar
+                if (event.target.classList.contains('btn-limpar-grupo')) {
+                    const tipoLimpeza = event.target.dataset.limpar;
+                    console.log("Limpando filtro:", tipoLimpeza); // Para debug
+
+                    switch (tipoLimpeza) {
+                        case 'status':
+                            // Reseta o radio button para o valor padrão
+                            const defaultStatus = document.querySelector('.filter-status[value="A Receber/Recebendo Proposta"]');
+                            if (defaultStatus) defaultStatus.checked = true;
+                            break;
+
+                        case 'modalidades':
+                            // Desmarca todos os checkboxes de modalidade
+                            document.querySelectorAll('#modalidadesContainerDropdown .filter-modalidade:checked').forEach(cb => cb.checked = false);
+                            updateModalidadeSelectedCount(); // Atualiza o contador visual
+                            break;
+
+                        case 'inclusao':
+                            // Limpa o array e as tags de palavras-chave de inclusão
+                            palavrasChaveInclusao = [];
+                            renderTags(palavrasChaveInclusao, tagsPalavraInclusaoContainer, 'inclusao');
+                            break;
+                        
+                        case 'exclusao':
+                            // Limpa o array e as tags de palavras-chave de exclusão
+                            palavrasChaveExclusao = [];
+                            renderTags(palavrasChaveExclusao, tagsPalavraExclusaoContainer, 'exclusao');
+                            break;
+                        
+                        case 'localizacao': // Exemplo se você agrupar UF e Município
+                            document.querySelectorAll('#ufsContainerDropdown .filter-uf:checked').forEach(cb => cb.checked = false);
+                            handleUFChange(); // Esta função já limpa os municípios e atualiza os contadores
+                            break;
+
+                        // Adicione mais 'case' aqui para outros filtros que você criar
                     }
                 }
             });
@@ -356,7 +397,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 containerElement.appendChild(tag);
             });
         }
-
         function addPalavraChave(inputField, palavrasArray, containerElement, tipo) {
             const termos = inputField.value.trim();
             if (termos) {
@@ -372,25 +412,34 @@ document.addEventListener('DOMContentLoaded', function () {
                 renderTags(palavrasArray, containerElement, tipo);
             }
         }
-
         // Event Listeners para adicionar palavras-chave
-        if (palavraChaveInclusaoInputField) {
-            palavraChaveInclusaoInputField.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' || e.key === ',') {
-                    e.preventDefault(); 
-                    addPalavraChave(palavraChaveInclusaoInputField, palavrasChaveInclusao, tagsPalavraInclusaoContainer, 'inclusao');
+        function configurarInputDeTags(inputField, palavrasArray, containerElement, tipo) {
+            if (!inputField) return;
+
+            // Handler para a tecla "Enter"
+            inputField.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter' || e.key === 'NumpadEnter') {
+                    e.preventDefault();
+                    addPalavraChave(inputField, palavrasArray, containerElement, tipo);
+                }
+            });
+
+            // Handler para vírgula e ponto e vírgula
+            inputField.addEventListener('input', function(e) {
+                const value = inputField.value;
+                // Se o último caractere for vírgula ou ponto e vírgula
+                if (value.endsWith(',') || value.endsWith(';')) {
+                    // Remove a vírgula/ponto e vírgula antes de adicionar
+                    inputField.value = value.slice(0, -1);
+                    addPalavraChave(inputField, palavrasArray, containerElement, tipo);
                 }
             });
         }
-
-        if (palavraChaveExclusaoInputField) {
-            palavraChaveExclusaoInputField.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' || e.key === ',') {
-                    e.preventDefault();
-                    addPalavraChave(palavraChaveExclusaoInputField, palavrasChaveExclusao, tagsPalavraExclusaoContainer, 'exclusao');
-                }
-            });
-        }// FIM DA FUNÇÃO DE TAGS NAS PALAVRAS-CHAVE
+        // Configura ambos os campos de input
+        configurarInputDeTags(palavraChaveInclusaoInputField, palavrasChaveInclusao, tagsPalavraInclusaoContainer, 'inclusao');
+        configurarInputDeTags(palavraChaveExclusaoInputField, palavrasChaveExclusao, tagsPalavraExclusaoContainer, 'exclusao');
+        // FIM DA FUNÇÃO DE TAGS NAS PALAVRAS-CHAVE
+    
 
         // FUNÇÃO DAS TAGS NO TOPO
         function atualizarExibicaoFiltrosAtivos() {
@@ -433,8 +482,6 @@ document.addEventListener('DOMContentLoaded', function () {
             } else if (statusSelecionadoRadio && statusSelecionadoRadio.value === "") {
                 filtrosAplicados.push(`Status: <span class="badge bg-dark">Todos</span>`);
             }
-
-
             // Datas Publicação
             if (dataPubInicioInput.value || dataPubFimInput.value) {
                 let strDataPub = "Data Pub.: ";
@@ -544,6 +591,121 @@ document.addEventListener('DOMContentLoaded', function () {
             });        
         }
 
+        // ======== FUNÇÕES PARA SALVAR FILTROS DA SEÇÃO ATUAL =========== //
+        const FILTROS_KEY = 'radarPncpUltimosFiltros';
+
+        function salvarFiltrosAtuais() {
+            // 1. Coleta todos os valores dos campos de filtro
+            const filtros = {
+                // Palavras-chave já estão em arrays globais
+                palavrasChaveInclusao: palavrasChaveInclusao,
+                palavrasChaveExclusao: palavrasChaveExclusao,
+                
+                // Status
+                status: document.querySelector('.filter-status:checked')?.value || "A Receber/Recebendo Proposta",
+                
+                // UFs e Municípios
+                ufs: Array.from(document.querySelectorAll('#ufsContainerDropdown .filter-uf:checked')).map(cb => cb.value),
+                municipios: Array.from(document.querySelectorAll('#municipiosContainerDropdown .filter-municipio:checked')).map(cb => cb.value),
+
+                // Modalidades
+                modalidades: Array.from(document.querySelectorAll('#modalidadesContainerDropdown .filter-modalidade:checked')).map(cb => cb.value),
+                
+                // Filtros Avançados
+                dataPubInicio: dataPubInicioInput.value,
+                dataPubFim: dataPubFimInput.value,
+                dataAtualizacaoInicio: dataAtualizacaoInicioInput.value,
+                dataAtualizacaoFim: dataAtualizacaoFimInput.value,
+                valorMin: valorMinInput.value,
+                valorMax: valorMaxInput.value,
+                
+                // Configurações da Tabela
+                ordenacao: ordenarPorSelect.value,
+                itensPorPagina: itensPorPaginaSelect.value,
+            };
+
+            // 2. Salva o objeto de filtros no localStorage como uma string JSON
+            localStorage.setItem(FILTROS_KEY, JSON.stringify(filtros));
+            console.log("Filtros salvos no localStorage:", filtros);
+        }
+
+        // ---- FUNÇÃO PARA CARREGAR FILTROS SALVOS DA ULTIMA SEÇÃO ----
+        function carregarFiltrosSalvos() {
+            const filtrosSalvosJson = localStorage.getItem(FILTROS_KEY);
+            if (!filtrosSalvosJson) {
+                console.log("Nenhum filtro salvo encontrado.");
+                return; // Sai se não houver nada salvo
+            }
+
+            try {
+                const filtros = JSON.parse(filtrosSalvosJson);
+                console.log("Carregando filtros salvos:", filtros);
+
+                // --- PREENCHE OS CAMPOS ---
+
+                // 1. Palavras-chave
+                if (filtros.palavrasChaveInclusao) {
+                    palavrasChaveInclusao = filtros.palavrasChaveInclusao;
+                    renderTags(palavrasChaveInclusao, tagsPalavraInclusaoContainer, 'inclusao');
+                }
+                if (filtros.palavrasChaveExclusao) {
+                    palavrasChaveExclusao = filtros.palavrasChaveExclusao;
+                    renderTags(palavrasChaveExclusao, tagsPalavraExclusaoContainer, 'exclusao');
+                }
+
+                // 2. Status
+                if (filtros.status) {
+                    const radioStatus = document.querySelector(`.filter-status[value="${filtros.status}"]`);
+                    if (radioStatus) radioStatus.checked = true;
+                }
+
+                // 3. UFs (Precisamos marcar e depois chamar a função que carrega os municípios)
+                if (filtros.ufs && filtros.ufs.length > 0) {
+                    filtros.ufs.forEach(ufSigla => {
+                        const checkUf = document.querySelector(`#ufsContainerDropdown .filter-uf[value="${ufSigla}"]`);
+                        if (checkUf) checkUf.checked = true;
+                    });
+                    // Dispara a função para carregar os municípios baseados nas UFs marcadas
+                    handleUFChange().then(() => {
+                        // SÓ DEPOIS que os municípios carregarem, tentamos marcar os salvos
+                        if (filtros.municipios && filtros.municipios.length > 0) {
+                            filtros.municipios.forEach(munNome => {
+                                const checkMun = document.querySelector(`#municipiosContainerDropdown .filter-municipio[value="${munNome}"]`);
+                                if (checkMun) checkMun.checked = true;
+                            });
+                            updateMunicipioSelectedCount();
+                        }
+                    });
+                }
+
+                // 4. Modalidades
+                if (filtros.modalidades && filtros.modalidades.length > 0) {
+                    filtros.modalidades.forEach(modId => {
+                        const checkMod = document.querySelector(`#modalidadesContainerDropdown .filter-modalidade[value="${modId}"]`);
+                        if (checkMod) checkMod.checked = true;
+                    });
+                    updateModalidadeSelectedCount();
+                }
+
+                // 5. Filtros Avançados
+                if (filtros.dataPubInicio) dataPubInicioInput.value = filtros.dataPubInicio;
+                if (filtros.dataPubFim) dataPubFimInput.value = filtros.dataPubFim;
+                if (filtros.dataAtualizacaoInicio) dataAtualizacaoInicioInput.value = filtros.dataAtualizacaoInicio;
+                if (filtros.dataAtualizacaoFim) dataAtualizacaoFimInput.value = filtros.dataAtualizacaoFim;
+                if (filtros.valorMin) valorMinInput.value = filtros.valorMin;
+                if (filtros.valorMax) valorMaxInput.value = filtros.valorMax;
+
+                // 6. Configurações da Tabela
+                if (filtros.ordenacao) ordenarPorSelect.value = filtros.ordenacao;
+                if (filtros.itensPorPagina) itensPorPaginaSelect.value = filtros.itensPorPagina;
+
+            } catch (e) {
+                console.error("Erro ao carregar filtros salvos:", e);
+                localStorage.removeItem(FILTROS_KEY); // Remove dados corrompidos
+            }
+        }
+
+
         // ====================== FAVORITOS ====================== //
         // --- FUNÇÃO PARA ATUALIZAR A UI DO BOTÃO DE FAVORITO --- //
         function atualizarBotaoFavoritoUI(buttonElement, pncpId) {
@@ -578,7 +740,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         }
-
         // --- HANDLER PARA O CLIQUE NO BOTÃO DE FAVORITAR ---
         function handleFavoritarClick(event) { // Sempre espera o evento da delegação
             const button = event.target.closest('.btn-favoritar'); // Pega o botão com a classe .btn-favoritar
@@ -611,8 +772,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 renderizarFavoritosSidebar();
             }
-        }
-        
+        }        
         // --- CONFIGURAR EVENT LISTENERS ---
         if (licitacoesTableBody) {
             licitacoesTableBody.addEventListener('click', handleFavoritarClick);
@@ -629,7 +789,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 // pela condição mais genérica event.target.closest('.btn-favoritar') se preferir
             });
         }      
-
         document.addEventListener('click', function(event) {
             // Verifica se o elemento clicado (ou um de seus pais) é o botão de remover
             const removeButton = event.target.closest('.btn-remover-fav-sidebar');
@@ -953,6 +1112,8 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // --- FUNÇÕES DE BUSCA E RENDERIZAÇÃO DE LICITAÇÕES ---
         async function buscarLicitacoes(page = 1) {
+            salvarFiltrosAtuais(); // SALVA OS FILTROS ANTES DE EXECUTAR A BUSCA
+            
             currentPage = page;
             const params = new URLSearchParams();
             
@@ -1749,8 +1910,10 @@ document.addEventListener('DOMContentLoaded', function () {
             popularUFs(); 
             await popularModalidades(); 
             await popularStatus();   
-            buscarLicitacoes(1);   
+              
             renderizarFavoritosSidebar();
+            carregarFiltrosSalvos(); // Tenta carregar os filtros salvos da última sessão
+            buscarLicitacoes(1); 
                        
             setupFilterSearch('ufSearchInput', 'ufsContainerDropdown', '.form-check');
             setupFilterSearch('modalidadeSearchInput', 'modalidadesContainerDropdown', '.form-check');

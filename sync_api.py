@@ -15,7 +15,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Define o caminho completo para o arquivo do banco de dados
 DATABASE_PATH = os.path.join(BASE_DIR, 'database.db')
 TAMANHO_PAGINA_SYNC  = 50 # OBRIGATORIO
-LIMITE_PAGINAS_TESTE_SYNC = 1 # OBRIGATORIO. Mudar para None para buscar todas.
+LIMITE_PAGINAS_TESTE_SYNC = None # OBRIGATORIO. Mudar para 'None' para buscar todas.
 CODIGOS_MODALIDADE = [5, 6, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13 ] # (OBRIGATORIO)
 DIAS_JANELA_SINCRONIZACAO = 365 #Periodo da busca
 API_BASE_URL = "https://pncp.gov.br/api/consulta" # (URL base da API do PNCP)      
@@ -566,8 +566,6 @@ def salvar_itens_no_banco(conn, licitacao_id_local, lista_itens_api):
 # (Similarmente, você pode querer dividir fetch_all_arquivos_for_licitacao em busca e salvamento)
 
 
-
-
     
 def sync_licitacoes_ultima_janela_anual():
     conn = get_db_connection()
@@ -575,7 +573,7 @@ def sync_licitacoes_ultima_janela_anual():
 
     agora = datetime.now()
     data_fim_periodo_dt = agora
-    data_inicio_periodo_dt = agora - timedelta(days=DIAS_JANELA_SINCRONIZACAO) # Últimos 12 meses
+    data_inicio_periodo_dt = agora - timedelta(days=DIAS_JANELA_SINCRONIZACAO) # Quantos dias considerar para a janela de sincronização
 
     data_inicio_api_str = format_datetime_for_api(data_inicio_periodo_dt)
     data_fim_api_str = format_datetime_for_api(data_fim_periodo_dt)

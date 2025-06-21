@@ -297,6 +297,25 @@ header.border-bottom {
     }
 }
 
+
+/* ===== BOTÃO DE LIMPEZA INDIVIDUAL NOS FILTROS ========= */
+
+.btn-limpar-grupo {
+    cursor: pointer;
+    color: #adb5bd; /* Cinza claro */
+    font-size: 1.7rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    user-select: none; /* Impede que o 'x' seja selecionado como texto */
+}
+.btn-limpar-grupo:hover {
+    color: #dc3545; /* Vermelho no hover */
+    background-color: #f8f9fa;
+}
+
 /* ========================================================= */
 /* ===== AJUSTE DE ALTURA E POSIÇÃO DOS OFFCANVAS (DESKTOP) ==== */
 /* ========================================================= */
@@ -919,9 +938,8 @@ header.border-bottom {
     display: block; /* Para o ellipsis funcionar bem */
 }
 
-/* ========================================================= */
+
 /* ===================== Painel de Feedback ================ */
-/* ========================================================= */
 
 /* Container para o painel de feedback na coluna lateral (DESKTOP) */
 #feedback-placeholder-desktop {
@@ -976,6 +994,8 @@ header.border-bottom {
     font-size: 0.85em; /* Ajusta o botão dentro do painel mobile */
     padding: 0.25rem 0.6rem;
 }
+
+
 
 /* ========================================================= */
 /* ===================== Responsividade Geral ============== */
@@ -1050,7 +1070,7 @@ header.border-bottom {
     .table-responsive thead {
         display: none;
     }
-
+    
     /* Transforma a linha da tabela em um "card" */
     .table-responsive tr {
         display: block;
@@ -1590,6 +1610,7 @@ body.page-home h3 {
 @media (max-width: 991.98px) {
     .page-busca-licitacoes header.border-bottom {
         position: static; /* Remove a posição fixa, fazendo-o rolar com a página */
+        z-index: auto;    /* Reseta o z-index para o padrão */
     }
     /* Remove o padding-top extra que não é mais necessário */
     .page-busca-licitacoes .main-content {
@@ -1601,7 +1622,7 @@ body.page-home h3 {
 /* --- Estilo dos Botões Flutuantes --- */
 .botoes-flutuantes-mobile {
     position: fixed; /* Fixo na tela */
-    top: 90px;       /* Distância do topo */
+    top: 20px;       /* Distância do topo */
     left: 0px;      /* Distância da esquerda */
     z-index: 1040;   /* Z-index alto para ficar sobre o conteúdo */
     display: flex;

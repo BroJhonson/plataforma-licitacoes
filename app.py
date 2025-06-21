@@ -236,7 +236,7 @@ def processar_contato():
     return redirect(url_for('pagina_contato'))
 
 
-# --- Rotas Backend (API Principal) ---
+# --------------------- ROTAS NACKEND (API Principal) ------------------------------
 @app.route('/licitacoes', methods=['GET'])
 def get_licitacoes():
     filtros = {
