@@ -75,6 +75,14 @@
                     </button>
                 </div>
             </div>
+            
+            <!-- BOTÃO EXPORTAR CSV -->
+            <div class="text-end mb-2">
+                <button class="btn btn-sm btn-outline-success" id="btnExportarCsv" title="Exportar para CSV">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Exportar
+                </button>
+            </div>
+            
             <div class="d-flex justify-content-between align-items-center mb-2 table-controls-header">
                 <div class="filter-control-group"> 
                     <label for="ordenarPor" class="form-label form-label-sm mb-0 me-1">Ordem:</label>
@@ -100,7 +108,7 @@
                 </div>
             </div>
 
-            <!-- Tabela Responsiva (como antes) -->
+            <!-- Tabela Responsiva -->
             <div class="table-responsive">
                 <table class="table table-striped table-hover table-sm">
                     <thead>
@@ -200,7 +208,7 @@
                 <span class="btn-limpar-grupo" data-limpar="inclusao" title="Limpar palavras-chave de busca">×</span>
             </div>
             <div class="input-group input-group-sm mb-1">
-                <input type="text" class="form-control form-control-sm" id="palavraChaveInclusaoInput" placeholder="Digite e tecle Enter">
+                <input type="text" class="form-control form-control-sm" id="palavraChaveInclusaoInput" placeholder="Separe por virgula ou Enter">
             </div>
             <div id="tagsPalavraInclusaoContainer" class="tags-container"></div>
         </div>
@@ -213,7 +221,7 @@
                 <span class="btn-limpar-grupo" data-limpar="exclusao" title="Limpar palavras-chave de exclusão">×</span>
             </div>            
             <div class="input-group input-group-sm mb-1">
-                <input type="text" class="form-control form-control-sm" id="palavraChaveExclusaoInput" placeholder="Digite e tecle Enter">
+                <input type="text" class="form-control form-control-sm" id="palavraChaveExclusaoInput" placeholder="Separe por virgula ou Enter">
             </div>
             <div id="tagsPalavraExclusaoContainer" class="tags-container"></div>
         </div>

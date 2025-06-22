@@ -7,6 +7,9 @@ import smtplib
 from email.mime.text import MIMEText
 import os  # Para ler variáveis de ambiente
 from dotenv import load_dotenv  # Para carregar o arquivo .env
+import csv #Esse e os tres de baixo são para o upload de arquivos CSV
+import io
+from flask import Response
 
 load_dotenv()  # Carrega as variáveis do arquivo .env para o ambiente
 
@@ -235,8 +238,8 @@ def processar_contato():
 
     return redirect(url_for('pagina_contato'))
 
-
-# --------------------- ROTAS NACKEND (API Principal) ------------------------------
+ 
+# ===========================================---- ROTAS BACKEND (API Principal) ----============================================
 @app.route('/licitacoes', methods=['GET'])
 def get_licitacoes():
     filtros = {
@@ -540,6 +543,181 @@ def api_get_referencia_statuscompra():
     print("Frontend API: Chamando /referencias/statuscompra")
     return get_statuscompra_referencia()
 
+           
+# EXPORTAR CSV - Mantendo separado de def get_licitacoes() sem refatorar posso enviar mais coisas ou menos. 
+@app.route('/api/exportar-csv')
+def exportar_csv():    
+    filtros = {
+        'ufs': request.args.getlist('uf'),
+        'modalidadesId': request.args.getlist('modalidadeId', type=int),
+        'statusRadar': request.args.get('statusRadar', default=None, type=str),
+        'dataPubInicio': request.args.get('dataPubInicio', default=None, type=str),
+        'dataPubFim': request.args.get('dataPubFim', default=None, type=str),
+        'valorMin': request.args.get('valorMin', default=None, type=float),
+        'valorMax': request.args.get('valorMax', default=None, type=float),
+        'municipiosNome': request.args.getlist('municipioNome'),
+        'dataAtualizacaoInicio': request.args.get('dataAtualizacaoInicio', default=None, type=str),
+        'dataAtualizacaoFim': request.args.get('dataAtualizacaoFim', default=None, type=str),
+        'palavrasChave': request.args.getlist('palavraChave'),
+        'excluirPalavras': request.args.getlist('excluirPalavra'),
+        'statusId': request.args.get('status', default=None, type=int),
+        'anoCompra': request.args.get('anoCompra', type=int),
+        'cnpjOrgao': request.args.get('cnpjOrgao'),
+    }
+    orderBy_param = request.args.get('orderBy', default='dataPublicacaoPncp', type=str)
+    orderDir_param = request.args.get('orderDir', default='DESC', type=str).upper()
+
+    condicoes_db = []
+    parametros_db = []
+    
+    if filtros['statusRadar']:
+        condicoes_db.append("situacaoReal = ?")
+        parametros_db.append(filtros['statusRadar'])
+    elif filtros['statusId'] is not None:
+        condicoes_db.append("situacaoCompraId = ?")
+        parametros_db.append(filtros['statusId'])
+
+    if filtros['ufs']:
+        placeholders = ', '.join(['?'] * len(filtros['ufs']))
+        condicoes_db.append(f"unidadeOrgaoUfSigla IN ({placeholders})")
+        parametros_db.extend([uf.upper() for uf in filtros['ufs']])
+
+    if filtros['modalidadesId']:
+        placeholders = ', '.join(['?'] * len(filtros['modalidadesId']))
+        condicoes_db.append(f"modalidadeId IN ({placeholders})")
+        parametros_db.extend(filtros['modalidadesId'])
+
+    if filtros['excluirPalavras']:
+        campos_texto_busca = [
+            "objetoCompra", "orgaoEntidadeRazaoSocial", "unidadeOrgaoNome",
+            "numeroControlePNCP", "unidadeOrgaoMunicipioNome", "unidadeOrgaoUfNome",
+            "CAST(unidadeOrgaoCodigoIbge AS TEXT)", "orgaoEntidadeCnpj"
+        ]
+        for palavra_excluir in filtros['excluirPalavras']:
+            termo_excluir = f"%{palavra_excluir}%"
+            condicoes_palavra_excluir_and = []
+            for campo in campos_texto_busca:
+                condicoes_palavra_excluir_and.append(f"COALESCE({campo}, '') NOT LIKE ?")
+                parametros_db.append(termo_excluir)
+            if condicoes_palavra_excluir_and:
+                condicoes_db.append(f"({' AND '.join(condicoes_palavra_excluir_and)})")
+
+    if filtros['palavrasChave']:
+        campos_texto_busca = [
+            "objetoCompra", "orgaoEntidadeRazaoSocial", "unidadeOrgaoNome",
+            "numeroControlePNCP", "unidadeOrgaoMunicipioNome", "unidadeOrgaoUfNome",
+            "CAST(unidadeOrgaoCodigoIbge AS TEXT)", "orgaoEntidadeCnpj"
+        ]
+        sub_condicoes_palavras_or_geral = []
+        for palavra_chave in filtros['palavrasChave']:
+            termo_like = f"%{palavra_chave}%"
+            condicoes_campos_or_para_palavra = []
+            for campo in campos_texto_busca:
+                condicoes_campos_or_para_palavra.append(f"COALESCE({campo}, '') LIKE ?")
+                parametros_db.append(termo_like)
+            if condicoes_campos_or_para_palavra:
+                sub_condicoes_palavras_or_geral.append(f"({' OR '.join(condicoes_campos_or_para_palavra)})")
+        if sub_condicoes_palavras_or_geral:
+            condicoes_db.append(f"({' OR '.join(sub_condicoes_palavras_or_geral)})")
+
+    if filtros['dataPubInicio']:
+        condicoes_db.append("dataPublicacaoPncp >= ?")
+        parametros_db.append(filtros['dataPubInicio'])
+    if filtros['dataPubFim']:
+        condicoes_db.append("dataPublicacaoPncp <= ?")
+        parametros_db.append(filtros['dataPubFim'])
+
+    if filtros['valorMin'] is not None:
+        condicoes_db.append("valorTotalEstimado >= ?")
+        parametros_db.append(filtros['valorMin'])
+    if filtros['valorMax'] is not None:
+        condicoes_db.append("valorTotalEstimado <= ?")
+        parametros_db.append(filtros['valorMax'])
+
+    if filtros['dataAtualizacaoInicio']:
+        condicoes_db.append("dataAtualizacao >= ?")
+        parametros_db.append(filtros['dataAtualizacaoInicio'])
+    if filtros['dataAtualizacaoFim']:
+        condicoes_db.append("dataAtualizacao <= ?")
+        parametros_db.append(filtros['dataAtualizacaoFim'])
+
+    if filtros['anoCompra'] is not None:
+        condicoes_db.append("anoCompra = ?")
+        parametros_db.append(filtros['anoCompra'])
+
+    if filtros['cnpjOrgao']:
+        condicoes_db.append("orgaoEntidadeCnpj = ?")
+        parametros_db.append(filtros['cnpjOrgao'])
+
+    if filtros['municipiosNome']:
+        sub_condicoes_municipio = []
+        for nome_mun in filtros['municipiosNome']:
+            termo_mun = f"%{nome_mun.upper()}%"
+            sub_condicoes_municipio.append("UPPER(unidadeOrgaoMunicipioNome) LIKE ?")
+            parametros_db.append(termo_mun)
+        if sub_condicoes_municipio:
+            condicoes_db.append(f"({ ' OR '.join(sub_condicoes_municipio) })")
+
+    # 2. Conecte ao banco e faça a busca SEM paginação
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query_select = "SELECT * FROM licitacoes"
+    query_where = ""
+    if condicoes_db:
+        query_where = " WHERE " + " AND ".join(condicoes_db)
+    
+    # A ÚNICA DIFERENÇA: SEM LIMIT E OFFSET
+    query_order = f" ORDER BY {orderBy_param} {orderDir_param}"
+    sql_query_final = query_select + query_where + query_order
+
+    try:
+        cursor.execute(sql_query_final, parametros_db)
+        licitacoes_rows = cursor.fetchall()
+        licitacoes = [dict(row) for row in licitacoes_rows]
+    except sqlite3.Error as e:
+        print(f"Erro ao exportar CSV: {e}")
+        return jsonify({"erro": "Erro ao buscar dados para exportação"}), 500
+    finally:
+        if conn:
+            conn.close()
+
+    # 3. Gere o CSV em memória
+    output = io.StringIO()
+    # Usamos QUOTE_ALL para garantir que valores com ';' ou quebras de linha sejam tratados corretamente
+    writer = csv.writer(output, delimiter=';', lineterminator='\n', quoting=csv.QUOTE_ALL)
+    
+    # Escreve o cabeçalho
+    writer.writerow(['Data Atualizacao', 'Municipio/UF', 'Orgao', 'Modalidade', 'Status', 'Valor Estimado (R$)', 'Objeto da Compra', 'Link PNCP'])
+
+    # Escreve os dados
+    for lic in licitacoes:
+        municipio_uf = f"{lic.get('unidadeOrgaoMunicipioNome', '')}/{lic.get('unidadeOrgaoUfSigla', '')}"
+        # Formata o valor para o padrão brasileiro (vírgula como decimal)
+        valor_str = 'N/I'
+        if lic.get('valorTotalEstimado') is not None:
+            valor_str = f"{lic['valorTotalEstimado']:.2f}".replace('.', ',')
+
+        writer.writerow([
+            lic.get('dataAtualizacao', ''),
+            municipio_uf,
+            lic.get('orgaoEntidadeRazaoSocial', ''),
+            lic.get('modalidadeNome', ''),
+            lic.get('situacaoReal', ''),
+            valor_str,
+            lic.get('objetoCompra', ''),
+            lic.get('link_portal_pncp', '')
+        ])
+
+    # 4. Prepara a resposta para download
+    output.seek(0)
+    return Response(
+        output.getvalue().encode('utf-8-sig'), # 'utf-8-sig' é melhor para compatibilidade com Excel
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment;filename=radar_pncp_licitacoes.csv"}
+    )
+
+ 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     app.run(debug=True, host='0.0.0.0', port=port)

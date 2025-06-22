@@ -79,6 +79,57 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     // --- FIM DA LÓGICA DO PAINEL DE FEEDBACK ---
 
+    // --- LOGICA PRA EMPURRAR O HEADER QUANDO O OFFCANVAS FOR ABERTO ---
+    const headerElement = document.querySelector('header.border-bottom');
+    const offcanvasElements = document.querySelectorAll('.offcanvas');
+    let originalScrollY = 0; // Variável para armazenar a posição de rolagem
+
+    if (headerElement && offcanvasElements.length > 0) {
+        offcanvasElements.forEach(offcanvasEl => {
+            offcanvasEl.addEventListener('show.bs.offcanvas', function () {
+                // Só executa em telas mobile (onde o header não é fixo)
+                if (window.innerWidth < 992) {
+                    originalScrollY = window.scrollY; // Salva a posição atual de rolagem
+
+                    // Calcula a posição do topo do header em relação à viewport
+                    const headerRect = headerElement.getBoundingClientRect();
+                    const headerHeight = headerElement.offsetHeight;
+
+                    // Se o topo do header estiver visível ou acima da viewport (headerRect.top <= 0)
+                    // E se a rolagem atual for menor que a altura do header
+                    // (ou seja, o header está total ou parcialmente visível no topo)
+                    if (headerRect.top < headerHeight && originalScrollY < headerHeight) {
+                        // Rola a página para que o header saia da tela
+                        // A nova posição de rolagem será a altura do header
+                        // (ou a posição atual + o restante da altura do header visível)
+                        let scrollToPosition = headerHeight;
+                        if (originalScrollY > 0 && originalScrollY < headerHeight) {
+                            // Se já rolou um pouco, mas não o suficiente
+                            scrollToPosition = originalScrollY + (headerHeight - originalScrollY);
+                        }
+
+
+                        window.scrollTo({
+                            top: scrollToPosition,
+                            behavior: 'smooth' // Rolagem suave!
+                        });
+                    }
+                }
+            });
+
+            offcanvasEl.addEventListener('hidden.bs.offcanvas', function () {
+                // Só executa em telas mobile
+                if (window.innerWidth < 992) {
+                    // Rola de volta para a posição original, suavemente
+                    window.scrollTo({
+                        top: originalScrollY,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    }
+
     // ========= GERENCIADOR DE COOKIES ========= // 
     const COOKIE_CONSENT_KEY = 'radarPncpCookieConsent';
 
@@ -302,7 +353,51 @@ document.addEventListener('DOMContentLoaded', function () {
             { sigla: "SP", nome: "São Paulo" }, { sigla: "SE", nome: "Sergipe" }, { sigla: "TO", nome: "Tocantins" }
         ];
 
-        // Função Ctrl + Enter aplica filtroe para limpeza de filtros individuais
+        // BOTÃO DE EXPORTAR
+        const btnExportarCsv = document.getElementById('btnExportarCsv');
+        if (btnExportarCsv) {
+            btnExportarCsv.addEventListener('click', function() {
+                // --- COLETOR DE FILTROS PARA EXPORTAÇÃO ---
+                const params = new URLSearchParams();
+
+                // Palavras-chave
+                if (palavrasChaveInclusao.length > 0) {
+                    palavrasChaveInclusao.forEach(p => params.append('palavraChave', p));
+                }
+                if (palavrasChaveExclusao.length > 0) {
+                    palavrasChaveExclusao.forEach(p => params.append('excluirPalavra', p));
+                }
+                // UFs, Modalidades, Status
+                document.querySelectorAll('.filter-uf:checked').forEach(cb => params.append('uf', cb.value));
+                document.querySelectorAll('.filter-modalidade:checked').forEach(cb => params.append('modalidadeId', cb.value));
+                const statusSelecionado = document.querySelector('.filter-status:checked');
+                if (statusSelecionado) {
+                    params.append('statusRadar', statusSelecionado.value);
+                }
+                // Municípios
+                document.querySelectorAll('#municipiosContainerDropdown .filter-municipio:checked').forEach(cb => params.append('municipioNome', cb.value));
+                // Filtros Avançados
+                if (dataPubInicioInput.value) params.append('dataPubInicio', dataPubInicioInput.value);
+                if (dataPubFimInput.value) params.append('dataPubFim', dataPubFimInput.value);
+                if (dataAtualizacaoInicioInput.value) params.append('dataAtualizacaoInicio', dataAtualizacaoInicioInput.value);
+                if (dataAtualizacaoFimInput.value) params.append('dataAtualizacaoFim', dataAtualizacaoFimInput.value);
+                if (valorMinInput.value) params.append('valorMin', valorMinInput.value);
+                if (valorMaxInput.value) params.append('valorMax', valorMaxInput.value);
+                // Ordenação (para o caso de querer o CSV ordenado)
+                const [orderByField, orderDirValue] = ordenarPorSelect.value.split('_');
+                params.append('orderBy', orderByField);
+                params.append('orderDir', orderDirValue.toUpperCase());
+                // ---------------------------------------------
+
+                console.log("Exportando com os seguintes parâmetros:", params.toString());
+                
+                // Constrói a URL e abre em uma nova aba para iniciar o download
+                const url = `/api/exportar-csv?${params.toString()}`;
+                window.open(url, '_blank');
+            });
+        }
+
+        // Função Ctrl + Enter aplica filtros, e para limpeza de filtros individuais no painel
         if (offcanvasFiltrosBody) { // Garante que o container dos filtros existe
                         
             offcanvasFiltrosBody.addEventListener('keydown', function(event) {
@@ -413,31 +508,24 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
         // Event Listeners para adicionar palavras-chave
-        function configurarInputDeTags(inputField, palavrasArray, containerElement, tipo) {
-            if (!inputField) return;
-
-            // Handler para a tecla "Enter"
-            inputField.addEventListener('keyup', function(e) {
-                if (e.key === 'Enter' || e.key === 'NumpadEnter') {
-                    e.preventDefault();
-                    addPalavraChave(inputField, palavrasArray, containerElement, tipo);
-                }
-            });
-
-            // Handler para vírgula e ponto e vírgula
-            inputField.addEventListener('input', function(e) {
-                const value = inputField.value;
-                // Se o último caractere for vírgula ou ponto e vírgula
-                if (value.endsWith(',') || value.endsWith(';')) {
-                    // Remove a vírgula/ponto e vírgula antes de adicionar
-                    inputField.value = value.slice(0, -1);
-                    addPalavraChave(inputField, palavrasArray, containerElement, tipo);
+       
+        if (palavraChaveInclusaoInputField) {
+            palavraChaveInclusaoInputField.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault(); 
+                    addPalavraChave(palavraChaveInclusaoInputField, palavrasChaveInclusao, tagsPalavraInclusaoContainer, 'inclusao');
                 }
             });
         }
-        // Configura ambos os campos de input
-        configurarInputDeTags(palavraChaveInclusaoInputField, palavrasChaveInclusao, tagsPalavraInclusaoContainer, 'inclusao');
-        configurarInputDeTags(palavraChaveExclusaoInputField, palavrasChaveExclusao, tagsPalavraExclusaoContainer, 'exclusao');
+
+        if (palavraChaveExclusaoInputField) {
+            palavraChaveExclusaoInputField.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    addPalavraChave(palavraChaveExclusaoInputField, palavrasChaveExclusao, tagsPalavraExclusaoContainer, 'exclusao');
+                }
+            });
+        }
         // FIM DA FUNÇÃO DE TAGS NAS PALAVRAS-CHAVE
     
 
@@ -702,6 +790,37 @@ document.addEventListener('DOMContentLoaded', function () {
             } catch (e) {
                 console.error("Erro ao carregar filtros salvos:", e);
                 localStorage.removeItem(FILTROS_KEY); // Remove dados corrompidos
+            }
+        }
+
+        // --- LÓGICA PARA LEMBRAR ESTADO DOS FILTROS COLAPSÁVEIS ---
+        // --- Quando o usuario reabrir a pagina, os filtros colapsáveis devem reabrir como estavam antes
+        const COLLAPSE_KEY = 'radarPncpCollapseState';
+        const collapsibles = document.querySelectorAll('.filter-collapsible .collapse');
+
+        // Salva o estado quando um filtro é aberto/fechado
+        collapsibles.forEach(el => {
+            el.addEventListener('shown.bs.collapse', event => {
+                const state = JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}');
+                state[event.target.id] = true;
+                localStorage.setItem(COLLAPSE_KEY, JSON.stringify(state));
+            });
+            el.addEventListener('hidden.bs.collapse', event => {
+                const state = JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}');
+                state[event.target.id] = false;
+                localStorage.setItem(COLLAPSE_KEY, JSON.stringify(state));
+            });
+        });
+        // Aplica o estado salvo quando a página carrega
+        function aplicarEstadoCollapse() {
+            const state = JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}');
+            for (const id in state) {
+                if (state[id]) {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        new bootstrap.Collapse(el, { toggle: false }).show();
+                    }
+                }
             }
         }
 
@@ -1112,9 +1231,18 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // --- FUNÇÕES DE BUSCA E RENDERIZAÇÃO DE LICITAÇÕES ---
         async function buscarLicitacoes(page = 1) {
+            
+            // Função de carregamento de aplicar filtros
+            const btnAplicar = document.getElementById('btnBuscarLicitacoes');
+            if (btnAplicar) {
+                btnAplicar.disabled = true; // Desabilita o botão
+                btnAplicar.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Buscando...`;
+            }
+
             salvarFiltrosAtuais(); // SALVA OS FILTROS ANTES DE EXECUTAR A BUSCA
             
             currentPage = page;
+            
             const params = new URLSearchParams();
             
             if(loadingOverlay) loadingOverlay.classList.remove('d-none');
@@ -1247,6 +1375,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 exibicaoInfo.textContent = 'Erro';
                 paginationControls.innerHTML = '';
             }finally {
+                // Ao final da busca (sucesso ou erro), restaura o botão (carregamento filtros)
+                if (btnAplicar) {
+                    btnAplicar.disabled = false;
+                    btnAplicar.innerHTML = `<i class="bi bi-search"></i> Aplicar Filtros`;
+                }
                 // Oculta o overlay de carregamento no final, seja sucesso ou erro
                 if (loadingOverlay) loadingOverlay.classList.add('d-none');
             }
@@ -1910,9 +2043,11 @@ document.addEventListener('DOMContentLoaded', function () {
             popularUFs(); 
             await popularModalidades(); 
             await popularStatus();   
-              
-            renderizarFavoritosSidebar();
+            
+            //aplicarEstadoCollapse() //Isso lembra os estados do collapse, mas não quero por agr
             carregarFiltrosSalvos(); // Tenta carregar os filtros salvos da última sessão
+            renderizarFavoritosSidebar();
+            
             buscarLicitacoes(1); 
                        
             setupFilterSearch('ufSearchInput', 'ufsContainerDropdown', '.form-check');

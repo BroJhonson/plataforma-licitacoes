@@ -1,153 +1,150 @@
 /* ========================================================= */
-/* =============== Estilização Geral das Páginas ============= */
+/* =============== ESTILOS GLOBAIS DA PÁGINA =============== */
 /* ========================================================= */
 
-/* Estilização do corpo da página (body) */
+html, body {
+    overflow-x: clip !important; /* Evita scroll horizontal indesejado de forma moderna */    
+}
+
 body {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;/* Garante que o rodapé fique no fim da página, mesmo com pouco conteúdo */
+    min-height: 100vh; /* Garante que o rodapé fique no fim da página, mesmo com pouco conteúdo */
     font-size: 0.95rem;
     font-family: 'Poppins', sans-serif;
-    background-color: #ffffff; /* Fundo branco por padrão (para a home) */
+    background-color: #ffffff; /* Fundo branco padrão */
 }
 
-/* Estilo para o conteúdo principal, ocupa o espaço restante */
 .main-content {
-    flex-grow: 1; /* Faz o conteúdo principal ocupar o espaço restante */
-    padding-top: 70px; /* Ajusta o padding-top para evitar que o conteúdo fique atrás do cabeçalho ampliado */
-    position: relative; /* Necessário para que o z-index funcione */
-    z-index: 5;         /* Um valor baixo, apenas para garantir que fique acima do fundo */
+    flex-grow: 1; /* Ocupa o espaço restante */
+    position: relative; /* Necessário para contexto de empilhamento e z-index */
+    z-index: 1;         /* z-index base baixo para o conteúdo principal */
 }
 
-/* O fundo escuro específico da página do Radar */
+/* Fundo escuro específico para a página do Radar */
 body.page-busca-licitacoes {
     background-color: #0e1e27;
 }
 
 /* ========================================================= */
-/* ======================= Cabeçalho ======================= */
+/* ======================= CABEÇALHO ======================= */
 /* ========================================================= */
 
-/* Estilo para o cabeçalho das páginas */
 header.border-bottom {
-    /* --- Posicionamento e Estrutura --- */
-    position: fixed; /* Fixo no topo de todas as páginas */
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1030;
-    
-    /* --- Estilo Visual --- */
-    background-color: rgba(255, 255, 255, 0.616); /* Branco com 85% de opacidade */
-    backdrop-filter: blur(10px); /* Efeito de vidro fosco moderno */
-    -webkit-backdrop-filter: blur(10px); /* Suporte para Safari */
-    box-shadow: 0 1px 15px rgba(0, 0, 0, 0.1); /* Sombra sutil que funciona bem */
-    transition: all 0.3s ease; /* Transição para futuras interações */
-    
+    background-color: #ffffff; /* Fundo sólido branco (era rgba com baixa opacidade) */
+    box-shadow: 0 1px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    /* overflow: visible !important; /* Garantir que o header não corte o dropdown (aplicado em media queries) */
 }
 
-/*------------- Estilo da Logo Etc ------------------- */
-/* Estilos para o container do logo no cabeçalho, ajustar logo com subtitulo */
+/* --- Logo --- */
 .logo-container {
-    margin-left: 60px; /* Desloca o conjunto (ícone + texto) para a direita */
+    margin-left: 60px;
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-/* Estilo para o subtítulo abaixo do logo */
-.logo-subtitle {
-    font-size: 0.8rem; /* Tamanho da fonte do texto */
-    font-weight: 500;
-    color: #1f2b38; /* Cor do texto */
-    margin-top: 5px; /* Espaço entre o ícone e o texto */
-    font-style: italic; /* Deixa o texto em itálico */
-}
-
-/* Estilos para o cabeçalho mobile (visível apenas em telas pequenas) */
-.d-lg-none.text-center.py-3 { /* O container do logo mobile */
-    position: relative; /* Para posicionar o botão hamburger absolutamente dentro dele */
-}
-
-/* Estilo para o subtítulo/título mobile */
-.logo-subtitle-mobile {
-    font-size: 1.1rem; /* Ajuste o tamanho do subtítulo/título mobile */
+.logo-subtitle { /* Subtítulo Desktop */
+    font-size: 0.8rem;
     font-weight: 500;
     color: #1f2b38;
+    margin-top: 5px;
+    font-style: italic;
 }
 
-/* ========================================================= */
-/* ==================== Navegação/Menu ===================== */
-/* ========================================================= */
+/* --- Navegação Principal (Desktop) --- */
 .nav-pills {
     display: flex;
-    gap: 0.6rem; /* <<< CONTROLA O ESPAÇO ENTRE OS BOTÕES DE FORMA SEGURA */
+    gap: 0.6rem;
 }
 
-
-/* Estilo para o item ativo (página atual) na navegação */
-.nav-pills .nav-link.active {
-    background-color: #0d6efd;
-    color: white;
-}
-
-/* Estilo base dos botões do menu */
 .nav-pills .nav-link {
     font-family: 'Poppins', sans-serif;
     font-weight: 700;
-    color: #0e1e27;    
+    color: #0e1e27;
     border-radius: 0.5rem;
     transition: all 0.3s ease;
 }
-/*.nav-pills .nav-link {    
-   /* transition: background 0.5s ease;     /* Suaviza mudanças de fundo */
-   /* position: relative;                   /* Permite posicionar o pseudo-elemento ::before */
-   /* overflow: hidden;                     /* Garante que o efeito não ultrapasse os limites do botão */
-/*}
 
-
-/* Quando o mouse passa, revela o efeito */
-.nav-pills .nav-link:hover::before {
-    opacity: 1; /* Torna o gradiente visível no hover */
-}
-
-/* Ajustes no botão quando em hover */
-.nav-pills .nav-link:hover {
-    background-color: #007bff6b;
-    color: white;  /* Garante que o texto continue branco */
-    z-index: 1;    /* Garante que o conteúdo do botão fique acima do gradiente */
-}
-
-
-/* ========================================================= */
-/* ========================= Botões ======================== */
-/* ========================================================= */
-
-/* Estilo do botão "Aplicar no corpo" */
-.btn-primary {
-    background: linear-gradient(90deg, #4d10ad, #007bff);
-    border: none;
-    color: white;
-    transition: background 0.9s ease;
-}
-
-.btn-primary:hover {
-    background: linear-gradient(90deg, #f06f04, #f06f04); /* Gradient "sólido" */
+.nav-pills .nav-link.active,
+.nav-pills .nav-link:hover { /* Combinado active e hover para consistência */
+    background-color: #0d6efd; /* Cor primária do Bootstrap */
     color: white;
 }
+.nav-pills .nav-link:hover { /* Efeito de cor diferente no hover se não for ativo */
+    background-color: #007bff6b; /* Cor mais clara ou com transparência */
+}
+
+
+/* --- Menu Dropdown do Header (Mobile e Desktop, se aplicável) --- */
+header.border-bottom .dropdown-menu {
+    z-index: 1100 !important; /* Abaixo do backdrop do offcanvas, acima do header fixo e conteúdo */
+}
 
 /* ========================================================= */
-/* ======================== Rodapé ========================= */
+/* =========== RESPONSIVIDADE DO CABEÇALHO ============ */
 /* ========================================================= */
 
-/* Estilo do rodapé */
+/* --- Estilos do Header para DESKTOP (lg e acima) --- */
+@media (min-width: 992px) {
+    header.border-bottom {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1030; /* Abaixo do dropdown e offcanvas, mas acima do conteúdo normal */
+        backdrop-filter: blur(10px); /* Efeito de vidro fosco SÓ NO DESKTOP */
+        -webkit-backdrop-filter: blur(10px);
+        background-color: rgba(255, 255, 255, 0.85); /* Fundo semi-transparente COM o blur */
+        overflow: visible !important; /* Importante para dropdowns que possam sair dos limites */
+    }
+
+    .main-content { /* Ajusta o conteúdo principal para não ficar atrás do header fixo */
+        padding-top: 70px; /* Altura aproximada do header */
+    }
+}
+
+/* --- Estilos do Header para MOBILE (abaixo de lg) --- */
+@media (max-width: 991.98px) {
+    header.border-bottom { /* Header rola com a página */
+        position: static !important;
+        z-index: auto !important; /* z-index não se aplica a static, mas para garantir */
+        background-color: #ffffff; /* Fundo SÓLIDO no mobile, sem backdrop-filter */
+        overflow: visible !important; /* Crucial para o dropdown não ser cortado */
+    }
+
+    header.border-bottom > .container-fluid { /* Container interno do header */
+        overflow: visible !important;
+    }
+
+    .d-lg-none.text-center.py-3 { /* Container do logo e botão de menu no mobile */
+        position: relative; /* Contexto para o botão de menu posicionado absolutamente */
+        overflow: visible !important; /* Essencial para o dropdown não ser cortado */
+        min-height: 60px; /* Altura mínima para acomodar logo/botão */
+    }
+
+    .logo-subtitle-mobile { /* Título/Logo Mobile */
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #1f2b38;
+    }
+
+    .main-content { /* Conteúdo principal no mobile */
+        padding-top: 1rem; /* Espaçamento superior menor, já que o header não é fixo */
+    }
+}
+
+/* ========================================================= */
+/* ======================== RODAPÉ ========================= */
+/* ========================================================= */
 .site-footer {
-    background-color: #43484d; /* Cinza escuro */
-    color: #faf8f8; /* Texto claro */
+    background-color: #43484d;
+    color: #faf8f8;
     padding: 0.2rem 0;
     font-size: 0.65em;
     text-align: center;
+    margin-top: auto; /* Empurra para o final da página se o conteúdo for curto */
 }
 
 .site-footer p,
@@ -166,29 +163,25 @@ header.border-bottom {
 }
 
 /* ========================================================= */
-/* ============== BANNER DE CONSENTIMENTO DE COOKIES ======= */
+/* ============ BANNER DE CONSENTIMENTO DE COOKIES ========= */
 /* ========================================================= */
-
 .cookie-banner {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background-color: rgba(14, 30, 39, 0.95); /* Fundo escuro semi-transparente */
-    color: #f8f9fa; /* Texto claro */
+    background-color: rgba(14, 30, 39, 0.95);
+    color: #f8f9fa;
     padding: 1rem 1.5rem;
-    z-index: 1050; /* Garante que fique acima de quase tudo */
+    z-index: 1050; /* Acima do conteúdo, abaixo do dropdown do header e offcanvas */
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.2);
-
-    /* Animação de entrada */
     transform: translateY(100%);
     transition: transform 0.5s ease-in-out;
 }
 
-/* Classe que o JS vai adicionar para mostrar o banner */
 .cookie-banner.show {
     transform: translateY(0);
 }
@@ -205,20 +198,19 @@ header.border-bottom {
 .cookie-banner .cookie-text {
     margin: 0;
     font-size: 0.9rem;
-    flex-grow: 1; /* Permite que o texto ocupe o espaço disponível */
+    flex-grow: 1;
 }
 
 .cookie-banner .cookie-text a {
-    color: #f7931a; /* Cor laranja de destaque */
+    color: #f7931a;
     text-decoration: underline;
 }
 
 .cookie-banner .cookie-actions button {
-    white-space: nowrap; /* Impede que o texto do botão quebre linha */
+    white-space: nowrap;
 }
 
-/* Responsividade para telas menores */
-@media (max-width: 768px) {
+@media (max-width: 768px) { /* Responsividade do Banner de Cookies */
     .cookie-banner .cookie-content {
         flex-direction: column;
         text-align: center;
@@ -228,423 +220,154 @@ header.border-bottom {
     }
 }
 
-/* --------------------------------------------- PAGINA RADAR ---------------------------------------- */
 /* ========================================================= */
-/* ============ Painel de Filtros (Offcanvas) ============== */
+/* ================== BOTÃO VOLTAR AO TOPO ================= */
 /* ========================================================= */
-
-/* Ajustes para o min-width dos dropdowns internos no Offcanvas de filtros */
-#offcanvasFiltros .filter-dropdown .dropdown-menu {
-    min-width: 280px; /* Exemplo, ajuste se os seus já estiverem diferentes */
+#btnVoltarAoTopo {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: none; /* Controlado por JS */
+    z-index: 1000; /* Abaixo de outros overlays, mas acima do conteúdo base */
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Estilos para os inputs de busca dentro dos dropdowns de filtro no Offcanvas */
-#offcanvasFiltros .dropdown-menu input[type="text"].form-control-sm {
-    margin-bottom: 0.5rem; /* Um pouco de espaço abaixo do input de busca */
+#btnVoltarAoTopo i.bi-arrow-up-short {
+    font-size: 1.5rem;
+    line-height: 1;
 }
 
-/* Estilo para o link clicável nos filtros (ex.: "Status", "Modalidades") */
-.filter-collapsible .form-label {
+/* ========================================================= */
+/* ================ OVERLAY DE CARREGAMENTO ================ */
+/* ========================================================= */
+#loadingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.7);
+    z-index: 1055; /* Acima do cookie banner, abaixo do dropdown do header e offcanvas */
+    display: flex; /* d-none é a classe que controla a visibilidade */
+    justify-content: center;
+    align-items: center;
+}
+
+/* ========================================================= */
+/* ======================= OFFCANVAS ======================= */
+/* ========================================================= */
+/* --- Estilos Gerais para Offcanvas e Backdrop --- */
+.offcanvas {
+    z-index: 1600 !important; /* TOPO DE TUDO */
+    visibility: hidden; /* Controlado por JS/Bootstrap (.show) */
+    pointer-events: none;
+}
+.offcanvas.show {
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.offcanvas-backdrop {
+    z-index: 1590 !important; /* Abaixo do Offcanvas, acima do resto (incluindo dropdown do header) */
+    display: none; /* Controlado por JS/Bootstrap (.show) */
+}
+.offcanvas-backdrop.show {
+    display: block;
+}
+
+/* --- Offcanvas de Filtros Específico --- */
+#offcanvasFiltros .filter-dropdown .dropdown-menu { /* Dropdowns dentro do offcanvas de filtros */
+    min-width: 280px;
+}
+
+#offcanvasFiltros .dropdown-menu input[type="text"].form-control-sm { /* Input de busca dentro dos dropdowns */
+    margin-bottom: 0.5rem;
+}
+
+.filter-collapsible .form-label { /* Labels colapsáveis nos filtros */
     cursor: pointer;
     font-weight: 500;
-    color: #333; /* Cor do texto do link */
+    color: #333;
 }
-
 .filter-collapsible .form-label:hover {
-    color: #f17106; /* Cor ao passar o mouse */
+    color: #f17106;
 }
-
-/* Animação suave da seta de expansão/colapso */
-.filter-collapsible .bi-chevron-down {
+.filter-collapsible .bi-chevron-down { /* Seta de expansão */
     transition: transform 0.2s ease-in-out;
 }
-
-/* Rota a seta ao expandir */
 .filter-collapsible [aria-expanded="true"] .bi-chevron-down {
     transform: rotate(180deg);
 }
 
-/* Estilo do container de checkboxes (UFs, Modalidades) */
-.checkbox-container {
+.checkbox-container { /* Container de checkboxes (UFs, Modalidades) */
     overflow-y: auto;
     border: 1px solid #ced4da;
     padding: 0.5rem;
     border-radius: 0.25rem;
-    background-color: #ffffff; /* Fundo branco para destacar */
+    background-color: #ffffff;
 }
-
 .checkbox-container .form-check {
     margin-bottom: 0.2rem;
 }
-
 .checkbox-container .form-check-label {
     font-size: 0.9em;
     font-weight: normal;
 }
 
-/* Filtros dentro do Offcanvas de Filtros (Responsividade) */
-@media (max-width: 767.98px) {
-    #offcanvasFiltros .offcanvas-body .form-label {
-        font-size: 0.9em; /* Relativo ao novo body font-size */
-    }
-    #offcanvasFiltros .offcanvas-body .form-control-sm,
-    #offcanvasFiltros .offcanvas-body .checkbox-container .form-check-label,
-    #offcanvasFiltros .offcanvas-body .tag-item {
-        font-size: 0.85em; /* Relativo ao novo body font-size */
-    }
-     #offcanvasFiltros .offcanvas-footer .btn {
-        font-size: 0.9em; /* Botões no footer do offcanvas de filtros */
-    }
-}
-
-
-/* ===== BOTÃO DE LIMPEZA INDIVIDUAL NOS FILTROS ========= */
-
-.btn-limpar-grupo {
+.btn-limpar-grupo { /* Botão 'x' para limpar grupo de filtros */
     cursor: pointer;
-    color: #adb5bd; /* Cinza claro */
+    color: #adb5bd;
     font-size: 1.7rem;
     font-weight: 600;
     line-height: 1;
     padding: 0 8px;
     border-radius: 50%;
     transition: all 0.2s ease;
-    user-select: none; /* Impede que o 'x' seja selecionado como texto */
+    user-select: none;
 }
 .btn-limpar-grupo:hover {
-    color: #dc3545; /* Vermelho no hover */
+    color: #dc3545;
     background-color: #f8f9fa;
 }
 
-/* ========================================================= */
-/* ===== AJUSTE DE ALTURA E POSIÇÃO DOS OFFCANVAS (DESKTOP) ==== */
-/* ========================================================= */
-
-/* Aplicado apenas em telas grandes (desktop) */
-@media (min-width: 992px) {
-    
-    /* Seleciona TODOS os offcanvas na página do radar */
-    .page-busca-licitacoes .offcanvas {
-        /* Pega a altura do header (aprox. 100px) e a desconta da altura total */
-        height: calc(100vh - 70px); /* << AJUSTE O '100px' SE A ALTURA DO SEU HEADER MUDAR */
-        
-        /* Empurra o topo do offcanvas para baixo, para começar logo após o header */
-        top: 70px; /* << ESTE VALOR DEVE SER IGUAL AO DO CÁLCULO ACIMA */
-    }
-    
-    /* Opcional: Remove a sombra superior que pode parecer estranha */
-    .page-busca-licitacoes .offcanvas-header {
-        box-shadow: none; 
-    }
+/* --- Offcanvas de DETALHES Específico --- */
+#detailsPanel.offcanvas-end { /* Largura padrão desktop */
+    width: 50vw;
 }
 
-/* ========================================================= */
-/* ============ CONTROLE DO PAINEL DA ESQUERDA ============= */
-/* ========================================================= */
-
-/* ------ SOMENTE BOTÃO FILTRO FIXO ------- */
-/*#coluna-sidebar-esquerda {
-    position: relative; /* Ou static. Apenas para garantir um contexto de posicionamento se necessário, mas não obrigatório. */    
-/*}
-#sticky-filter-button-wrapper {
-  /*  position: -webkit-sticky; /* Safari */
-  /*  position: sticky;    
-  /*  top: 70px; /* Distancia do cabeçallho */                   
-  /*  padding-bottom: 10px; /* Pequeno espaço abaixo do botão antes do conteúdo rolável começar a passar por baixo */
-  /*  /*z-index: 1020; /* Para ficar acima do conteúdo rolável da sidebar */
-  /*  padding-top: 5px; /* Pequeno espaço acima do botão se quiser */
-  /*  z-index: 1000; /* Um z-index menor que o Offcanvas de filtros (1040) e Offcanvas de detalhes */
-/*} */
-
-/* --------- COLUNA INTEIRA FIXA ---------- */
-/*#coluna-sidebar-esquerda {
-    position: -webkit-sticky; /* Suporte para Safari */
-  /*  position: sticky;
-    top: 70px; /* Distância do cabeçalho fixo */
-  /*  height: calc(100vh - 70px); /* Garante que a sidebar ocupe a altura da tela menos o cabeçalho */
-  /*  overflow-y: auto; /* Permite rolagem interna se o conteúdo for maior que a altura */
-  /*  z-index: 1000; /* Menor que o offcanvas de filtros (1040) e detalhes */
-/*}
-#sticky-filter-button-wrapper {
-    padding-bottom: 10px; /* Mantém espaço abaixo do botão, se desejar */
-/*    padding-top: 5px; /* Mantém espaço acima do botão, se desejar */
-/*}*/
-
-
-@media (min-width: 992px) {
-
-    /* A coluna da esquerda inteira fica "grudenta" no topo */
-    #coluna-sidebar-esquerda {
-        position: -webkit-sticky;
-        position: sticky;
-        top: 85px;  /* Distância do topo = altura do header + margem */
-        align-self: flex-start; /* Impede que estique verticalmente */
-    }
-
-    /* O conteúdo DENTRO da sidebar é que terá a rolagem */
-    #conteudo-rolavel-sidebar {
-        /* Altura máxima é a da janela, menos o espaço para o header e para o botão de filtros */
-        max-height: calc(100vh - 150px); /* Ajuste o 150px se necessário */
-        overflow-y: auto; /* Adiciona scroll somente se o conteúdo for maior que a altura */
-    }
-}
-
-/* ========================================================= */
-/* ======================== Tabela Principal =============== */
-/* ========================================================= */
-
-/* Estilo da tabela principal de licitações */
-#licitacoes-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-#licitacoes-table th {
-    background-color: #e9ecef;
-    padding: 0.5rem;
-    text-align: left;
-    font-size: 0.9em;
-    color: #343a40;
-}
-
-#licitacoes-table td {
-    padding: 0.5rem;
-    font-size: 0.85em;
-    border-bottom: 1px solid #dee2e6;
-}
-
-/* Estilo específico para a 4ª coluna da tabela (geralmente o status ou valor) */
-#licitacoes-table td:nth-child(4) {
-    font-weight: bold;
-    color: #007bff;
-}
-
-/* Efeito hover nas linhas da tabela */
-#licitacoes-table tr:hover {
-    background-color: #f1f3f5;
-}
-
-/* Estilo do cabeçalho da tabela (título "Licitações Encontradas") */
-#licitacoes-header {
-    padding: 1rem;
-    background-color: #ffffff;
-    border-bottom: 1px solid #dee2e6;
-}
-
-#licitacoes-header h4 {
-    color: #007bff;
-    margin: 0;
-    font-size: 1.1em;
-}
-
-/* Controles acima da tabela (Ordenar por, Itens por página) */
-.table-controls-header {
-    display: flex;
-    flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-    gap: 10px; /* Espaçamento entre os grupos de controle */
-}
-
-.filter-control-group {
-    display: flex; /* Alinha o label e o select na mesma linha */
-    align-items: center;
-    /* flex-grow: 0; /* Não permite que o grupo cresça */
-    /* flex-shrink: 0; /* Não permite que o grupo encolha além do seu conteúdo */
-}
-
-.filter-control-group label {
-    white-space: nowrap; /* Evita que o label quebre linha */
-}
-
-
-/* Estilo para a informação de exibição (Exibindo X-Y de Z) */
-#exibicaoInfo {
-    flex-grow: 1; /* Permite que este div ocupe o espaço central restante */
-    text-align: center;
-    /* min-width: 150px; /* Garante um espaço mínimo para o texto de exibição */
-}
-
-/* Responsividade para os controles da tabela e tabela principal */
-@media (max-width: 767.98px) {
-    /* Reduz a fonte base para mobile. Ajuste este valor! */
-    body {
-        font-size: 0.83rem;
-    }
-
-    /* Ajuste para títulos principais se necessário */
-    h1, .h1 { font-size: 1.7rem; }
-    h2, .h2 { font-size: 1.5rem; }
-    h3, .h3 { font-size: 1.3rem; }
-    h4, .h4 { font-size: 1.1rem; } /* Ex: "Licitações Encontradas" */
-    h5, .h5 { font-size: 1.0rem; } /* Ex: Títulos no Offcanvas */
-
-    /* Botões e Selects nos controles da tabela */
-    .table-controls-header .form-label-sm {
-        font-size: 0.8em; /* Relativo ao novo font-size do body em mobile */
-    }
-    .table-controls-header .form-select-sm {
-        font-size: 0.85em; /* Relativo ao novo font-size do body em mobile */
-        /* width: 100%; /* Já deve estar assim de antes para empilhar */
-    }
-
-    /* Texto "Exibindo X-Y de Z" */
-    #exibicaoInfo {
-        font-size: 0.8em;
-    }
-
-    /* Tabela principal */
-    #licitacoesTableBody td,
-    #licitacoesTableBody th { /* Se quiser que os headers também diminuam */
-        font-size: 0.8em; /* Ajuste */
-        padding: 0.4rem; /* Menor padding */
-    }
-
-    /* Paginação principal */
-    .pagination .page-link {
-        padding: 0.2rem 0.4rem;
-        font-size: 0.75em; /* Relativo ao novo font-size do body */
-    }
-
-    /* Controles da tabela em mobile: empilha os grupos */
-    .table-controls-header {
-           flex-direction: column;
-           align-items: stretch;
-    }
-    .filter-control-group {
-        width: 100%; /* Em telas menores, cada grupo ocupa a largura total */
-        justify-content: space-between; /* Espaçar label e select dentro do grupo */
-        margin-bottom: 0.5rem;
-    }
-    .filter-control-group:last-child {
-        margin-bottom: 0;
-    }
-    .filter-control-group .form-select-sm {
-        /* Se quiser que o select ocupe o espaço restante no grupo: */
-        /* flex-grow: 1; */
-        /* Ou mantenha width: auto com um min/max-width se necessário */
-        min-width: 0; /* Resetar min-width do desktop se necessário */
-        width: 100px; /* Exemplo, ou deixe auto */
-    }
-    #exibicaoInfo {
-        width: 100%;
-        order: 1; /* Pode mudar a ordem em mobile se desejar, ex: colocar o info no meio */
-        margin-top: 0.5rem;
-        margin-bottom: 0.5rem;
-    }
-}
-
-/* ========================================================= */
-/* ======== ESTILO PARA LINHA SELECIONADA NA TABELA ======== */
-/* ========================================================= */
-
-/* Cursor de ponteiro (Efeito de dedinho) */
-/*#licitacoesTableBody tr {
-    cursor: pointer; 
-}*/
-
-/* Regra mais específica e com !important como garantia */
-#licitacoesTableBody > tr.linha-selecionada {
-    background-color: #6082f0 !important; /* Azul bem claro com !important */
-    color: #0c5460 !important; /* Texto escuro com !important */
-    font-weight: 500;
-}
-
-#licitacoesTableBody > tr.linha-selecionada > td {
-    background-color: transparent !important; /* Força os filhos a não terem cor de fundo listrada */
-}
-
-/* Opcional: Garante que os links dentro da linha selecionada também mudem de cor */
-#licitacoesTableBody tr.linha-selecionada a {
-    color: #f8f8f8;
-}
-
-/* Garante que o efeito de hover não sobrescreva a cor da seleção */
-#licitacoesTableBody tr.linha-selecionada:hover {
-    background-color: #80baf3 !important; /* Um tom mais escuro com !important */ 
-}
-
-/* ========================================================= */
-/* ======================== Paginação ====================== */
-/* ========================================================= */
-
-/* Estilo da paginação da tabela principal */
-.pagination {
-    margin-top: 1rem;
-}
-
-.pagination .page-link {
-    color: #007bff;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.85em;
-}
-
-.pagination .page-link:hover {
-    background-color: #e9ecef;
-}
-
-/* ========================================================= */
-/* ================= Painel de Detalhes (Offcanvas) ======== */
-/* ========================================================= */
-
-/* Estilo do painel de detalhes (offcanvas) */
 #detailsPanelContent p {
     margin-bottom: 0.3rem;
     font-size: 0.9em;
     line-height: 1.4;
 }
-
 #detailsPanelContent strong {
-    font-size: 1em;
+    font-size: 1em; /* Relativo ao pai */
     color: #343a40;
 }
-
 #detailsPanelContent .badge {
-    font-size: 0.85em;
+    font-size: 0.85em; /* Relativo ao pai */
 }
-
 #detailsPanelContent .small {
-    font-size: 0.8em;
+    font-size: 0.8em; /* Relativo ao pai */
 }
-
-/* Estilo das caixas de texto em "Justificativa" e "Informação Complementar" */
-#detailsPanelContent div[style*="white-space: pre-wrap"] {
+#detailsPanelContent div[style*="white-space: pre-wrap"] { /* Caixas de texto pré-formatado */
     font-size: 0.88em;
     padding: 8px;
-    max-height: 120px;
+    max-height: 120px; /* Ajustado de 150px */
+}
+#detailsPanelContent .justificativa-container a.small { /* Link "ver mais" na justificativa */
+    font-size: 0.9em; /* Relativo ao pai */
 }
 
-#detailsPanelContent .justificativa-container a.small {
-    font-size: 0.9em;
-}
-
-/* Estilo da tabela de itens no painel de detalhes */
-#detailsPanelItensTableContainer {
-    max-height: 300px;
-    overflow-y: auto;
-    margin-left: 10px;
-    margin-right: 10px;
-}
-
-#detailsPanelItensTableContainer table td,
-#detailsPanelItensTableContainer table th {
-    padding: 0.25rem 0.4rem;
-    font-size: 0.85em;
-    vertical-align: middle;
-}
-
-#detailsPanelItensPagination .page-link-sm {
-    padding: 0.2rem 0.4rem;
-    font-size: 0.75rem;
-}
-
-/* Estilo do título do offcanvas */
-.offcanvas-title {
+.offcanvas-title { /* Título geral de offcanvas */
     font-size: 1.2rem;
 }
-
-.offcanvas-body h5 {
+.offcanvas-body h5 { /* Subtítulos dentro do corpo do offcanvas */
     font-size: 1.05rem;
     color: #007bff;
     margin-top: 1.25rem;
@@ -652,128 +375,267 @@ header.border-bottom {
     padding-bottom: 0.25rem;
     border-bottom: 1px solid #e9ecef;
 }
-
 .offcanvas-body hr {
     margin-top: 1.25rem;
     margin-bottom: 1.25rem;
 }
 
-/* Responsividade para o Painel de Detalhes (Offcanvas) */
-#detailsPanel.offcanvas-end { /* Ou .offcanvas-start se mudar a origem */
-    /* Largura padrão para telas maiores (ex: desktop) */
-    width: 50vw; /* Ou o valor que você quer para desktop, ex: 700px, 800px, etc. */
-    /* max-width: 900px; /* Um limite máximo para telas muito largas se usar vw */
+/* Tabela de Itens no Painel de Detalhes */
+#detailsPanelItensTableContainer {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-left: 10px; /* Pequena margem interna */
+    margin-right: 10px;
+}
+#detailsPanelItensTableContainer table td,
+#detailsPanelItensTableContainer table th {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.85em;
+    vertical-align: middle;
+}
+#detailsPanelItensPagination .page-link-sm { /* Paginação dos itens */
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
 }
 
-@media (max-width: 991.98px) { /* Telas médias (tablets) */
-    #detailsPanel.offcanvas-end,
-    #detailsPanel.offcanvas-start {
-        width: 75vw !important; /* Um pouco mais largo em tablets */
-        /* max-width: 600px; /* Um limite se necessário */
-    }
+/* Botões Personalizados no Footer do Painel de Detalhes */
+#detailsPanel .d-flex .btn { /* Container dos botões */
+    padding: 0.6rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border-width: 2px;
+    transition: all 0.3s ease-in-out;
+    min-width: 220px;
 }
-
-@media (max-width: 767.98px) { /* Telas pequenas (smartphones) */
-    #detailsPanel.offcanvas-end,
-    #detailsPanel.offcanvas-start {
-        width: 95vw !important; /* Quase toda a largura da tela */
-        max-width: none !important; /* Remove o max-width para que o 95vw seja efetivo */
-    }
-    /* Painel de Detalhes (Offcanvas) - Font sizes */
-    #detailsPanel .offcanvas-title {
-        font-size: 1.1rem;
-    }
-    #detailsPanel #detailsPanelSubtitle {
-        font-size: 0.75em;
-    }
-    #detailsPanelContent p {
-        font-size: 0.85em; /* Ajuste, relativo ao novo body font-size */
-        margin-bottom: 0.3rem;
-    }
-    #detailsPanelContent div[style*="white-space: pre-wrap"], /* Caixas de texto */
-    #detailsPanelItensTableContainer table td,
-    #detailsPanelItensTableContainer table th {
-        font-size: 0.80em; /* Ajuste */
-    }
-    #detailsPanelItensPagination .page-link-sm {
-         font-size: 0.7em;
-    }
-}
-
-/* ========================================================= */
-/* ===== BOTÕES PERSONALIZADOS DO PAINEL DE DETALHES ======= */
-/* ========================================================= */
-
-/* --- Estilo base para TODOS os botões no painel --- */
-#detailsPanel .d-flex .btn {
-    padding: 0.6rem 1.5rem;   /* Espaçamento interno (altura e largura) */
-    font-size: 0.9rem;       /* Tamanho da fonte */
-    font-weight: 600;        /* Deixa o texto mais forte */
-    border-radius: 8px;      /* Cantos arredondados */
-    border-width: 2px;       /* Borda um pouco mais grossa */
-    transition: all 0.3s ease-in-out; /* Transição suave para todos os efeitos */
-    min-width: 220px;        /* Garante uma largura mínima para todos */
-}
-
-/* --- 1. Botão Primário (Acessar PNCP) --- */
-#detailsPanel #detailsPanelBtnPncp {
-    background-color: #0d6efd; /* Azul padrão do Bootstrap */
+#detailsPanel #detailsPanelBtnPncp { /* Botão Acessar PNCP */
+    background-color: #0d6efd;
     border-color: #0d6efd;
     color: #ffffff;
 }
-/* Efeito Hover do botão Primário */
 #detailsPanel #detailsPanelBtnPncp:hover {
-    background-color: #0b5ed7; /* Azul mais escuro */
+    background-color: #0b5ed7;
     border-color: #0b5ed7;
-    transform: translateY(-2px); /* Efeito de "levantar" */
-    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3); /* Sombra azulada */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
 }
-
-
-/* --- 2. Botão Secundário (Sistema de Origem) --- */
-#detailsPanel #detailsPanelBtnSistemaOrigem {
+#detailsPanel #detailsPanelBtnSistemaOrigem { /* Botão Sistema de Origem */
     background-color: transparent;
-    border-color: #6c757d; /* Cinza secundário do Bootstrap */
+    border-color: #6c757d;
     color: #6c757d;
 }
-/* Efeito Hover do botão Secundário */
-#detailsPanel #detailsPanelBtnSistemaOrigem:hover:not(:disabled) { /* O hover só funciona se o botão NÃO estiver desabilitado */
-    background-color: #6c757d;
-    border-color: #6c757d;
+#detailsPanel #detailsPanelBtnSistemaOrigem:hover:not(:disabled) {
+    background-color: #5a7c99; /* Cor customizada para hover */
+    border-color: #545b62; /* Ajustado de #6c757d */
     color: #ffffff;
 }
-/* Estilo quando está desabilitado (padrão) */
 #detailsPanel #detailsPanelBtnSistemaOrigem:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
-
-
-/* --- 3. Botão de Fechar --- */
-/* A classe .btn-secondary já existe no HTML, vamos usá-la */
-#detailsPanel .btn-secondary {
-    background-color: #f8f9fa; /* Um cinza bem claro */
-    border-color: #dee2e6; /* Borda sutil */
-    color: #495057; /* Texto cinza escuro */
+#detailsPanel .btn-secondary { /* Botão Fechar (usa classe Bootstrap) */
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    color: #495057;
 }
-/* Efeito Hover do botão de Fechar */
 #detailsPanel .btn-secondary:hover {
-    background-color: #e9ecef; /* Fundo um pouco mais escuro */
+    background-color: #e9ecef;
     border-color: #adb5bd;
 }
 
+
 /* ========================================================= */
-/* ========================== Tags ========================= */
+/* =========== ESTILOS ESPECÍFICOS: PÁGINA RADAR =========== */
 /* ========================================================= */
 
-/* Estilo das tags de palavra-chave */
+/* --- Layout da Coluna Esquerda (Sidebar) no Desktop --- */
+@media (min-width: 992px) {
+    #coluna-sidebar-esquerda { /* Sidebar fixa no desktop */
+        position: -webkit-sticky;
+        position: sticky;
+        top: 85px; /* Distância do topo (header fixo + margem) */
+        align-self: flex-start; /* Impede que estique verticalmente com o conteúdo principal */
+        height: calc(100vh - 85px); /* Altura da viewport menos o espaço do header */
+    }
+
+    #conteudo-rolavel-sidebar { /* Conteúdo interno da sidebar que terá scroll */
+        max-height: 100%; /* Ocupa a altura disponível da #coluna-sidebar-esquerda */
+        overflow-y: auto;
+    }
+
+    /* Ajuste de altura e posição dos Offcanvas na página do Radar (Desktop) */
+    .page-busca-licitacoes .offcanvas {
+        height: calc(100vh - 70px); /* Altura da viewport menos header */
+        top: 70px; /* Alinha abaixo do header */
+    }
+    .page-busca-licitacoes .offcanvas-header {
+        box-shadow: none; /* Remove sombra se parecer estranho */
+    }
+}
+
+/* --- Área de Anúncios na Sidebar --- */
+#espaco-anuncios-lateral {
+    min-height: 300px; /* Volume visual */
+}
+#espaco-anuncios-lateral img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* --- Painel de Favoritos na Sidebar --- */
+#painel-licitacoes-salvas .p-3 {
+    display: flex;
+    flex-direction: column;
+}
+#lista-favoritos-sidebar {
+    max-height: 150px; /* Altura antes do scroll */
+    overflow-y: auto;
+    margin-bottom: 0;
+    flex-grow: 1; /* Ocupa espaço disponível se o pai for flex */
+}
+#lista-favoritos-sidebar .list-group-item {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+#lista-favoritos-sidebar .list-group-item .sidebar-fav-link { /* Link do favorito */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block; /* Necessário para text-overflow */
+}
+
+/* --- Painel de Feedback (Clonado por JS) --- */
+.painel-feedback-conteudo { /* Estilo do conteúdo do template */
+    padding: 0.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    background-color: #f8f9fa;
+    text-align: center;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+}
+#coluna-sidebar-esquerda .painel-feedback-conteudo { /* Quando na sidebar (Desktop) */
+    width: 100%;
+    box-sizing: border-box;
+}
+#coluna-tabela-principal #feedback-placeholder-mobile .painel-feedback-conteudo { /* Quando abaixo da tabela (Mobile) */
+    max-width: 450px;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 0.9em;
+}
+#feedback-placeholder-mobile .painel-feedback-conteudo h6 {
+    font-size: 1.1em;
+}
+#feedback-placeholder-mobile .painel-feedback-conteudo p small {
+    font-size: 0.9em;
+}
+#feedback-placeholder-mobile .painel-feedback-conteudo .btn-sm {
+    font-size: 0.85em;
+    padding: 0.25rem 0.6rem;
+}
+
+/* --- TABELA PRINCIPAL de Licitações --- */
+#licitacoes-table { /* Se você usa ID para a tabela */
+    width: 100%;
+    border-collapse: collapse; /* Ou use classes Bootstrap table */
+}
+#licitacoes-table th { /* Se não usar classes Bootstrap table-group-divider, etc. */
+    background-color: #e9ecef;
+    padding: 0.5rem;
+    text-align: left;
+    font-size: 0.9em;
+    color: #343a40;
+}
+#licitacoes-table td {
+    padding: 0.5rem;
+    font-size: 0.85em;
+    border-bottom: 1px solid #dee2e6;
+}
+#licitacoes-table td:nth-child(4) { /* Exemplo: destaque em uma coluna */
+    font-weight: bold;
+    color: #007bff;
+}
+#licitacoes-table tr:hover {
+    background-color: #f1f3f5;
+}
+
+/* Linha Selecionada na Tabela */
+#licitacoesTableBody > tr.linha-selecionada,
+#licitacoesTableBody > tr.linha-selecionada:hover { /* Manter a cor no hover */
+    background-color: #cfe2ff !important; /* Cor de info sutil do Bootstrap */
+    color: #052c65 !important;
+    font-weight: 500;
+}
+#licitacoesTableBody > tr.linha-selecionada > td {
+    background-color: transparent !important; /* Evita conflito com table-striped */
+}
+#licitacoesTableBody tr.linha-selecionada a {
+    color: #052c65; /* Cor do link na linha selecionada */
+}
+
+
+/* Cabeçalho da Seção da Tabela (Título "Licitações Encontradas") */
+#licitacoes-header h4 { /* Se você tiver um ID específico para o header da tabela */
+    color: #007bff;
+    margin: 0;
+    font-size: 1.1em;
+}
+
+/* Controles Acima da Tabela (Ordenar, Itens por Página) */
+.table-controls-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    gap: 10px;
+}
+.filter-control-group {
+    display: flex;
+    align-items: center;
+}
+.filter-control-group label {
+    white-space: nowrap;
+}
+#exibicaoInfo { /* Texto "Exibindo X-Y de Z" */
+    flex-grow: 1;
+    text-align: center;
+}
+
+/* Objeto da Compra na Tabela (Ver Mais/Menos) */
+.objeto-container a {
+    font-size: 0.85em;
+    text-decoration: none;
+}
+.objeto-container .ver-mais-objeto,
+.objeto-container .ver-menos-objeto {
+    cursor: pointer;
+}
+
+/* Paginação Principal da Tabela */
+.pagination {
+    margin-top: 1rem;
+}
+.pagination .page-link {
+    color: #007bff;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85em;
+}
+.pagination .page-link:hover {
+    background-color: #e9ecef;
+}
+
+/* Tags de Palavra-Chave e Filtros Ativos */
 .tags-container {
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
     padding: 5px 0;
 }
-
 .tag-item {
     background-color: #007bff;
     color: white;
@@ -783,7 +645,6 @@ header.border-bottom {
     display: inline-flex;
     align-items: center;
 }
-
 .tag-item .remove-tag {
     background: none;
     border: none;
@@ -794,912 +655,538 @@ header.border-bottom {
     line-height: 1;
     cursor: pointer;
 }
-
 .tag-item .remove-tag:hover {
     opacity: 0.7;
 }
 
-/* Estilo das tags de filtros no topo da tabela */
-#filtrosAtivosContainer .badge {
+#filtrosAtivosContainer .badge { /* Tags de filtros aplicados no topo */
     margin-right: 5px;
     margin-bottom: 5px;
     font-size: 0.9em;
 }
-
 #filtrosAtivosContainer strong {
     color: #555;
 }
 
-/* ========================================================= */
-/* ============ Outras seções dentro da pagina ============= */
-/* ========================================================= */
-
-/* Estilo para a área de anúncios (exemplo) */
-#espaco-anuncios-lateral {
-    min-height: 300px; /* Apenas para dar um volume ao espaço */
-    /* Adicione outros estilos que desejar */
-}
-
-/* Garante que imagens dentro do espaço de anúncios não ultrapassem a largura do container */
-#espaco-anuncios-lateral img {
-    max-width: 100%; /* Garante que a imagem não seja maior que seu container */
-    height: auto;    /* Mantém a proporção da imagem */
-}
-
-/* Estilo do overlay de carregamento */
-#loadingOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(255, 255, 255, 0.7);
-    z-index: 1050;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* Estilo para links no container de objetos */
-.objeto-container a {
-    font-size: 0.85em;
-    text-decoration: none;
-}
-
-.objeto-container .ver-mais-objeto,
-.objeto-container .ver-menos-objeto {
-    cursor: pointer;
-}
-
-/* Estilo do botão "Voltar ao Topo" */
-#btnVoltarAoTopo {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    display: none; /* Inicialmente oculto, JS controla */
-    z-index: 1000;
-    /* Forçar dimensões para um círculo perfeito */
-    width: 50px;  /* Ajuste o tamanho */
-    height: 50px; /* Ajuste o tamanho (igual à largura) */
-    padding: 0; /* Resetar padding para controlar o tamanho pelo width/height */
-    display: flex; /* Para centralizar o ícone */
-    align-items: center;
-    justify-content: center;
-    /* transition: opacity 0.3s, visibility 0.3s; /* Mantenha se quiser fade */
-}
-
-#btnVoltarAoTopo i.bi-arrow-up-short {
-    font-size: 1.5rem; /* Ajuste o tamanho do ícone se necessário */
-    line-height: 1; /* Ajuda na centralização vertical do ícone */
-}
-
-/* ===== ESTILO SUTIL DA BARRA DE ROLAGEM (SCROLLBAR) ====== */
-/* Esconde a barra de rolagem por padrão (para Chrome, Safari, Edge) */
-::-webkit-scrollbar {
-    width: 8px; /* Largura da barra */
-    background: #0e1e2700; /* Fundo transparente */
-}
-
-/* Esconde a "trilha" da barra de rolagem */
-::-webkit-scrollbar-track {
-    background: #ffffff00;
-}
-
-/* Define o estilo da "alça" da barra, que é o que você arrasta */
-::-webkit-scrollbar-thumb {
-    background-color: transparent; /* Totalmente invisível por padrão */
-    border-radius: 10px;
-    border: 3px solid transparent;
-}
-
-/* O truque acontece aqui: no HOVER de um elemento com scroll... */
-#offcanvasFiltros .offcanvas-body:hover::-webkit-scrollbar-thumb,
-#detailsPanelItensTableContainer:hover::-webkit-scrollbar-thumb,
-/* Adicione outros containers com overflow-y: auto aqui */
-.main-content:hover::-webkit-scrollbar-thumb { /* ... aplica o estilo visível na "alça" */
-    background-color: rgba(255, 255, 255, 0); /* Cor cinza semi-transparente */
-}
-
-/* Efeito de transição suave ao aparecer */
-::-webkit-scrollbar-thumb {
-    transition: background-color 0.3s ease-in-out;
-}
-
-/* ================= PAINEL DE FAVORITOS ================= */
-
-/* Painel de Licitações Salvas na Sidebar */
-#painel-licitacoes-salvas .p-3 { /* O wrapper interno */
-    display: flex; /* Para permitir que o <ul> cresça e o footer (se houver) fique no final */
-    flex-direction: column;
-    
-}
-
-#lista-favoritos-sidebar {
-    max-height: 150px; /* <<< Defina a altura máxima desejada para a lista antes do scroll */
-    overflow-y: auto;  /* <<< Adiciona a barra de rolagem vertical quando necessário */
-    margin-bottom: 0; /* Remove margem inferior padrão do list-group se houver */
-    flex-grow: 1; /* Se o painel .p-3 for flex-column, permite que a lista ocupe espaço */
-}
-
-/* Ajuste fino nos itens da lista da sidebar de favoritos, se necessário */
-#lista-favoritos-sidebar .list-group-item {
-    padding-top: 0.35rem;
-    padding-bottom: 0.35rem;
-    padding-left: 0.5rem; /* Menor padding lateral se os botões ficarem apertados */
-    padding-right: 0.5rem;
-    /* font-size já foi definido em JS como 0.78em */
-}
-
-#lista-favoritos-sidebar .list-group-item .sidebar-fav-link {
-    /* Estilos para o link (nome da licitação) */
-    white-space: nowrap;      /* Impede que o texto do link quebre linha */
-    overflow: hidden;         /* Esconde o texto que transborda */
-    text-overflow: ellipsis;  /* Adiciona "..." no final do texto cortado */
-    display: block; /* Para o ellipsis funcionar bem */
-}
-
-
-/* ===================== Painel de Feedback ================ */
-
-/* Container para o painel de feedback na coluna lateral (DESKTOP) */
-#feedback-placeholder-desktop {
-    /* A largura já deve ser definida pela coluna Bootstrap pai (col-lg-2 col-md-3) */
-    margin-left: auto;
-    margin-right: auto;
-}
-
-/* Container para o painel de feedback abaixo da tabela (MOBILE) */
-#feedback-placeholder-mobile {
-    /* d-lg-none já o oculta no desktop */
-    margin-left: auto;
-    margin-right: auto;
-    max-width: 500px; /* Exemplo: limita a largura no mobile se a coluna for 100% */
-}
-
-/* Estilo para o CONTEÚDO REAL do painel de feedback (que é clonado do template) */
-.painel-feedback-conteudo {
-    padding: 0.5rem; /* p-3 é 1rem */
-    border: 1px solid #dee2e6; /* Cor de borda padrão do Bootstrap */
-    border-radius: 0.25rem;
-    background-color: #f8f9fa; /* bg-light */
-    text-align: center;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Sombra sutil */
-    margin-bottom: 1rem; /* Espaço abaixo dele */
-    font-size: 0.8rem;
-}
-
-/* Estilo para Desktop (quando o painel de feedback está na sidebar) */
-#coluna-sidebar-esquerda .painel-feedback-conteudo {
-    width: 100%; /* Força a ocupar a largura da coluna pai */
-    box-sizing: border-box; /* Garante que padding e border não aumentem a largura total */
-}
-
-/* Estilo para Mobile (quando o painel de feedback está abaixo da tabela) */
-#coluna-tabela-principal #feedback-placeholder-mobile .painel-feedback-conteudo {
-    max-width: 450px; /* Largura máxima para o painel no mobile para não ficar tela cheia */
-    margin-left: auto;  /* Centraliza o bloco */
-    margin-right: auto; /* Centraliza o bloco */
-    font-size: 0.9em; /* Letra um pouco menor no mobile para este painel */
-}
-
-#feedback-placeholder-mobile .painel-feedback-conteudo h6 {
-    font-size: 1.1em; /* Ajusta o título dentro do painel mobile */
-}
-
-#feedback-placeholder-mobile .painel-feedback-conteudo p small {
-    font-size: 0.9em; /* Ajusta o parágrafo dentro do painel mobile */
-}
-
-#feedback-placeholder-mobile .painel-feedback-conteudo .btn-sm {
-    font-size: 0.85em; /* Ajusta o botão dentro do painel mobile */
-    padding: 0.25rem 0.6rem;
-}
-
-
 
 /* ========================================================= */
-/* ===================== Responsividade Geral ============== */
+/* ======== RESPONSIVIDADE ESPECÍFICA: PÁGINA RADAR ======== */
 /* ========================================================= */
 
-/* Ajustes de responsividade para o botão de filtros e offcanvas */
-@media (max-width: 991.98px) { /* Abaixo de LG, quando o painel lateral fixo some */
-    #coluna-sidebar-esquerda .sticky-top { /* O botão de filtros */
-        position: static !important; /* Remove o sticky para o botão em mobile */
+/* --- Botões Flutuantes (SOMENTE MOBILE, abaixo de lg) --- */
+@media (max-width: 991.98px) {
+    .botoes-flutuantes-mobile {
+        position: fixed;
+        top: 125px; /* Altura */
+        right: 5px; /* Ajustado para o canto direito */
+        left: auto; /* Remove o left: 0px; */
+        z-index: 1060; /* Acima do conteúdo, abaixo do dropdown e offcanvas */
+        display: flex;
+        flex-direction: column; /* Empilha verticalmente */
+        gap: 0.5rem; /* Espaço entre os botões */
+        align-items: flex-end; /* Alinha os botões à direita do container */
+        pointer-events: none; /* Container não intercepta cliques */
     }
-    /* A coluna da tabela ocupará toda a largura, pois a coluna da sidebar some. */
-    /* Se #coluna-sidebar-esquerda não tiver d-none d-lg-block,
-       então precisaria de:
-    #coluna-sidebar-esquerda {
-        display: none;
+    .botoes-flutuantes-mobile > * {
+        pointer-events: auto; /* Botões interceptam cliques */
     }
+    .btn-flutuante {
+        width: 45px; /* Levemente maior */
+        height: 45px;
+        border-radius: 50%; /* Totalmente redondo */
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .btn-flutuante:hover {
+        transform: scale(1.1);
+    }
+
+    /* --- Ajuste de Layout das Colunas (Sidebar e Tabela) no Mobile --- */
+    #coluna-sidebar-esquerda,
     #coluna-tabela-principal {
-        width: 100%;
         flex: 0 0 100%;
         max-width: 100%;
-    } */
-}
-
-/* Ajustes de responsividade para telas pequenas (Painel de Filtros Fixo) */
-@media (max-width: 767.98px) {
-    #painel-filtros-fixo {
-        position: static;
-        height: auto;
-        margin-bottom: 1.5rem;
+        width: 100%;
     }
-    #conteudo-scroll-filtros {
-        overflow-y: visible;
-        max-height: none;
+    #coluna-sidebar-esquerda { /* Espaço abaixo da sidebar antes da tabela */
+        margin-bottom: 1rem;
+        position: relative; /* Reset de sticky se houver */
+        z-index: 2; /* Garante que não flutue estranhamente */
     }
-    /* Botão principal de abrir filtros (se estiver visível em mobile) */
-    #coluna-sidebar-esquerda .btn-primary, /* Botão sticky da sidebar */
-    .d-lg-none .btn-primary /* Botão que aparece em mobile para abrir filtros (se você tiver um) */
-    {
-        font-size: 0.9em;
-        padding: 0.5rem 0.75rem;
+     #coluna-tabela-principal {
+        z-index: 1; /* Abaixo da sidebar se houver sobreposição acidental */
     }
 }
 
-/* ========================================================= */
-/* =========== RESPONSIVIDADE - PÁGINA DO RADAR ============ */
-/* ========================================================= */
 
-/* Por padrão, o painel de detalhes (mesmo escondido) não deve roubar cliques */
-/* Esconde TODOS os offcanvas (seja de filtros ou detalhes) por padrão 
-   e impede que eles "roubem" cliques quando não estão visíveis. */
-.offcanvas {
-    visibility: hidden; /* Fica completamente invisível e não interativo */
-    pointer-events: none; /* Dupla garantia de que não recebe cliques */
-}
-/* Quando o Bootstrap adiciona a classe .show para abrir um offcanvas... */
-.offcanvas.show {
-    visibility: visible;  /* Torna-o visível novamente */
-    pointer-events: auto;   /* Permite que ele e seus botões recebam cliques */
-}
-/* Opcional, mas recomendado: Garante que o backdrop também só exista quando necessário. */
-/* O Bootstrap cuida disso, mas essa regra reforça o comportamento. */
-.offcanvas-backdrop {
-    display: none;
-}
-.offcanvas-backdrop.show {
-    display: block;
-}
+/* --- Tabela Responsiva (transforma em "cards" no mobile) --- */
+@media (max-width: 767.98px) { /* md e abaixo */
+    /* Ajustes gerais de fonte para mobile */
+    body { font-size: 0.83rem; }
+    h1, .h1 { font-size: 1.7rem; }
+    h2, .h2 { font-size: 1.5rem; }
+    h3, .h3 { font-size: 1.3rem; }
+    h4, .h4 { font-size: 1.1rem; }
+    h5, .h5 { font-size: 1.0rem; }
 
-@media (max-width: 991.98px) { /* Afeta tablets e celulares */
+    /* Controles da Tabela Principal */
+    .table-controls-header {
+           flex-direction: column;
+           align-items: stretch; /* Ocupa toda a largura */
+    }
+    .filter-control-group {
+        width: 100%;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+    .filter-control-group:last-child { margin-bottom: 0; }
+    .filter-control-group .form-select-sm {
+        min-width: 100px; /* Ou deixe auto e controle com flex-grow se necessário */
+    }
+    #exibicaoInfo { /* Texto "Exibindo..." */
+        width: 100%;
+        order: 1; /* Pode mudar a ordem visual */
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.8em; /* Relativo ao novo body font-size */
+    }
+    .table-controls-header .form-label-sm,
+    .table-controls-header .form-select-sm {
+        font-size: 0.85em; /* Relativo ao novo body font-size */
+    }
 
-    /* Esconde o cabeçalho da tabela no mobile, pois os rótulos estarão nos cards */
-    .table-responsive thead {
+    /* Tabela Principal */
+    #licitacoesTableBody td,
+    #licitacoesTableBody th { /* Se th for visível por algum motivo */
+        font-size: 0.8em; /* Relativo ao novo body font-size */
+        padding: 0.4rem;
+    }
+    .table-responsive thead { /* Esconde cabeçalho da tabela */
         display: none;
     }
-    
-    /* Transforma a linha da tabela em um "card" */
-    .table-responsive tr {
+    .table-responsive tr { /* Linha vira card */
         display: block;
         margin-bottom: 1rem;
         border: 1px solid #dee2e6;
         border-radius: 8px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
-    
-    /* Remove a borda padrão do bootstrap */
-    .table-responsive td {
+    .table-responsive td { /* Célula vira linha do card */
         border: none;
-        border-bottom: 1px solid #eee; /* Linha sutil para separar os campos do card */
+        border-bottom: 1px solid #eee;
         display: block;
-        text-align: right; /* Alinha o conteúdo à direita */
-        padding-left: 50%; /* Dá espaço para o rótulo à esquerda */
+        text-align: right; /* Conteúdo da célula à direita */
+        padding-left: 50%; /* Espaço para o label */
         position: relative;
     }
-    
-    /* A mágica acontece aqui: cria o rótulo usando o atributo data-label */
-    .table-responsive td::before {
-        content: attr(data-label); /* Pega o texto do atributo data-label */
+    .table-responsive td::before { /* Label da célula */
+        content: attr(data-label);
         position: absolute;
         left: 10px;
-        width: calc(50% - 20px);
+        width: calc(50% - 20px); /* Largura do label */
         padding-right: 10px;
         text-align: left;
-        font-weight: 600; /* Deixa o rótulo em negrito */
+        font-weight: 600;
         color: #343a40;
     }
-
-    /* Ajuste específico para a coluna de ações */
-    .table-responsive td[data-label="Ações"] {
-        text-align: center; /* Centraliza os botões */
-        padding-left: 0; /* Remove o padding especial */
+    .table-responsive td[data-label="Ações"] { /* Célula de Ações */
+        text-align: center;
+        padding-left: 0;
     }
-    .table-responsive td[data-label="Ações"]::before {
-        display: none; /* Não precisa de rótulo para a coluna de ações */
-    }
-
-    /* Ajuste para a coluna de objeto, que pode ter muito texto */
-     .table-responsive td[data-label="Objeto"] {
+    .table-responsive td[data-label="Ações"]::before { display: none; }
+    .table-responsive td[data-label="Objeto"] { /* Célula de Objeto */
         text-align: left;
         padding-left: 10px;
     }
-    .table-responsive td[data-label="Objeto"]::before {
-        position: static; /* Faz o rótulo se comportar como texto normal */
-        display: block;   /* Coloca o rótulo em sua própria linha */
+    .table-responsive td[data-label="Objeto"]::before { /* Label do Objeto */
+        position: static;
+        display: block;
         margin-bottom: 5px;
         width: auto;
+    }
+
+    /* Paginação Principal */
+    .pagination .page-link {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75em; /* Relativo ao novo body font-size */
+    }
+
+    /* Offcanvas de Filtros */
+    #offcanvasFiltros .offcanvas-body .form-label { font-size: 0.9em; }
+    #offcanvasFiltros .offcanvas-body .form-control-sm,
+    #offcanvasFiltros .offcanvas-body .checkbox-container .form-check-label,
+    #offcanvasFiltros .offcanvas-body .tag-item { font-size: 0.85em; }
+    #offcanvasFiltros .offcanvas-footer .btn { font-size: 0.9em; }
+
+    /* Offcanvas de Detalhes */
+    #detailsPanel.offcanvas-end,
+    #detailsPanel.offcanvas-start { /* Largura do offcanvas de detalhes */
+        width: 95vw !important;
+        max-width: none !important;
+    }
+    #detailsPanel .offcanvas-title { font-size: 1.1rem; }
+    #detailsPanel #detailsPanelSubtitle { font-size: 0.75em; }
+    #detailsPanelContent p { font-size: 0.85em; margin-bottom: 0.3rem; }
+    #detailsPanelContent div[style*="white-space: pre-wrap"],
+    #detailsPanelItensTableContainer table td,
+    #detailsPanelItensTableContainer table th { font-size: 0.80em; }
+    #detailsPanelItensPagination .page-link-sm { font-size: 0.7em; }
+
+    /* Tabela de Itens Responsiva no Painel de Detalhes */
+    #detailsPanelItensTableContainer thead { display: none; }
+    #detailsPanelItensTableContainer tr {
+        display: block;
+        border-bottom: 2px solid #0d6efd;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    #detailsPanelItensTableContainer td {
+        display: block;
+        text-align: right;
+        border: none;
+        padding-left: 50%; /* Espaço para o label */
+        position: relative;
+    }
+    #detailsPanelItensTableContainer td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 50%; /* Ajustado para ocupar metade */
+        padding-right: 10px;
+        text-align: left;
+        font-weight: 600;
+    }
+    #detailsPanelItensTableContainer td[data-label="Descrição"] { /* Descrição do item */
+        text-align: left;
+        padding-left: 0; /* Sem padding especial, pois o label fica acima */
+        white-space: normal;
+    }
+    #detailsPanelItensTableContainer td[data-label="Descrição"]::before { /* Label da descrição */
+        position: static; /* Label acima do conteúdo */
+        display: block;
+        margin-bottom: 5px;
+        width: auto; /* Ocupa a largura necessária */
     }
 }
 
 
-
-/* ----------------------------------------------------------------------------------------------------------------- */
-
 /* ========================================================= */
-/* ================== ESTILOS DA HOMEPAGE ================== */
+/* ============ ESTILOS ESPECÍFICOS: PÁGINA HOME =========== */
 /* ========================================================= */
-
-/* Fora da home, o .site-wrapper é transparente e 100% da largura. */
-.site-wrapper {
-    width: 100%;
-}
-
-/* O fundo do corpo para a home page (as "margens" brancas ou de outra cor) */
+/* --- Layout Geral da Home (Efeito "Encaixotado") --- */
 body.page-home {
-    background-color: #ffffff;
-    color: #ffffff; /* Texto padrão na home */
+    background-color: #ffffff; /* Fundo "externo" da página */
+    color: #ffffff; /* Cor de texto padrão para conteúdo dentro do wrapper */
 }
-
-/* APENAS na home, o .site-wrapper se torna a nossa "caixa" de conteúdo */
-body.page-home .site-wrapper {
-    max-width: 1500px; /* Largura máxima da caixa */
-    margin: 1rem auto; /* Centraliza e dá margem no topo/baixo */
-    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.473); /* Sombra para profundidade */
-    background-color: #0e1e27; /* Fundo da "caixa" de conteúdo */
-    overflow: hidden; /* Importante para o box-shadow e bordas */
-    border-radius: 20px; /* Cantos levemente arredondados */
-    padding: 2rem;
+body.page-home .site-wrapper { /* O container principal da home */
+    max-width: 1500px;
+    margin: 1rem auto;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.473);
+    background-color: #0e1e27; /* Fundo interno da "caixa" */
+    overflow: hidden; /* Para border-radius e box-shadow funcionarem bem */
+    border-radius: 20px;
+    padding: 2rem; /* Espaçamento interno do wrapper */
 }
-
-/* Remover o espaçamento padrão que não precisamos mais no modo encaixotado */
-body.page-home .main-content .container-fluid {
+body.page-home .main-content .container-fluid { /* Remove margem do container-fluid dentro do wrapper */
     margin-top: 0 !important;
 }
-
-/* Faz o main herdar o fundo da caixa */
-body.page-home main.main-content {
+body.page-home main.main-content { /* Conteúdo principal herda o fundo do wrapper */
     background-color: inherit;
 }
 
-/* Padrão */
+/* --- Estilos Gerais das Seções da Home --- */
 .page-home section {
     padding: 7rem 0; /* Espaçamento vertical generoso */
     color: #ffffff; /* Cor de texto padrão para as seções */
 }
+.page-home h1 { color: #007bff; }
+.page-home h2 { font-size: 2.75rem; color: #131f1d; /* Cor escura para contraste em fundos claros */ }
+.page-home h3 { color: #ffffff; } /* H3 geralmente em fundos escuros na home */
 
-/* Cores da fonte */
-body.page-home h1 {
-    color: #007bff;
-    
-
-}
-body.page-home h2 {
-    font-size: 2.75rem;
-    color: #131f1d;
-}
-body.page-home h3 {
-    color: #ffffff;
-}
-
-/* Esta classe irá definir a cor padrão para todo o H1 */
-.hero-title {
-    color: #007bff; /* Azul, cor associada ao "RADAR PNCP" e profissionalismo */
-    text-align: center; /* Exemplo: se você quiser centralizar o texto */
-}
-/* Estilo para a parte destacada em laranja */
-.hero-title .destaque-laranja {
-    color: #f06f04; 
-}
-
-
-/* ========================================================= */
-/* =========== PRIMEIRA SEÇÃO (hero) DA HOMEPAGE =========== */
-/* ========================================================= */
-
-.page-home .hero { /* O fundo da seção*/
-    background: linear-gradient(to bottom, #ffffff, #628294); 
-    padding-bottom: 5rem; 
-    display: flex;         /* permite centralizar o conteúdo */
+/* --- Seção Hero (Topo) --- */
+.page-home .hero {
+    background: linear-gradient(to bottom, #ffffff, #628294);
+    padding-bottom: 5rem;
+    display: flex;
     justify-content: center;
 }
-
 .page-home .hero .container {
     max-width: 1200px;
     width: 100%;
 }
-.page-home .destaque-gratuito {
-    color: #f06f04; /* Laranja para destaque de palavras */
+.hero-title { /* Título principal da Hero */
+    color: #007bff;
+    text-align: center;
+}
+.hero-title .destaque-laranja { /* Palavra destacada no título */
+    color: #f06f04;
+}
+.page-home .destaque-gratuito { /* Outras palavras de destaque */
+    color: #f06f04;
+}
+.botao-destaque { /* Botão principal da Hero */
+    padding: 1rem 2.5rem;
+    font-size: 1.4rem;
+    font-weight: 600;
+    border-radius: 0.6rem;
 }
 
-.botao-destaque {
-    padding: 1rem 2.5rem;   /* aumenta altura e largura */
-    font-size: 1.4rem;      /* aumenta o tamanho do texto */
-    font-weight: 600;       /* deixa mais destacado */
-    border-radius: 0.6rem;  /* cantos levemente mais arredondados */
-}
-
-
-/* ========================================================= */
-/* ============= EFEITO ACORDEÃO E LUZ NA BORDA ============ */
-/* ========================================================= */
-
+/* --- Seção Acordeão Horizontal com Efeito de Luz --- */
 .accordion-horizontal-container {
     display: flex;
     gap: 10px;
     min-height: 420px;
 }
-
 .accordion-card {
     flex: 1;
     border-radius: 1rem;
-    overflow: hidden;
+    overflow: hidden; /* Necessário para o efeito de borda com ::after */
     transition: flex 0.9s cubic-bezier(0.65, 0, 0.35, 1);
     position: relative;
     cursor: pointer;
-    background-color: #33502c; /* Fundo escuro para os cards */
+    background-color: #0e1e27; /* Fundo dos cards (era #33502c) */
 }
-
 .accordion-card.active {
-    flex: 3; /* largura quando ativo */
+    flex: 3; /* Card ativo expande */
 }
-
-/* O efeito de luz agora usa um pseudo-elemento ::before */
-.accordion-card::before {
+.accordion-card::before { /* Efeito de luz gradiente */
     content: '';
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 400%; /* Bem grande para cobrir tudo ao girar */
-    height: 400%;
-    background: conic-gradient(from 180deg at 50% 50%, #5d52e5 0%, #db5722 65%, #ebe7ea 70%, #61ff52 50%);
+    top: 50%; left: 50%;
+    width: 400%; height: 400%;
+    background: conic-gradient(from 180deg at 50% 50%, #5d52e5 0%, #db5722 65%, #ebe7ea 70%, #61ff52 50%); /* Ajustado o gradiente */
     z-index: 1;
     transform-origin: center center;
     transform: translate(-50%, -50%) rotate(0deg);
     opacity: 0;
     transition: opacity 0.5s ease-in-out;
 }
-
 .accordion-card.active::before {
     opacity: 1;
     animation: rotateBorder 5s linear infinite;
 }
-
-/* Um "recorte" para criar o efeito de borda, colocado sobre o ::before */
-.accordion-card::after {
+.accordion-card::after { /* "Recorte" para criar a borda brilhante */
     content: '';
     position: absolute;
-    inset: 5px; /* A espessura da borda brilhante */
+    inset: 5px; /* Espessura da borda */
     background: #0e1e27; /* Mesma cor de fundo do card */
-    border-radius: calc(1rem - 5px);
-    z-index: 2;
+    border-radius: calc(1rem - 5px); /* Raio interno */
+    z-index: 2; /* Acima do gradiente, abaixo do conteúdo */
 }
-
-.accordion-card .card-content {
+.accordion-card .card-content { /* Conteúdo do card */
     position: relative;
-    z-index: 3; /* Conteúdo fica acima de tudo */
+    z-index: 3; /* Acima de tudo */
     padding: 2rem;
     height: 100%;
-    color: #fdfdfd; /* cor da font */
+    color: #fdfdfd;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
 }
-
-.accordion-card .card-content i {
+.accordion-card .card-content i { /* Ícone */
     font-size: 7rem;
     transition: transform 0.5s ease;
 }
-
-.accordion-card .card-content h3 {
+.accordion-card .card-content h3 { /* Título do card */
     font-size: 2rem;
     font-weight: 700;
     margin-top: 1rem;
     transition: transform 0.5s ease;
 }
-
-/* O conteúdo oculto do card do acordeão */
-.accordion-card .hidden-content {
+.accordion-card .hidden-content { /* Conteúdo que aparece ao expandir */
     opacity: 0;
     max-height: 0;
     overflow: hidden;
-    transition: opacity 0.4s ease 0.2s, max-height 0.4s ease 0.2s;
+    transition: opacity 0.4s ease 0.2s, max-height 0.4s ease 0.2s; /* Delay na transição */
 }
-
 .accordion-card.active .hidden-content {
     opacity: 1;
-    max-height: 220px;
+    max-height: 220px; /* Altura máxima do conteúdo oculto */
 }
-
 .accordion-card.active .card-content i,
-.accordion-card.active .card-content h3 {
+.accordion-card.active .card-content h3 { /* Efeito no ícone e título ao expandir */
     transform: translateY(-50px);
-    color: #ed6f06; /* cor da titulo */
+    color: #ed6f06;
 }
-
-/* Animação de rotação para a borda brilhante */
-@keyframes rotateBorder {
+@keyframes rotateBorder { /* Animação da borda gradiente */
     from { transform: translate(-50%, -50%) rotate(0deg); }
     to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* ========================================================= */
-/* =================== ESTILOS DAS SEÇÃO 3 ================= */
-/* ========================================================= */
-
-.page-home .how-it-works {  /* fundo da seção*/
+/* --- Seção "Como Funciona" (How It Works) --- */
+.page-home .how-it-works {
     background-color: #f1f1f1;
-    color: #0e1e27;
+    color: #0e1e27; /* Texto escuro em fundo claro */
     font-size: 1rem;
     font-weight: 600;
 }
-
-.page-home .step-card {
+.page-home .step-card { /* Card de cada passo */
     padding: 20px;
     border-radius: 8px;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    /*cursor: default; /* Mostra que não é clicável */
 }
-
 .page-home .step-card:hover {
-    transform: translateY(-10px);
+    transform: translateY(-10px); /* Efeito de levantar no hover */
 }
-
-.page-home .step-number {
-    width: 60px;
-    height: 60px;
-    background-color: #17bdaa; /* Cor do Botão */
+.page-home .step-number { /* Círculo com o número do passo */
+    width: 60px; height: 60px;
+    background-color: #17bdaa; /* Cor do círculo */
     color: #fff;
     border-radius: 50%;
-    /* Flexbox para centralizar o número perfeitamente */
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 2rem;
     font-weight: 700;
-    margin: 0 auto 1.5rem auto; /* Centraliza o círculo horizontalmente */
+    margin: 0 auto 1.5rem auto; /* Centraliza */
     transition: background-color 0.3s ease, transform 0.3s ease;
 }
-
 .page-home .step-card:hover .step-number {
-    transform: scale(1.15); /* Aumenta o tamanho do círculo numérico */
-    background-color: #ed6f06;
+    transform: scale(1.15);
+    background-color: #ed6f06; /* Muda cor no hover do card */
 }
-
-/* === Estilo das fontes === */
-.page-home .how-it-works .step-card h3 {
-    color: #17bdaa; 
-    transition: color 0.3s ease;
-}
-.page-home .how-it-works .step-card p {
-    color: #0e1e27; /* Cor do texto */
-    transition: color 0.3s ease;
-}
-
-/* === Efeito ao passar o mouse no card === */
-.page-home .how-it-works .step-card:hover h3 {
-    color: #f06f04; 
-}
-.page-home .how-it-works .step-card:hover p {
+.page-home .how-it-works .step-card h3 { /* Título do passo */
     color: #17bdaa;
+    transition: color 0.3s ease;
 }
-
-/* ========================================================= */
-/* ================ ANIMAÇÕES DE SCROLL (AOS) ============== */
-/* ========================================================= */
-
-/* Define o estado inicial dos elementos que serão animados */
-[data-aos="fade-up"] {
-    transform: translateY(50px); /* Começa 50px para baixo */
-    opacity: 0;
-    transition-property: transform, opacity;
+.page-home .how-it-works .step-card p { /* Texto do passo */
+    color: #0e1e27;
+    transition: color 0.3s ease;
 }
+.page-home .how-it-works .step-card:hover h3 { color: #f06f04; }
+.page-home .how-it-works .step-card:hover p { color: #17bdaa; }
 
-[data-aos="fade-in"] {
-    opacity: 0;
-    transition-property: opacity;
-}
-
-[data-aos="zoom-in"] {
-    transform: scale(0.9); /* Começa um pouco menor */
-    opacity: 0;
-    transition-property: transform, opacity;
-}
-
-/* Opcional: Define como os elementos ficam DEPOIS que a animação acontece */
-/* Isso é feito pela classe que o AOS adiciona (ex: .aos-animate) */
-[data-aos].aos-animate {
-    transform: none; /* Reseta qualquer translação/escala */
-    opacity: 1;
-}
-
-
-/* ========================================================= */
-/* ==================== SEÇÃO DOR ARTIGOS ================== */
-/* ========================================================= */
-
+/* --- Seção Blog Destaques --- */
 .blog-destaques {
-    background-color: #ffffff;
+    background-color: #ffffff; /* Fundo claro para a seção */
 }
-
-.blog-destaques .card {
+.blog-destaques .card { /* Card de post do blog */
     border: none;
     box-shadow: 0 8px 12px rgba(0, 0, 0, 0.08);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-
 .blog-destaques .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 25px 16px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 25px 16px rgba(0, 0, 0, 0.15); /* Sombra mais pronunciada no hover */
 }
-
 .blog-destaques .card-title {
     color: #007bff;
     transition: color 0.3s ease;
 }
-
 .blog-destaques .card:hover .card-title {
-    color: #f06f04;
+    color: #f06f04; /* Muda cor do título no hover */
 }
-
 .blog-destaques .card-text {
-    color: #495057;
+    color: #495057; /* Cor do texto do resumo */
 }
 
-
-/* ========================================================= */
-/* =================== ESTILO ULTIMA SEÇÃO ================= */
-/* ========================================================= */
-
-.page-home .final-cta h2 {
-    color: #ff7c11; 
-}
-
+/* --- Seção Final CTA (Call to Action) --- */
 .final-cta {
-    background-color: #242323;
+    background-color: #242323; /* Fundo escuro */
     color: white;
     padding: 5rem 0;
-} 
-
-.final-cta .paragrafo-cta {
+    position: relative; /* Para o caso de usar overlay com imagem de fundo */
+}
+.page-home .final-cta h2 { /* Título da seção CTA */
+    color: #ff7c11;
+}
+.final-cta .paragrafo-cta { /* Texto principal da CTA */
     font-size: 1.1rem;
     color: #ffffff;
     margin-top: 1.5rem;
 }
-
-.final-cta .paragrafo-blog {
+.final-cta .paragrafo-blog { /* Texto menor, talvez link para blog */
     font-size: 0.8rem;
     color: #cccccc;
     margin-top: 2rem;
     font-style: italic;
     line-height: 1.6;
 }
-
-/* CASO EU QUEIRA USAR IMAGEM */
-/*
-.final-cta { 
-    background: url('/static/images/imag.png') no-repeat center center;
-    background-size: cover;
-    color: white;
-    padding: 5rem 0;
-} 
-.final-cta::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.5); /* camada escura por cima *//*
-    z-index: 0;
-}
-.final-cta .container {
-    position: relative;
-    z-index: 1; /* coloca o conteúdo acima da camada escura *//*
-} */
-
-/* ==== Imagem logo a cima dessa seção (predios) ==== */
-.faixa-final-cta {
+.faixa-final-cta { /* Imagem de faixa acima da seção CTA */
     width: 100%;
     height: auto;
-    max-height:250px; /* ajuste conforme a altura desejada */
-    object-fit: cover;
+    max-height:250px;
+    object-fit: cover; /* Garante que a imagem cubra a área sem distorcer */
     display: block;
-    margin-bottom: 0px; /* tira espaçamento entre a imagem e a seção */
+    margin-bottom: 0px; /* Remove espaço se houver */
 }
 
-/* ========================================================= */
-/* =========== RESPONSIVIDADE - DA PAGINA HOME ============= */
-/* ========================================================= */
+/* --- Responsividade da Página Home --- */
+@media (max-width: 767.98px) { /* md e abaixo */
+    /* Ajustes gerais de texto e espaçamento */
+    .page-home section { padding: 3rem 0; }
+    body.page-home h2 { font-size: 1.8rem; }
 
-@media (max-width: 767.98px) { /* Estilos para tablets pequenos e celulares */
+    /* Seção Hero */
+    .page-home .hero-title { font-size: 2rem; }
+    .page-home .texto-subtitulo { font-size: 1rem; }
+    .page-home .botao-destaque { font-size: 1.1rem; padding: 0.8rem 1.8rem; }
 
-    /* --- AJUSTES DOS TEXTOS --- */    
-    /* 1. Hero Section */
-    .page-home .hero-title {
-        font-size: 2rem; /* Reduz o tamanho do título principal */
-    }
-    .page-home .texto-subtitulo {
-        font-size: 1rem; /* Reduz o subtítulo */
-    }
-    .page-home .botao-destaque {
-        font-size: 1.1rem; /* Reduz um pouco o botão */
-        padding: 0.8rem 1.8rem;
-    }
-
-    /* 2. Transformando o Acordeão Horizontal em Vertical */
+    /* Acordeão: de horizontal para vertical */
     .accordion-horizontal-container {
-        flex-direction: column; /* Empilha os cards */
-        min-height: auto;       /* Remove a altura mínima fixa */
+        flex-direction: column;
+        min-height: auto;
         gap: 1rem;
     }
     .accordion-card,
     .accordion-card.active {
-        flex: 1; /* Reseta a propriedade flex para que todos tenham o mesmo tamanho */
-        min-height: 100px; /* Uma altura mínima para os cards fechados */
-        transition: min-height 0.5s ease; /* Anima a altura */
+        flex: 1; /* Todos os cards com o mesmo tamanho base */
+        min-height: 100px; /* Altura mínima para cards fechados */
+        transition: min-height 0.5s ease;
     }
     .accordion-card.active {
-        min-height: 350px; /* Altura do card quando expandido */
+        min-height: 350px; /* Altura do card expandido */
     }
-    /* Ajusta o conteúdo para o layout vertical */
+    .accordion-card.active .card-content i, /* Ajuste de animação do conteúdo */
     .accordion-card.active .card-content h3 {
-        transform: translateY(0); /* Remove o efeito de mover para cima */
+        transform: translateY(0); /* Remove o deslocamento vertical */
     }
     .accordion-card .hidden-content {
-        /* Garante que o conteúdo não espere para aparecer no mobile */
-        transition-delay: 0s; 
+        transition-delay: 0s; /* Conteúdo oculto aparece sem delay no mobile */
     }
 
-    /* 3. Ajustes de Títulos e Seções */
-    .page-home section {
-        padding: 3rem 0; /* Diminui o espaçamento vertical das seções no mobile */
-    }
-    body.page-home h2 {
-        font-size: 1.8rem; /* Reduz o tamanho de todos os títulos H2 na home mobile */
-    }
-    /* Centraliza os textos nos cards de "Por que gratuito" */
+    /* Seção "Como Funciona" */
     .page-home .how-it-works .step-card {
-        text-align: center;
-    } 
-
-
-    /* =========== RESPONSIVIDADE - DA PAGINA RADAR ============= */
-    
-    /* --- Tabela de Itens Responsiva no Painel de Detalhes --- */
-    #detailsPanelItensTableContainer thead {
-        display: none; /* Esconde o cabeçalho da tabela de itens */
-    }
-    #detailsPanelItensTableContainer tr {
-        display: block;
-        border-bottom: 2px solid #0d6efd; /* Borda azul para separar os cards de itens */
-        padding-bottom: 0.5rem;
-        margin-bottom: 1rem;
-    }
-    #detailsPanelItensTableContainer td {
-        display: block;
-        text-align: right; /* Alinha o valor à direita */
-        border: none;
-        padding-left: 50%;
-        position: relative;
-    }
-    #detailsPanelItensTableContainer td::before {
-        content: attr(data-label); /* Cria o rótulo */
-        position: absolute;
-        left: 0;
-        width: 50%;
-        padding-right: 10px;
-        text-align: left;
-        font-weight: 600;
-    }
-    /* Caso especial para a descrição, que pode ser longa */
-    #detailsPanelItensTableContainer td[data-label="Descrição"] {
-        text-align: left;
-        padding-left: 0;
-        white-space: normal; /* Permite quebra de linha */
-    }
-    #detailsPanelItensTableContainer td[data-label="Descrição"]::before {
-        position: static;
-        display: block;
-        margin-bottom: 5px;
-    }
-}
-
-/* --- Esconde o cabeçalho no Mobile na Página do Radar --- */
-@media (max-width: 991.98px) {
-    .page-busca-licitacoes header.border-bottom {
-        position: static; /* Remove a posição fixa, fazendo-o rolar com a página */
-        z-index: auto;    /* Reseta o z-index para o padrão */
-    }
-    /* Remove o padding-top extra que não é mais necessário */
-    .page-busca-licitacoes .main-content {
-        padding-top: 1rem !important; 
-    }
-    
-}
-
-/* --- Estilo dos Botões Flutuantes --- */
-.botoes-flutuantes-mobile {
-    position: fixed; /* Fixo na tela */
-    top: 20px;       /* Distância do topo */
-    left: 0px;      /* Distância da esquerda */
-    z-index: 1040;   /* Z-index alto para ficar sobre o conteúdo */
-    display: flex;
-    flex-direction: column;
-}
-.btn-flutuante {
-    width: 40px;
-    height: 40px;
-    border-radius: 30%; /* Deixa os botões redondos */
-    font-size: 1.2rem;   /* Aumenta o tamanho do ícone */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
-/* Opcional: Efeito hover */
-.btn-flutuante:hover {
-    transform: scale(1.1);
-}
-
-/* ===== CORREÇÃO DE SOBREPOSIÇÃO MOBILE ===== */
-/* Aplicado em telas de tablet e menores, onde as colunas se empilham */
-@media (max-width: 991.98px) {    
-    /* Força a coluna da sidebar a se comportar como um bloco normal e ocupar 100% da largura */
-    #coluna-sidebar-esquerda {
-        flex: 0 0 100%;  /* Garante que não tente ser flexível */
-        max-width: 100%; /* Ocupa a largura total */
-        width: 100%;
-        position: relative; /* Garante que não tenha um posicionamento absoluto/fixo estranho */
-        z-index: 1;         /* Define um z-index baixo para garantir que não flutue sobre outros elementos */
-        margin-bottom: 1rem; /* Adiciona um espaço abaixo dela antes da tabela */
-    }
-    /* Força a coluna da tabela a fazer o mesmo, garantindo o empilhamento correto */
-    #coluna-tabela-principal {
-        flex: 0 0 100%;
-        max-width: 100%;
-        width: 100%;
-        z-index: 2; /* Garante que a tabela tenha prioridade sobre a sidebar, se houver sobreposição */
+        text-align: center; /* Centraliza texto nos cards */
     }
 }
 
 
 /* ========================================================= */
-/* ============= ESTILOS DAS PÁGINAS DE CONTEÚDO (blog)=========== */
+/* ===== ESTILOS PÁGINAS DE CONTEÚDO (Blog, Contato) ====== */
 /* ========================================================= */
-
-/* Fundo padrão para páginas de texto (Blog, Contato, Políticas) */
 .page-blog .main-content,
 .page-contato .main-content,
 .page-post-individual .main-content,
 .page-politica .main-content {
-    background-color: #fdfdfd;
+    background-color: #fdfdfd; /* Fundo claro para páginas de conteúdo */
 }
 
-/* --- Estilos da Lista do Blog (pagina_blog.html) --- */
-.blog-post-summary {
+/* --- Lista de Posts do Blog (pagina_blog.html) --- */
+.blog-post-summary { /* Resumo de cada post na lista */
     transition: background-color 0.3s ease;
 }
 .blog-post-summary:hover {
-    background-color: #f8f9fa; /* Fundo sutil no hover */
+    background-color: #f8f9fa;
 }
-.blog-list-image {
-    aspect-ratio: 16 / 10;
+.blog-list-image { /* Imagem da lista de posts */
+    aspect-ratio: 16 / 10; /* Proporção da imagem */
     object-fit: cover;
 }
 
-/* --- Estilos do Post Individual (pagina_post_individual.html) --- */
-.page-post-individual .post-content-body {
-    font-size: 1.1rem; /* Tamanho de fonte confortável para leitura */
-    line-height: 1.8;  /* Espaçamento entre linhas generoso */
+/* --- Post Individual (pagina_post_individual.html) --- */
+.page-post-individual .post-content-body { /* Corpo do post */
+    font-size: 1.1rem;
+    line-height: 1.8;
     color: #343a40;
 }
-/* Estilização de elementos comuns dentro do conteúdo de um post */
-.post-content-body p {
-    margin-bottom: 1.5rem;
-}
+.post-content-body p { margin-bottom: 1.5rem; }
 .post-content-body h2,
 .post-content-body h3,
 .post-content-body h4 {
@@ -1707,10 +1194,7 @@ body.page-home h3 {
     margin-bottom: 1rem;
     font-weight: 600;
 }
-.post-content-body a {
-    text-decoration: underline;
-    color: #0d6efd;
-}
+.post-content-body a { text-decoration: underline; color: #0d6efd; }
 .post-content-body blockquote {
     border-left: 4px solid #0d6efd;
     padding-left: 1rem;
@@ -1723,48 +1207,106 @@ body.page-home h3 {
     padding-left: 2rem;
     margin-bottom: 1.5rem;
 }
-.post-content-body code {
+.post-content-body code { /* Blocos de código inline */
     background-color: #e9ecef;
     padding: 0.2rem 0.4rem;
     border-radius: 4px;
     font-size: 0.9em;
 }
 
-/* --- Estilos do Formulário de Contato --- */
-.page-contato .card {
-    border: none;
+/* --- Formulário de Contato --- */
+.page-contato .card { /* Card do formulário de contato */
+    border: none; /* Remove borda padrão se não desejar */
 }
 
-
-/* ========================================================= */
-/* ===== RESPONSIVIDADE - POST INDIVIDUAL E PÁGINAS DE CONTEÚDO ====== */
-/* ========================================================= */
-@media (max-width: 767.98px) {
-    /* --- Ajuste Geral do Container em Telas Pequenas --- */
+/* --- Responsividade das Páginas de Conteúdo --- */
+@media (max-width: 767.98px) { /* md e abaixo */
     .page-post-individual .container,
     .page-blog .container,
     .page-contato .container,
-    .page-politica .container {
+    .page-politica .container { /* Ajuste de padding para containers */
         padding-left: 1rem;
         padding-right: 1rem;
     }
-
-    /* --- Título do Post Individual --- */
-    .page-post-individual .blog-post-title {
-        font-size: 1.8rem; /* Reduz o tamanho do título principal do post */
+    .page-post-individual .blog-post-title { /* Título do post individual */
+        font-size: 1.8rem;
         line-height: 1.3;
     }
-
-    /* --- Corpo do Conteúdo do Post --- */
-    .page-post-individual .post-content-body {
-        font-size: 1rem;     /* Tamanho de fonte ideal para leitura mobile */
-        line-height: 1.7;    /* Espaçamento confortável entre as linhas */
+    .page-post-individual .post-content-body { /* Corpo do post */
+        font-size: 1rem;
+        line-height: 1.7;
     }
-
-    /* --- Garante que imagens dentro do conteúdo do post sejam responsivas --- */
-    .post-content-body img {
-        max-width: 100%; /* A imagem nunca será mais larga que seu container */
-        height: auto;    /* Mantém a proporção da imagem */
-        border-radius: 8px; /* Adiciona cantos arredondados sutis */
+    .post-content-body img { /* Imagens responsivas dentro do post */
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
     }
 }
+
+
+/* ========================================================= */
+/* =================== BOTÕES GERAIS ===================== */
+/* ========================================================= */
+/* Estilo do botão primário padrão (pode ser sobrescrito por botões específicos) */
+.btn-primary {
+    background: linear-gradient(90deg, #4d10ad, #007bff);
+    border: none;
+    color: white;
+    transition: background 0.9s ease;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg, #f06f04, #f06f04);
+    color: white;
+}
+
+/* ========================================================= */
+/* ============= ANIMAÇÕES DE SCROLL (AOS) ================= */
+/* ========================================================= */
+[data-aos="fade-up"] {
+    transform: translateY(50px);
+    opacity: 0;
+    transition-property: transform, opacity;
+}
+[data-aos="fade-in"] {
+    opacity: 0;
+    transition-property: opacity;
+}
+[data-aos="zoom-in"] {
+    transform: scale(0.9);
+    opacity: 0;
+    transition-property: transform, opacity;
+}
+[data-aos].aos-animate { /* Estado após a animação */
+    transform: none;
+    opacity: 1;
+}
+
+/* ========================================================= */
+/* ============ UTILITÁRIOS (Ex: Scrollbar Sutil) ========== */
+/* ========================================================= */
+::-webkit-scrollbar {
+    width: 8px;
+    background: transparent; /* Era #0e1e2700 */
+}
+::-webkit-scrollbar-track {
+    background: transparent; /* Era #ffffff00 */
+}
+::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2); /* Invisível por padrão, aparece no hover do container */
+    border-radius: 10px;
+    border: 2px solid transparent; /* Ajustado para melhor visualização */
+    background-clip: content-box; /* Garante que a borda não seja coberta pelo fundo */
+    transition: background-color 0.3s ease-in-out;
+}
+/* Mostra o scrollbar thumb apenas no hover do elemento que tem scroll */
+#offcanvasFiltros .offcanvas-body:hover::-webkit-scrollbar-thumb,
+#detailsPanelItensTableContainer:hover::-webkit-scrollbar-thumb,
+#conteudo-rolavel-sidebar:hover::-webkit-scrollbar-thumb, /* Adicionado para a sidebar */
+.main-content:hover::-webkit-scrollbar-thumb { /* Scrollbar do corpo principal, se houver */
+    background-color: rgba(0, 0, 0, 0.4); /* Cor mais visível no hover */
+}
+/* Para Firefox (mais simples, menos customizável) */
+/* html {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.4) transparent;
+} */
