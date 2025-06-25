@@ -851,6 +851,9 @@ header.border-bottom .dropdown-menu {
         padding-left: 50%; /* Espaço para o label */
         position: relative;
     }
+    #detailsPanelItensTableContainer td[data-label="Un."] {
+        text-align: right !important; /* Força o alinhamento à direita */
+    }
     #detailsPanelItensTableContainer td::before {
         content: attr(data-label);
         position: absolute;
@@ -859,6 +862,12 @@ header.border-bottom .dropdown-menu {
         padding-right: 10px;
         text-align: left;
         font-weight: 600;
+    }
+    #detailsPanelItensTableContainer td[data-label="Un."] {
+        padding-left: 40%; /* Menos espaço para o rótulo */
+    }
+    #detailsPanelItensTableContainer td[data-label="Un."]::before {
+        width: 40%;
     }
     #detailsPanelItensTableContainer td[data-label="Descrição"] { /* Descrição do item */
         text-align: left;

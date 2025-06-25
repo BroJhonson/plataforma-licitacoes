@@ -417,6 +417,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Opcional: Fechar o Offcanvas de filtros após aplicar
                     const offcanvasFiltrosElement = document.getElementById('offcanvasFiltros');
                     if (offcanvasFiltrosElement) {
+                        offcanvasFiltrosElement.addEventListener('show.bs.offcanvas', function () {
+                            // Re-renderiza as tags de inclusão e exclusão quando o painel é aberto
+                            renderTags(palavrasChaveInclusao, tagsPalavraInclusaoContainer, 'inclusao');
+                            renderTags(palavrasChaveExclusao, tagsPalavraExclusaoContainer, 'exclusao');
+                        });
                         const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasFiltrosElement);
                         if (bsOffcanvas) {
                             bsOffcanvas.hide();
@@ -468,17 +473,19 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // FUNÇÃO DE TAGS NAS PALAVRAS-CHAVE
-        function renderTags(palavrasArray, containerElement, tipo) { // tipo pode ser 'inclusao' ou 'exclusao'
+        function renderTags(palavrasArray, containerElement, tipo) {
+            if (!containerElement) return; // Proteção
             containerElement.innerHTML = ''; // Limpa tags existentes
             palavrasArray.forEach((palavra, index) => {
                 const tag = document.createElement('span');
                 tag.classList.add('tag-item');
                 tag.textContent = palavra;
-                
+
                 const removeBtn = document.createElement('button');
                 removeBtn.classList.add('remove-tag');
-                removeBtn.innerHTML = '×'; // Caractere 'x'
+                removeBtn.innerHTML = '×';
                 removeBtn.title = 'Remover palavra';
+                removeBtn.type = 'button'; // Boa prática para botões que não submetem formulários
                 removeBtn.addEventListener('click', () => {
                     if (tipo === 'inclusao') {
                         palavrasChaveInclusao.splice(index, 1);
@@ -487,42 +494,66 @@ document.addEventListener('DOMContentLoaded', function () {
                         palavrasChaveExclusao.splice(index, 1);
                         renderTags(palavrasChaveExclusao, tagsPalavraExclusaoContainer, 'exclusao');
                     }
+                    // Opcional: Disparar busca ou atualização da UI de filtros ativos aqui
+                    // atualizarExibicaoFiltrosAtivos();
+                    // buscarLicitacoes(1); // Se quiser que a busca seja imediata ao remover tag
                 });
                 tag.appendChild(removeBtn);
                 containerElement.appendChild(tag);
             });
         }
+
         function addPalavraChave(inputField, palavrasArray, containerElement, tipo) {
-            const termos = inputField.value.trim();
+            if (!inputField) return; // Proteção
+            const termos = inputField.value.trim(); // Pega o valor atual e remove a vírgula/ponto e vírgula
+
             if (termos) {
                 // Divide por vírgula ou ponto e vírgula, e limpa cada termo
-                const novasPalavras = termos.split(/[,;]+/).map(p => p.trim()).filter(p => p !== "");
-                
+                const novasPalavras = termos.split(/[,;]+/)
+                                        .map(p => p.trim())
+                                        .filter(p => p !== "" && p.length > 0); // Garante que não adicione strings vazias
+
+                let adicionouAlguma = false;
                 novasPalavras.forEach(novaPalavra => {
-                    if (novaPalavra && !palavrasArray.includes(novaPalavra)) { // Evita duplicatas
+                    if (!palavrasArray.includes(novaPalavra)) { // Evita duplicatas
                         palavrasArray.push(novaPalavra);
+                        adicionouAlguma = true;
                     }
                 });
-                inputField.value = ''; // Limpa o input
-                renderTags(palavrasArray, containerElement, tipo);
+
+                inputField.value = ''; // Limpa o input APÓS processar
+
+                if (adicionouAlguma) {
+                    renderTags(palavrasArray, containerElement, tipo);
+                }
             }
         }
-        // Event Listeners para adicionar palavras-chave
-       
-        if (palavraChaveInclusaoInputField) {
-            palavraChaveInclusaoInputField.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' || e.key === ',') {
-                    e.preventDefault(); 
-                    addPalavraChave(palavraChaveInclusaoInputField, palavrasChaveInclusao, tagsPalavraInclusaoContainer, 'inclusao');
+
+        // Event Listeners para adicionar palavras-chave (VERSÃO MELHORADA)
+        function configurarInputDeTags(inputField, palavrasArray, containerElement, tipo) {
+            if (!inputField) return;
+
+            // Handler para a tecla "Enter"
+            // Usar 'keyup' é geralmente melhor para 'Enter' do que 'keypress'
+            inputField.addEventListener('keyup', function(e) {
+                // e.key === 'Enter' é o padrão moderno.
+                // e.keyCode === 13 é para navegadores mais antigos ou casos específicos.
+                // NumpadEnter também é importante.
+                if (e.key === 'Enter' || e.key === 'NumpadEnter' || e.keyCode === 13) {
+                    e.preventDefault(); // Previne submissão de formulário se o input estiver em um
+                    addPalavraChave(inputField, palavrasArray, containerElement, tipo);
                 }
             });
-        }
 
-        if (palavraChaveExclusaoInputField) {
-            palavraChaveExclusaoInputField.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' || e.key === ',') {
-                    e.preventDefault();
-                    addPalavraChave(palavraChaveExclusaoInputField, palavrasChaveExclusao, tagsPalavraExclusaoContainer, 'exclusao');
+            // Handler para vírgula e ponto e vírgula usando o evento 'input'
+            // O evento 'input' dispara sempre que o valor do campo muda.
+            inputField.addEventListener('input', function(e) {
+                const valorAtual = inputField.value;
+                // Verifica se o último caractere digitado foi uma vírgula ou ponto e vírgula
+                if (valorAtual.endsWith(',') || valorAtual.endsWith(';')) {
+                    // Remove o último caractere (a vírgula/ponto e vírgula) ANTES de adicionar
+                    inputField.value = valorAtual.slice(0, -1);
+                    addPalavraChave(inputField, palavrasArray, containerElement, tipo);
                 }
             });
         }
@@ -1974,6 +2005,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td data-label="Item">${item.numeroItem || 'N/I'}</td>
                     <td data-label="Descrição">${item.descricao || 'N/I'}</td>
                     <td data-label="Qtde." class="text-end">${item.quantidade || 'N/I'}</td>
+                    <td data-label="Un." class="text-center">${item.unidadeMedida || 'N/I'}</td>
                     <td data-label="Vl. Unit." class="text-end">${valorUnitarioDisplay}</td>
                     <td data-label="Vl. Total" class="text-end">${valorTotalItemDisplay}</td>
                 `;
@@ -2053,6 +2085,9 @@ document.addEventListener('DOMContentLoaded', function () {
             setupFilterSearch('ufSearchInput', 'ufsContainerDropdown', '.form-check');
             setupFilterSearch('modalidadeSearchInput', 'modalidadesContainerDropdown', '.form-check');
             setupFilterSearch('municipioSearchInput', 'municipiosContainerDropdown', '.form-check');
+
+            configurarInputDeTags(palavraChaveInclusaoInputField, palavrasChaveInclusao, tagsPalavraInclusaoContainer, 'inclusao');
+            configurarInputDeTags(palavraChaveExclusaoInputField, palavrasChaveExclusao, tagsPalavraExclusaoContainer, 'exclusao');
 
         }
 

@@ -15,8 +15,17 @@ load_dotenv()  # Carrega as variáveis do arquivo .env para o ambiente
 
 # --- Configurações ---
 app = Flask(__name__)
-app.secret_key = 'sua_chave_secreta_muito_segura_aqui'  # Mude isso!
+app.secret_key = os.getenv('FLASK_SECRET_KEY')
+if not app.secret_key:    
+    message = "ERRO CRÍTICO DE CONFIGURAÇÃO: A variável de ambiente FLASK_SECRET_KEY não está definida. A aplicação não pode iniciar de forma segura."
+    app.logger.critical(message) # O logger do Flask pode não estar totalmente pronto aqui, mas tentamos.
+    # Para garantir que a mensagem apareça e a aplicação pare:
+    import sys
+    sys.stderr.write(message + "\n")
+    raise ValueError(message) # Impede que a aplicação continue sem a chave.
 
+# Se chegou até aqui, a app.secret_key foi carregada com sucesso.
+app.logger.info("FLASK_SECRET_KEY carregada com sucesso do ambiente.")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_PATH = os.path.join(BASE_DIR, 'database.db')
@@ -720,4 +729,7 @@ def exportar_csv():
  
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    # Em produção real, você não usaria app.run(), mas sim um servidor WSGI como Gunicorn.
+    # O debug=True também deve ser False ou controlado por uma variável de ambiente em produção.
+    is_debug_mode = os.getenv('FLASK_DEBUG', '0') == '1'
+    app.run(debug=is_debug_mode, host='0.0.0.0', port=port) # Modo debug esta configurado no arquivo .env

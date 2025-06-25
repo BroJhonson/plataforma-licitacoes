@@ -6,138 +6,326 @@ import json # (Para lidar com dados JSON da API, embora 'requests' já faça mui
 import os # (Para caminhos de arquivo)
 import time
 from datetime import datetime, date, timedelta # (Para trabalhar com datas)
+import logging 
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type # Importar de tenacity para usar Retentativas
+
+# ======= Configuração do Logging =======
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG) # Define o nível mínimo de log que este logger irá processar
+# Cria um handler para escrever logs no console (stdout)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO) # Logs INFO e acima irão para o console
+# Cria um handler para escrever logs em um arquivo
+# O arquivo será 'sync_api.log' na mesma pasta do script.
+log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sync_api.log')
+file_handler = logging.FileHandler(log_file_path, mode='a') # 'a' para append
+file_handler.setLevel(logging.ERROR) # c
+# Cria um formatador para definir o formato das mensagens de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)')
+console_handler.setFormatter(formatter)
+file_handler.setFormatter(formatter)
+# Adiciona os handlers ao logger
+# Evita adicionar handlers duplicados se o script for importado ou reconfigurado
+if not logger.handlers:
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+# --- Fim da Configuração do Logging ---
 
 
+# ======= Configuração de Retentativas para Chamadas de API =======
+# Define quais exceções do 'requests' devem acionar uma retentativa
+RETRYABLE_REQUESTS_EXCEPTIONS = (
+    requests.exceptions.Timeout,
+    requests.exceptions.ConnectionError,
+    requests.exceptions.HTTPError, # Vamos incluir HTTPError, mas filtrar por status codes abaixo
+)
+# Define quais status codes HTTP devem acionar uma retentativa
+# (ex: erros de servidor, rate limiting, mas não erros de cliente como 404 ou 400)
+RETRYABLE_STATUS_CODES = {500, 502, 503, 504, 429} # Internal Server Error, Bad Gateway, Service Unavailable, Gateway Timeout, Too Many Requests
 
-# --- Configurações ---
+def should_retry_http_error(exception_value):
+    """Verifica se um HTTPError deve ser retentado baseado no status code."""
+    if isinstance(exception_value, requests.exceptions.HTTPError):
+        return exception_value.response.status_code in RETRYABLE_STATUS_CODES
+    return False # Não é um HTTPError que queremos tentar novamente por status code
+# Decorador de retentativa
+# Tenta 3 vezes no total (1 original + 2 retentativas)
+# Espera exponencialmente entre as tentativas (ex: 1s, 2s, 4s...) com um máximo de 10s
+# Só tenta novamente para exceções de rede específicas ou HTTP status codes específicos
+api_retry_decorator = retry(
+    stop=stop_after_attempt(3), # Número máximo de tentativas (1 original + 2 retries)
+    wait=wait_exponential(multiplier=1, min=1, max=10), # Espera exponencial: 1s, 2s, 4s... até 10s
+    retry=(
+        retry_if_exception_type(requests.exceptions.Timeout) |
+        retry_if_exception_type(requests.exceptions.ConnectionError) |
+        retry_if_exception_type(should_retry_http_error) # Nossa função customizada para HTTPError
+    ),
+    before_sleep=lambda retry_state: logger.warning(
+        f"API_RETRY: Retentativa {retry_state.attempt_number} para {retry_state.fn.__name__} "
+        f"devido a: {retry_state.outcome.exception()}. Esperando {retry_state.next_action.sleep:.2f}s..."
+    ) # Loga antes de cada retentativa
+)
+# --- Fim da Configuração de Retentativas ---
+
+# ======== Configurações do Processamento das Licitações ========
 # Define o caminho para a pasta backend
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Define o caminho completo para o arquivo do banco de dados
 DATABASE_PATH = os.path.join(BASE_DIR, 'database.db')
 TAMANHO_PAGINA_SYNC  = 50 # OBRIGATORIO
-LIMITE_PAGINAS_TESTE_SYNC = None # OBRIGATORIO. Mudar para 'None' para buscar todas.
-CODIGOS_MODALIDADE = [5, 6, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13 ] # (OBRIGATORIO)
+LIMITE_PAGINAS_TESTE_SYNC = 2 #None # OBRIGATORIO. Mudar para 'None' para buscar todas.
+CODIGOS_MODALIDADE = [1, 2] # 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] #(OBRIGATORIO)
 DIAS_JANELA_SINCRONIZACAO = 365 #Periodo da busca
 API_BASE_URL = "https://pncp.gov.br/api/consulta" # (URL base da API do PNCP)      
 API_BASE_URL_PNCP_API = "https://pncp.gov.br/pncp-api"   # Para itens e arquivos    ## PARA TODOS OS LINKS DE ARQUIVOS E ITENS USAR PAGINAÇÃO SE NECESSARIO ##
 ENDPOINT_PROPOSTAS_ABERTAS = "/v1/contratacoes/proposta" # (Endpoint específico)
+# ======= Fim das Configurações do Processamento das Licitações ========
+
+# ===== Validação de Dados da Licitação para decidir se continua a buscar a licitação especifca ou não ===== 
+def validar_dados_licitacao_api(licitacao_api_data):
+    """
+    Valida os campos essenciais dos dados de uma licitação vindos da API.
+    Retorna True se válido, False caso contrário, e loga os problemas.
+    """
+    erros_validacao = []
+    pncp_id = licitacao_api_data.get('numeroControlePNCP') # Usar para logs
+
+    if not pncp_id:
+        erros_validacao.append("Campo 'numeroControlePNCP' está ausente ou vazio.")
+        # Se o PNCP ID está ausente, muitas outras validações podem não fazer sentido ou falhar.
+        # Podemos retornar False imediatamente ou continuar coletando outros erros.
+        return False #Para evitar continuar com dados incompletos
+    
+    if not licitacao_api_data.get('dataAtualizacao'):
+        erros_validacao.append("Campo 'dataAtualizacao' está ausente ou vazio.")
+        return False # Tambem é essencial para toda busca
+
+    # Validação para campos necessários para buscar sub-dados (itens/arquivos)
+    orgao_entidade = licitacao_api_data.get('orgaoEntidade', {}) # Pega o dict, ou um dict vazio se 'orgaoEntidade' não existir
+    if not orgao_entidade.get('cnpj'):
+        erros_validacao.append("Campo 'orgaoEntidade.cnpj' está ausente ou vazio.")
+    if licitacao_api_data.get('anoCompra') is None: # Checa por None, pois 0 pode ser um ano válido em teoria (embora improvável)
+        erros_validacao.append("Campo 'anoCompra' está ausente.")
+    if licitacao_api_data.get('sequencialCompra') is None:
+        erros_validacao.append("Campo 'sequencialCompra' está ausente.")
+
+    # Posso adicionar outras validações importantes aqui:
+    # Exemplo:
+    # if not licitacao_api_data.get('modalidadeId'):
+    #     erros_validacao.append("Campo 'modalidadeId' está ausente.")
+    # if licitacao_api_data.get('valorTotalEstimado') is not None:
+    #     try:
+    #         float(licitacao_api_data.get('valorTotalEstimado'))
+    #     except (ValueError, TypeError):
+    #         erros_validacao.append(f"Campo 'valorTotalEstimado' ('{licitacao_api_data.get('valorTotalEstimado')}') não é um número válido.")
+    if erros_validacao:
+        logger.warning(f"VALIDACAO_FALHA (PNCP: {pncp_id if pncp_id else 'DESCONHECIDO'}): Dados da licitação inválidos: {'; '.join(erros_validacao)}. Dados brutos: {json.dumps(licitacao_api_data, ensure_ascii=False, indent=2)}")
+        return False
+    return True
+
+# --- Configuração do Log de Falhas Persistentes ---
+FAILED_DATA_LOG_PATH = os.path.join(BASE_DIR, 'failed_processing_data.jsonl')
+
+def logar_falha_persistente(tipo_dado, dado_problematico, motivo_falha):
+    """
+    Loga dados problemáticos e o motivo da falha em um arquivo JSON Lines.
+    """
+    try:
+        entrada_log_falha = {
+            "timestamp": datetime.now().isoformat(),
+            "tipo_dado": tipo_dado, # ex: "licitacao_principal", "item_api", "arquivo_api"
+            "motivo_falha": motivo_falha,
+            "dado": dado_problematico # O dict/lista original da API
+        }
+        with open(FAILED_DATA_LOG_PATH, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(entrada_log_falha, ensure_ascii=False) + '\n')
+        logger.warning(f"FALHA_PERSISTENTE: Dados do tipo '{tipo_dado}' logados em {FAILED_DATA_LOG_PATH}. Motivo: {motivo_falha}. PNCP_ID (se aplicável): {dado_problematico.get('numeroControlePNCP', 'N/A')}")
+    except Exception as e:
+        logger.error(f"FALHA_LOG_DLQ: Erro ao tentar logar dados problemáticos para {FAILED_DATA_LOG_PATH}: {e}")
+# Fim da Configuração do Log de Falhas Persistentes e Validação de Dados
 
 
-    ##CONFIGURAÇÃO DA API PARA ENCONTRAR OS ITENS/ARQUIVOS DAS LICITAÇÕES ##
+# ==== CONFIGURAÇÃO DA API PARA ENCONTRAR OS ITENS/ARQUIVOS DAS LICITAÇÕES ====
+@api_retry_decorator # Decorador para retentativas
 def fetch_itens_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina=1, tamanho_pagina=TAMANHO_PAGINA_SYNC):
     """Busca uma página de itens de uma licitação."""
     url = f"{API_BASE_URL_PNCP_API}/v1/orgaos/{cnpj_orgao}/compras/{ano_compra}/{sequencial_compra}/itens"
     params = {'pagina': pagina, 'tamanhoPagina': tamanho_pagina}
     headers = {'Accept': 'application/json'}
-    print(f"ITENS: Buscando em {url} com params {params}")
+    logger.debug(f"ITENS_API: Buscando em {url} com params {params}")
     try:
-        response = requests.get(url, params=params, headers=headers, timeout=60)
-        response.raise_for_status()
-        if response.status_code == 204: return [] # Retorna lista vazia
-        return response.json() 
-    except Exception as e:
-        print(f"ITENS: Erro ao buscar itens para {cnpj_orgao}/{ano_compra}/{sequencial_compra} (Pag: {pagina}): {e}")
-        if hasattr(e, 'response') and e.response is not None:
-             print(f"ITENS: Status: {e.response.status_code}, Texto: {e.response.text[:200]}")
-        return None # Indica erro
-    
+        response = requests.get(url, params=params, headers=headers, timeout=60) # timeout original da requisição
+        response.raise_for_status() # Isso levantará HTTPError para status 4xx/5xx
+        if response.status_code == 204:
+            logger.debug(f"ITENS_API: Recebido status 204 (No Content) para {url} com params {params}.")
+            return []
+        return response.json()
+    except requests.exceptions.HTTPError as http_err:
+        # Este bloco só será atingido se o HTTPError NÃO for um dos que acionam retentativa,
+        # OU se todas as retentativas para um HTTPError retentável falharem.
+        if http_err.response.status_code not in RETRYABLE_STATUS_CODES:
+            logger.error(f"ITENS_API: Erro HTTP NÃO RETENTÁVEL ao buscar itens para {cnpj_orgao}/{ano_compra}/{sequencial_compra} (Pag: {pagina}): {http_err}")
+        # Se foi retentável e falhou todas as vezes, o log de warning da retentativa já ocorreu.
+        # Podemos logar um erro final aqui.
+        # A tenacity já terá logado os warnings das tentativas.
+        # O logger.error abaixo já cobre o caso de falha final.
+        else:
+            logger.error(f"ITENS_API: Todas as retentativas falharam para HTTPError {http_err.response.status_code} ao buscar itens...")
+        if http_err.response is not None:
+             logger.error(f"ITENS_API: Detalhes da resposta final - Status: {http_err.response.status_code}, Texto: {http_err.response.text[:200]}")
+        return None
+    except Exception as e: # Outras exceções que não são de requests (ex: json.JSONDecodeError se a resposta não for JSON válido)
+        logger.exception(f"ITENS_API: Erro GERAL (não-requests) ao buscar itens para {cnpj_orgao}/{ano_compra}/{sequencial_compra} (Pag: {pagina})")
+        return None
+
+
+@api_retry_decorator # Decorador para retentativas    
 def fetch_arquivos_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina=1, tamanho_pagina=TAMANHO_PAGINA_SYNC ):
     url = f"{API_BASE_URL_PNCP_API}/v1/orgaos/{cnpj_orgao}/compras/{ano_compra}/{sequencial_compra}/arquivos"
 
     params = {'pagina': pagina, 'tamanhoPagina': tamanho_pagina}
     headers = {'Accept': 'application/json'}
-    print(f"ARQUIVOS: Buscando em {url} com params {params}")
+    logger.debug(f"ARQUIVOS_API: Buscando em {url} com params {params}")
     try:
         response = requests.get(url, params=params, headers=headers, timeout=60)
         response.raise_for_status()
-        if response.status_code == 204: return [] # Retorna lista vazia        
-        return response.json() 
+        if response.status_code == 204:
+            logger.debug(f"ARQUIVOS_API: Recebido status 204 (No Content) para {url} com params {params}.")
+            return []
+        return response.json()
+    except requests.exceptions.HTTPError as http_err:
+        if http_err.response.status_code not in RETRYABLE_STATUS_CODES:
+            logger.error(f"ARQUIVOS_API: Erro HTTP NÃO RETENTÁVEL ao buscar arquivos para {cnpj_orgao}/{ano_compra}/{sequencial_compra} (Pag: {pagina}): {http_err}")
+        if http_err.response is not None:
+             logger.error(f"ARQUIVOS_API: Detalhes da resposta final - Status: {http_err.response.status_code}, Texto: {http_err.response.text[:200]}")
+        return None
     except Exception as e:
-        print(f"ARQUIVOS: Erro ao buscar arquivoS para {cnpj_orgao}/{ano_compra}/{sequencial_compra} (Pag: {pagina}): {e}")
-        if hasattr(e, 'response') and e.response is not None:
-             print(f"ARQUIVOS: Status: {e.response.status_code}, Texto: {e.response.text[:200]}")
-        return None 
+        logger.exception(f"ARQUIVOS_API: Erro GERAL (não-requests) ao buscar arquivos para {cnpj_orgao}/{ano_compra}/{sequencial_compra} (Pag: {pagina})")
+        return None
 
 
 
 ### ARQUIVOS ###
-def fetch_all_arquivos_for_licitacao(conn, licitacao_id_local, cnpj_orgao, ano_compra, sequencial_compra):
+def fetch_all_arquivos_metadata_from_api(cnpj_orgao, ano_compra, sequencial_compra):
+    """
+    Busca TODOS os METADADOS de arquivos de uma licitação específica da API,
+    lidando com a paginação da API.
+    Retorna uma lista de dicionários (metadados dos arquivos) ou None em caso de erro crítico.
+    """
     todos_arquivos_api_metadados = [] # Lista para guardar os metadados de todos os arquivos
-    pagina_atual_arquivos = 1    
+    pagina_atual_arquivos = 1
+    logger.info(f"ARQUIVOS (Busca Metadados): Iniciando busca para {cnpj_orgao}/{ano_compra}/{sequencial_compra}")
 
     while True:
-        # 1. Busca uma página de METADADOS de arquivos para verificar a quantidade de arquivos
-        arquivos_pagina_metadados = fetch_arquivos_from_api(
-            cnpj_orgao, ano_compra, sequencial_compra, 
-            pagina_atual_arquivos, TAMANHO_PAGINA_SYNC
+        # 1. Busca uma página de METADADOS de arquivos
+        arquivos_pagina_metadados = fetch_arquivos_from_api( # Sua função que busca UMA página
+            cnpj_orgao, ano_compra, sequencial_compra,
+            pagina_atual_arquivos, TAMANHO_PAGINA_SYNC # TAMANHO_PAGINA_SYNC é sua constante global
         )
-        
-        if arquivos_pagina_metadados is None: # Erro na chamada
-            print(f"ARQUIVOS: Falha ao buscar página {pagina_atual_arquivos} de arquivos. Abortando.")
-            return # Ou lida com o erro de outra forma
-                
-        if not arquivos_pagina_metadados: # Lista vazia, fim da paginação
-            break
-            
+
+        if arquivos_pagina_metadados is None: # Erro crítico na chamada da API
+            logger.critical(f"ARQUIVOS (Busca Metadados): Falha crítica ao buscar página {pagina_atual_arquivos}. Abortando busca de arquivos para esta licitação.")
+            return None # Indica que a busca de metadados falhou
+
+        if not arquivos_pagina_metadados: # Lista vazia, significa que não há mais arquivos ou nenhum arquivo
+            break # Sai do loop while
+
         todos_arquivos_api_metadados.extend(arquivos_pagina_metadados)
-        
+
+        # Se a página retornada tem menos itens que o tamanho da página, é a última página
         if len(arquivos_pagina_metadados) < TAMANHO_PAGINA_SYNC:
-            break
+            break # Sai do loop while
+
         pagina_atual_arquivos += 1
-        time.sleep(0.2)
-        
-    print(f"ARQUIVOS: Total de {len(todos_arquivos_api_metadados)} metadados de arquivos encontrados para {cnpj_orgao}/{ano_compra}/{sequencial_compra}.")
-    
-    if todos_arquivos_api_metadados:
-        cursor = conn.cursor()
-        # Opcional: Deletar arquivos antigos desta licitação antes de (re)inserir
+        time.sleep(0.2) # Pausa para não sobrecarregar a API
+
+    logger.info(f"ARQUIVOS (Busca Metadados): Total de {len(todos_arquivos_api_metadados)} metadados de arquivos encontrados para {cnpj_orgao}/{ano_compra}/{sequencial_compra}.")
+    return todos_arquivos_api_metadados
+
+def salvar_arquivos_no_banco(conn, licitacao_id_local, lista_arquivos_metadata_api, cnpj_orgao, ano_compra, sequencial_compra):
+    """
+    Salva uma lista de metadados de arquivos no banco de dados para uma licitação específica.
+    Deleta arquivos antigos dessa licitação antes de inserir os novos.
+    Constrói o link de download para cada arquivo.
+    """
+    if not lista_arquivos_metadata_api: # Se a lista estiver vazia (None ou [])
+        logger.info(f"ARQUIVOS_SAVE: Sem metadados de arquivos para salvar para licitação ID {licitacao_id_local}.") # Mudado para INFO
+        return # Nada a fazer
+
+    cursor = conn.cursor()
+    # Deletar arquivos antigos desta licitação antes de (re)inserir
+    try:
+        logger.debug(f"ARQUIVOS_SAVE: Garantindo limpeza de arquivos pré-existentes para licitação ID {licitacao_id_local} antes de inserir novos.")
+        cursor.execute("DELETE FROM arquivos_licitacao WHERE licitacao_id = ?", (licitacao_id_local,))
+        if cursor.rowcount > 0:
+            logger.debug(f"ARQUIVOS_SAVE: {cursor.rowcount} arquivos antigos foram efetivamente deletados para licitação ID {licitacao_id_local}.")
+    except sqlite3.Error as e:
+        logger.exception(f"ARQUIVOS_SAVE: Erro SQLite ao tentar limpar arquivos antigos (lic_id {licitacao_id_local})")
+        return
+
+    sql_insert_arquivo = """
+    INSERT INTO arquivos_licitacao (
+        licitacao_id, titulo, link_download, dataPublicacaoPncp, anoCompra, statusAtivo
+    ) VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(link_download) DO NOTHING;""" # link_download é UNIQUE
+
+    # 1. Preparar a lista de tuplas
+    arquivos_para_inserir = []
+    arquivos_com_dados_invalidos = 0
+
+    for arquivo_md_api in lista_arquivos_metadata_api:
+        nome_do_arquivo = arquivo_md_api.get('titulo')
+        id_do_documento_api = arquivo_md_api.get('sequencialDocumento')
+
+        if not (nome_do_arquivo and id_do_documento_api is not None):
+            logger.warning(f"ARQUIVOS_SAVE: Metadados do arquivo incompletos para lic_id {licitacao_id_local}. Título: {nome_do_arquivo}, ID Doc: {id_do_documento_api}. Pulando arquivo.")
+            arquivos_com_dados_invalidos +=1
+            continue
+
+        link_de_download_individual = f"{API_BASE_URL_PNCP_API}/v1/orgaos/{cnpj_orgao}/compras/{ano_compra}/{sequencial_compra}/arquivos/{id_do_documento_api}"
+        data_pub_pncp_str = arquivo_md_api.get('dataPublicacaoPncp')
+        data_pub_pncp_db = data_pub_pncp_str.split('T')[0] if data_pub_pncp_str else None
+
+        arquivo_db_tuple = (
+            licitacao_id_local,
+            nome_do_arquivo,
+            link_de_download_individual,
+            data_pub_pncp_db,
+            arquivo_md_api.get('anoCompra'),
+            bool(arquivo_md_api.get('statusAtivo')) # Convertendo para booleano explicitamente
+        )
+        arquivos_para_inserir.append(arquivo_db_tuple)
+
+    if arquivos_com_dados_invalidos > 0:
+        logger.warning(f"ARQUIVOS_SAVE: {arquivos_com_dados_invalidos} arquivos foram pulados devido a dados incompletos para lic_id {licitacao_id_local}.")
+
+    # 2. Executar a inserção em lote
+    if arquivos_para_inserir:
         try:
-            cursor.execute("DELETE FROM arquivos_licitacao WHERE licitacao_id = ?", (licitacao_id_local,))
+            cursor.executemany(sql_insert_arquivo, arquivos_para_inserir)
+            # conn.commit() # Commit principal em save_licitacao_to_db
+            logger.info(f"ARQUIVOS_SAVE: {cursor.rowcount} arquivos inseridos/ignorados (ON CONFLICT) em lote para licitação ID {licitacao_id_local}.")
+            # Para ON CONFLICT DO NOTHING, rowcount pode não ser o número de itens na lista se houver conflitos.
+            # Ele geralmente reflete o número de linhas realmente modificadas/inseridas.
+            if cursor.rowcount < len(arquivos_para_inserir):
+                logger.info(f"ARQUIVOS_SAVE: {len(arquivos_para_inserir) - cursor.rowcount} arquivos foram ignorados devido a conflito de 'link_download' (UNIQUE) para lic_id {licitacao_id_local}.")
         except sqlite3.Error as e:
-            print(f"ERRO (ARQUIVOS): Ao deletar arquivos antigos da licitação ID {licitacao_id_local}: {e}")
-
-        sql_insert_arquivo = """
-            INSERT INTO arquivos_licitacao (
-                licitacao_id, titulo, link_download, dataPublicacaoPncp, anoCompra, statusAtivo
-            ) VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT(link_download) DO NOTHING;""" 
-                    
-        arquivos_salvos_count = 0
-        for arquivo_metadata_api in todos_arquivos_api_metadados: # Itera sobre os metadados de cada arquivo
-            nome_do_arquivo = arquivo_metadata_api.get('titulo')
-            id_do_documento_api = arquivo_metadata_api.get('sequencialDocumento') 
-
-            if nome_do_arquivo and id_do_documento_api is not None: # id pode ser 0
-                # 2. Monta o link de download para ESTE arquivo específico
-                link_de_download_individual = f"{API_BASE_URL_PNCP_API}/v1/orgaos/{cnpj_orgao}/compras/{ano_compra}/{sequencial_compra}/arquivos/{id_do_documento_api}"
-                
-                arquivo_db_tuple =(
-                    licitacao_id_local,
-                    arquivo_metadata_api.get('titulo'),
-                    link_de_download_individual,
-                    arquivo_metadata_api.get('dataPublicacaoPncp', '').split('T')[0] if arquivo_metadata_api.get('dataPublicacaoPncp') else None,
-                    arquivo_metadata_api.get('anoCompra'),
-                    arquivo_metadata_api.get('statusAtivo')
-                )
-                try:
-                    cursor.execute(sql_insert_arquivo, arquivo_db_tuple)
-                    if cursor.rowcount > 0:
-                        arquivos_salvos_count += 1
-                except sqlite3.Error as e:
-                    print(f"ERRO (save_db): Ao salvar arquivo {nome_do_arquivo} (lic_id {licitacao_id_local}): {e} - Dados: {arquivo_db_tuple}")
-            else:
-                print(f"AVISO (arquivos): Metadados do arquivo incompletos, pulando. Nome: {nome_do_arquivo}, ID Doc: {id_do_documento_api}")
-
-        if arquivos_salvos_count > 0:
-            print(f"INFO (save_db): {arquivos_salvos_count} arquivos da licitação {licitacao_id_local} salvos.")
-           
-
+            logger.exception(f"ARQUIVOS_SAVE: Erro SQLite durante executemany para licitação ID {licitacao_id_local}")
+            logger.debug(f"ARQUIVOS_SAVE: Primeiros arquivos na tentativa de lote (max 5): {arquivos_para_inserir[:5]}")
+    elif not arquivos_com_dados_invalidos:
+        logger.info(f"ARQUIVOS_SAVE: Nenhum arquivo válido encontrado na lista para inserir para lic_id {licitacao_id_local}.")
 
     
 def get_db_connection():
     """Retorna uma conexão com o banco de dados."""
-    conn = sqlite3.connect(DATABASE_PATH)
-    conn.row_factory = sqlite3.Row # (Permite acessar colunas pelo nome)
+    conn = None # Adicionado para clareza da inicialização
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        conn.row_factory = sqlite3.Row
+        # logger.info("Conexão com o banco de dados estabelecida.") # INFO é bom aqui
+    except sqlite3.Error as e:
+        logger.critical(f"DB_CONNECTION: Falha CRÍTICA ao conectar ao banco de dados em {DATABASE_PATH}: {e}") # CRITICAL
+        return None # Retorna None para indicar falha
     return conn
 
 
@@ -146,8 +334,10 @@ def format_datetime_for_api(dt_obj):
     """Formata um objeto datetime para YYYYMMDD."""
     return dt_obj.strftime('%Y%m%d')
 
+@api_retry_decorator # Aplicar o decorador
 def fetch_licitacoes_por_atualizacao(data_inicio_str, data_fim_str, codigo_modalidade_api, pagina=1, tamanho_pagina=TAMANHO_PAGINA_SYNC):
     """Busca licitações da API /v1/contratacoes/atualizacao."""
+    # ... (resto da função similar, com o mesmo padrão de try-except)
     params_api = {
         'dataInicial': data_inicio_str,
         'dataFinal': data_fim_str,
@@ -155,22 +345,41 @@ def fetch_licitacoes_por_atualizacao(data_inicio_str, data_fim_str, codigo_modal
         'tamanhoPagina': tamanho_pagina,
         'codigoModalidadeContratacao': codigo_modalidade_api
     }
-    url_api_pncp = f"{API_BASE_URL}/v1/contratacoes/atualizacao" 
-    print(f"SYNC ATUALIZACAO: Buscando em {url_api_pncp} com params {params_api}")
-    
+    url_api_pncp = f"{API_BASE_URL}/v1/contratacoes/atualizacao"
+    logger.info(f"SYNC_API: Buscando em {url_api_pncp} com params {params_api}") # INFO aqui é bom para o fluxo principal
     try:
-        response = requests.get(url_api_pncp, params=params_api, timeout=120)
+        response = requests.get(url_api_pncp, params=params_api, timeout=120) # Timeout maior para esta API principal
         response.raise_for_status()
-        if response.status_code == 204:
-            return None, 0
+        if response.status_code == 204: # Improvável para esta API, mas para consistência
+            logger.info(f"SYNC_API: Recebido status 204 (No Content) para {url_api_pncp} com params {params_api}.")
+            return None, 0 # (data, paginasRestantes)
         data_api = response.json()
         return data_api.get('data'), data_api.get('paginasRestantes', 0)
+    except requests.exceptions.HTTPError as http_err:
+        if http_err.response.status_code not in RETRYABLE_STATUS_CODES:
+            logger.error(f"SYNC_API: Erro HTTP NÃO RETENTÁVEL (modalidade {codigo_modalidade_api}, pag {pagina}): {http_err}")
+        # O log de warning da tenacity já terá sido emitido para erros retentáveis.
+        # Podemos logar um erro final se todas as tentativas falharem.
+        # else:
+        #     logger.error(f"SYNC_API: Todas as retentativas falharam para HTTPError {http_err.response.status_code} (modalidade {codigo_modalidade_api}, pag {pagina})")
+
+        # O logger.critical na função chamadora (sync_licitacoes_ultima_janela_anual)
+        # já trata o caso de licitacoes_data ser None.
+        # Se quisermos ser mais explícitos aqui sobre a falha final:
+        if http_err.response is not None:
+             logger.error(f"SYNC_API: Detalhes da resposta final - Status: {http_err.response.status_code}, Texto: {http_err.response.text[:200]}")
+        return None, 0 # (data, paginasRestantes) - Indica falha
     except Exception as e:
-        print(f"SYNC ATUALIZACAO: Erro geral ao buscar (modalidade {codigo_modalidade_api}, pag {pagina}): {e}")
-        return None, 0
+        logger.exception(f"SYNC_API: Erro GERAL (não-requests) ao buscar (modalidade {codigo_modalidade_api}, pag {pagina})")
+        return None, 0 # (data, paginasRestantes) - Indica falha
 
 
 def  save_licitacao_to_db(conn, licitacao_api_item): 
+    # >>> PASSO DE VALIDAÇÃO INICIAL <<<
+    if not validar_dados_licitacao_api(licitacao_api_item):
+        logar_falha_persistente("licitacao_principal", licitacao_api_item, "Falha na validação inicial dos dados.")
+        return None # Pula o processamento desta licitação
+
     cursor = conn.cursor()
       
     # Mapeamento de licitacao_db 
@@ -213,15 +422,14 @@ def  save_licitacao_to_db(conn, licitacao_api_item):
         'unidadeOrgaoUfNome': licitacao_api_item.get('unidadeOrgao', {}).get('ufNome'),
         'usuarioNome': licitacao_api_item.get('usuarioNome'),
         'linkSistemaOrigem': licitacao_api_item.get('linkSistemaOrigem'),
-        'justificativaPresencial': licitacao_api_item.get('justificativaPresencial'),
-        #'link_portal_pncp': link_pncp_val
+        'justificativaPresencial': licitacao_api_item.get('justificativaPresencial'),        
     }
     
-    if not licitacao_db_parcial['numeroControlePNCP']:
-        print(f"AVISO (save_db): Licitação da lista sem 'numeroControlePNCP'. Dados: {licitacao_api_item}")
-        return None
+    #if not licitacao_db_parcial['numeroControlePNCP']:  #Não preciso mais por causa da validação inicial que implementei
+    #    logger.critical(f"AVISO (save_db): Licitação da lista sem 'numeroControlePNCP'. Dados: {licitacao_api_item}")
+    #    return None
     
-     # Gerar link_portal_pncp
+    # Gerar link_portal_pncp
     cnpj_l = licitacao_db_parcial['orgaoEntidadeCnpj']
     ano_l = licitacao_db_parcial['anoCompra']
     seq_l = licitacao_db_parcial['sequencialCompra']
@@ -265,11 +473,11 @@ def  save_licitacao_to_db(conn, licitacao_api_item):
         cursor.execute("SELECT COUNT(id) FROM itens_licitacao WHERE licitacao_id = ?", (licitacao_id_local_final,))
         if cursor.fetchone()[0] == 0:
             necessita_buscar_itens = True
-            print(f"INFO (save_db): Licitação {licitacao_db_parcial['numeroControlePNCP']} sem itens no banco. Buscando...")
+            logger.error(f"INFO (save_db): Licitação {licitacao_db_parcial['numeroControlePNCP']} sem itens no banco. Buscando...")
 
 
     if necessita_buscar_itens and licitacao_db_parcial['orgaoEntidadeCnpj'] and licitacao_db_parcial['anoCompra'] and licitacao_db_parcial['sequencialCompra'] is not None:
-        print(f"INFO (save_db): Iniciando busca de ITENS para {licitacao_db_parcial['numeroControlePNCP']} (para definir situacaoReal e salvar)")
+        logger.info(f"INFO (save_db): Iniciando busca de ITENS para {licitacao_db_parcial['numeroControlePNCP']} (para definir situacaoReal e salvar)")
         # fetch_all_itens_for_licitacao agora SÓ BUSCA e retorna a lista de itens da API
         # O salvamento dos itens será feito DEPOIS de salvar a licitação principal.
         itens_brutos_api = fetch_all_itens_for_licitacao_APENAS_BUSCA(
@@ -277,8 +485,16 @@ def  save_licitacao_to_db(conn, licitacao_api_item):
             licitacao_db_parcial['anoCompra'], 
             licitacao_db_parcial['sequencialCompra']
         )
-        if itens_brutos_api:
-            itens_da_licitacao_api = itens_brutos_api 
+        if itens_brutos_api is None: # Se a busca de itens falhou criticamente
+            logger.error(f"ITENS_FETCH_FAIL: Falha crítica ao buscar itens para {licitacao_db_parcial['numeroControlePNCP']}. A licitação pode ficar inconsistente.")
+            logar_falha_persistente(
+                "licitacao_itens_fetch_error",
+                licitacao_api_item, # Loga a licitação principal
+                f"Falha crítica ao buscar itens para PNCP ID {licitacao_db_parcial['numeroControlePNCP']}."
+            )            
+            return None # Para abortar o processamento desta licitação
+        elif itens_brutos_api:
+            itens_da_licitacao_api = itens_brutos_api
             # Guardamos para usar na lógica de situacaoReal e para salvar depois
     
     # --- LÓGICA PARA DEFINIR licitacao_db_parcial['situacaoReal'] ---
@@ -343,7 +559,7 @@ def  save_licitacao_to_db(conn, licitacao_api_item):
                 except ValueError:
                      # Data de encerramento em formato inválido, o que fazer?
                      # Talvez tratar como "A Receber/Recebendo Proposta" ou "Desconhecida" e logar um aviso
-                     print(f"AVISO: Formato inválido para dataEncerramentoProposta: {data_encerramento_str} para {licitacao_db_parcial['numeroControlePNCP']}")
+                     logger.exception(f"AVISO: Formato inválido para dataEncerramentoProposta: {data_encerramento_str} para {licitacao_db_parcial['numeroControlePNCP']}")
                      situacao_real_calculada = "A Receber/Recebendo Proposta" # Ou outra default segura
             else: # Sem data de encerramento, mas ativa pela API e não definida por status de item
                   # E aqui se status_compra_api == 1, será "A Receber/Recebendo Proposta"
@@ -437,12 +653,12 @@ def  save_licitacao_to_db(conn, licitacao_api_item):
                 if not row_existente: 
                     licitacao_id_local_final = cursor.lastrowid
                 # (licitacao_id_local_final já tem valor se row_existente)
-                print(f"INFO (SAVE_DB): Licitação {licitacao_db_parcial['numeroControlePNCP']} UPSERTED. ID: {licitacao_id_local_final}. SituacaoReal: {situacao_real_calculada}")
+                logger.info(f"INFO (SAVE_DB): Licitação {licitacao_db_parcial['numeroControlePNCP']} UPSERTED. ID: {licitacao_id_local_final}. SituacaoReal: {situacao_real_calculada}")
             elif row_existente:
-                 print(f"INFO (SAVE_DB): Licitação {licitacao_db_parcial['numeroControlePNCP']} não precisou de update. ID: {licitacao_id_local_final}. SituacaoReal: {situacao_real_calculada}")
+                 logger.info(f"INFO (SAVE_DB): Licitação {licitacao_db_parcial['numeroControlePNCP']} não precisou de update. ID: {licitacao_id_local_final}. SituacaoReal: {situacao_real_calculada}")
         elif row_existente:
              licitacao_id_local_final = row_existente['id'] # Garante que temos o ID
-             print(f"INFO (SAVE_DB): Licitação {licitacao_db_parcial['numeroControlePNCP']} já atualizada. ID: {licitacao_id_local_final}. SituacaoReal (do DB): {row_existente['situacaoReal'] if 'situacaoReal' in row_existente.keys() else 'N/A'}") # Mostra o do DB
+             logger.info(f"INFO (SAVE_DB): Licitação {licitacao_db_parcial['numeroControlePNCP']} já atualizada. ID: {licitacao_id_local_final}. SituacaoReal (do DB): {row_existente['situacaoReal'] if 'situacaoReal' in row_existente.keys() else 'N/A'}") # Mostra o do DB
         
         if not licitacao_id_local_final and flag_houve_mudanca_real:
             cursor.execute("SELECT id FROM licitacoes WHERE numeroControlePNCP = ?", (licitacao_db_parcial['numeroControlePNCP'],))
@@ -450,11 +666,17 @@ def  save_licitacao_to_db(conn, licitacao_api_item):
             if id_row: licitacao_id_local_final = id_row['id']
             
     except sqlite3.Error as e:
-        print(f"ERRO (SAVE_DB): Ao salvar principal {licitacao_db_parcial.get('numeroControlePNCP')}: {e}")
+        logger.exception(f"SAVE_DB: Erro SQLite ao salvar principal {licitacao_db_parcial.get('numeroControlePNCP')}")
+        
+        logar_falha_persistente(
+            "licitacao_principal_db_error",
+            licitacao_api_item, # Dados originais da API
+            f"Erro SQLite durante UPSERT: {e}"
+        )
         return None
         
     if not licitacao_id_local_final:
-        print(f"AVISO CRÍTICO (SAVE_DB): Falha ao obter ID local para {licitacao_db_parcial.get('numeroControlePNCP')}")
+        logger.critical(f"AVISO CRÍTICO (SAVE_DB): Falha ao obter ID local para {licitacao_db_parcial.get('numeroControlePNCP')}")
         return None 
 
     # --- SALVAR ITENS E ARQUIVOS (usando licitacao_id_local_final e os itens_da_licitacao_api) ---
@@ -467,17 +689,49 @@ def  save_licitacao_to_db(conn, licitacao_api_item):
     if necessita_buscar_itens and itens_da_licitacao_api: # Se buscamos e obtivemos itens
         salvar_itens_no_banco(conn, licitacao_id_local_final, itens_da_licitacao_api) # Nova função para apenas salvar
 
-    # Lógica para arquivos (similar: buscar se necessário e depois salvar)
-    # ... fetch_all_arquivos_for_licitacao_APENAS_BUSCA e salvar_arquivos_no_banco ...
-    # Por agora, vamos manter a chamada original, mas idealmente ela também seria dividida.
-    if flag_houve_mudanca_real or necessita_buscar_itens: # Condição simplificada para buscar arquivos
-        if licitacao_db_parcial['orgaoEntidadeCnpj'] and licitacao_db_parcial['anoCompra'] and licitacao_db_parcial['sequencialCompra'] is not None:
-            fetch_all_arquivos_for_licitacao(conn, licitacao_id_local_final, 
-                                             licitacao_db_parcial['orgaoEntidadeCnpj'], 
-                                             licitacao_db_parcial['anoCompra'], 
-                                             licitacao_db_parcial['sequencialCompra'])
+    # --- SALVAR ARQUIVOS (se necessário) ---
+    necessita_buscar_arquivos = False # Definir uma flag para arquivos
+    if flag_houve_mudanca_real: # Se a licitação principal mudou
+        necessita_buscar_arquivos = True
+    elif licitacao_id_local_final: # Se a licitação já existe
+        # Verificamos se já existem arquivos para ela no banco
+        # Se não existirem, marcamos para buscar.
+        cursor.execute("SELECT COUNT(id) FROM arquivos_licitacao WHERE licitacao_id = ?", (licitacao_id_local_final,))
+        if cursor.fetchone()[0] == 0:
+            necessita_buscar_arquivos = True
+            logger.info(f"INFO (ARQUIVOS): Licitação {licitacao_db_parcial['numeroControlePNCP']} (ID: {licitacao_id_local_final}) sem arquivos no banco. Marcando para busca...")
+
+    if necessita_buscar_arquivos:
+        # Verifica se temos os dados necessários para formar a URL da API de arquivos
+        cnpj_lic = licitacao_db_parcial.get('orgaoEntidadeCnpj')
+        ano_lic = licitacao_db_parcial.get('anoCompra')
+        seq_lic = licitacao_db_parcial.get('sequencialCompra')
+
+        if cnpj_lic and ano_lic and seq_lic is not None:
+            # 1. Busca todos os metadados dos arquivos da API
+            lista_arquivos_metadata = fetch_all_arquivos_metadata_from_api(
+                cnpj_lic,
+                ano_lic,
+                seq_lic
+            )
+
+            # 2. Se a busca de metadados foi bem-sucedida (não retornou None)
+            #    e temos um ID local para a licitação, então salvamos no banco.
+            if lista_arquivos_metadata is not None and licitacao_id_local_final is not None:
+                salvar_arquivos_no_banco(
+                    conn, # A conexão com o banco
+                    licitacao_id_local_final, # O ID da licitação no nosso banco
+                    lista_arquivos_metadata, # A lista de metadados que acabamos de buscar
+                    cnpj_lic, # CNPJ da licitação (para montar o link de download)
+                    ano_lic,  # Ano da licitação
+                    seq_lic   # Sequencial da licitação
+                )
+            elif lista_arquivos_metadata is None:
+                logger.error(f"AVISO (ARQUIVOS): Não foi possível buscar metadados de arquivos para Lic. ID {licitacao_id_local_final}, salvamento de arquivos pulado.")
+        else:
+            logger.error(f"AVISO (ARQUIVOS): Dados insuficientes (CNPJ, Ano, Sequencial) para buscar arquivos da licitação {licitacao_db_parcial.get('numeroControlePNCP')}.")
     
-    return licitacao_id_local_final
+    return licitacao_id_local_final # A função continua retornando o ID da licitação
 
 # Nova função para buscar itens sem salvar (para desacoplar)
 def fetch_all_itens_for_licitacao_APENAS_BUSCA(cnpj_orgao, ano_compra, sequencial_compra):
@@ -487,46 +741,56 @@ def fetch_all_itens_for_licitacao_APENAS_BUSCA(cnpj_orgao, ano_compra, sequencia
     # MAS SEM A PARTE DE SALVAR NO BANCO AQUI DENTRO
     while True:
         itens_pagina = fetch_itens_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina_atual_itens, TAMANHO_PAGINA_SYNC)
-        if itens_pagina is None: return None 
+        if itens_pagina is None: 
+            logger.critical(f"ITENS (Busca Geral): Falha crítica ao buscar página {pagina_atual_itens} de itens para {cnpj_orgao}/{ano_compra}/{sequencial_compra}. Abortando busca de itens.")
+            return None 
         if not itens_pagina: break
         todos_itens_api.extend(itens_pagina)
         if len(itens_pagina) < TAMANHO_PAGINA_SYNC: break
         pagina_atual_itens += 1
         time.sleep(0.2)
-    print(f"ITENS (Busca): Total de {len(todos_itens_api)} itens encontrados para {cnpj_orgao}/{ano_compra}/{sequencial_compra}.")
+    logger.info(f"ITENS (Busca): Total de {len(todos_itens_api)} itens encontrados para {cnpj_orgao}/{ano_compra}/{sequencial_compra}.")
     return todos_itens_api
 
-# Nova função para salvar itens no banco (separada da busca)
+
+# Função para salvar itens no banco (separada da busca)
 def salvar_itens_no_banco(conn, licitacao_id_local, lista_itens_api):
     if not lista_itens_api:
-        print(f"INFO (ITENS_SAVE): Sem itens para salvar para licitação ID {licitacao_id_local}.")
+        logger.info(f"ITENS_SAVE: Sem itens para salvar para licitação ID {licitacao_id_local}.") # Mudado para INFO
         return
-    
+
     cursor = conn.cursor()
     try:
         # Deletar itens antigos ANTES do loop, uma única vez
-        print(f"DEBUG (ITENS_SAVE): Deletando itens antigos para licitação ID {licitacao_id_local}")
+        logger.debug(f"ITENS_SAVE: Garantindo limpeza de itens pré-existentes para licitação ID {licitacao_id_local} antes de inserir novos.")
         cursor.execute("DELETE FROM itens_licitacao WHERE licitacao_id = ?", (licitacao_id_local,))
+        if cursor.rowcount > 0:
+            logger.debug(f"ITENS_SAVE: {cursor.rowcount} itens antigos foram efetivamente deletados para licitação ID {licitacao_id_local}.")
     except sqlite3.Error as e:
-        print(f"ERRO (ITENS_SAVE): Ao deletar itens antigos (lic_id {licitacao_id_local}): {e}")
-        # Você pode querer retornar ou levantar o erro aqui, dependendo da sua estratégia
-        return 
+        logger.exception(f"ITENS_SAVE: Erro SQLite ao tentar limpar itens antigos (lic_id {licitacao_id_local})")
+        return # Aborta se a limpeza falhar
 
-    # Defina a string SQL uma vez, antes do loop
     sql_insert_item = """
     INSERT INTO itens_licitacao (
         licitacao_id, numeroItem, descricao, materialOuServicoNome, quantidade,
         unidadeMedida, valorUnitarioEstimado, valorTotal, orcamentoSigiloso,
-        itemCategoriaNome, categoriaItemCatalogo, criterioJulgamentoNome, 
+        itemCategoriaNome, categoriaItemCatalogo, criterioJulgamentoNome,
         situacaoCompraItemNome, tipoBeneficioNome, incentivoProdutivoBasico, dataInclusao,
         dataAtualizacao, temResultado, informacaoComplementar
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""" # 19 placeholders
-    
-    itens_salvos_count = 0
-    itens_com_erro_count = 0
 
-    for item_api in lista_itens_api: 
-        item_db_tuple = (      
+    # 1. Preparar a lista de tuplas para executemany()
+    itens_para_inserir = []
+    itens_com_dados_invalidos = 0
+
+    for item_api in lista_itens_api:
+        # Validação básica de dados do item (opcional, mas bom)
+        if item_api.get('numeroItem') is None: # Exemplo de validação
+            logger.warning(f"ITENS_SAVE: Item para lic_id {licitacao_id_local} sem 'numeroItem'. Pulando item: {item_api}")
+            itens_com_dados_invalidos +=1
+            continue
+
+        item_db_tuple = (
             licitacao_id_local,
             item_api.get('numeroItem'),
             item_api.get('descricao'),
@@ -535,36 +799,39 @@ def salvar_itens_no_banco(conn, licitacao_id_local, lista_itens_api):
             item_api.get('unidadeMedida'),
             item_api.get('valorUnitarioEstimado'),
             item_api.get('valorTotal'),
-            bool(item_api.get('orcamentoSigiloso')), 
+            bool(item_api.get('orcamentoSigiloso')),
             item_api.get('itemCategoriaNome'),
             item_api.get('categoriaItemCatalogo'),
             item_api.get('criterioJulgamentoNome'),
             item_api.get('situacaoCompraItemNome'),
             item_api.get('tipoBeneficioNome'),
-            bool(item_api.get('incentivoProdutivoBasico')), 
+            bool(item_api.get('incentivoProdutivoBasico')),
             item_api.get('dataInclusao', '').split('T')[0] if item_api.get('dataInclusao') else None,
             item_api.get('dataAtualizacao', '').split('T')[0] if item_api.get('dataAtualizacao') else None,
-            bool(item_api.get('temResultado')), 
+            bool(item_api.get('temResultado')),
             item_api.get('informacaoComplementar')
         )
+        itens_para_inserir.append(item_db_tuple)
+
+    if itens_com_dados_invalidos > 0:
+        logger.warning(f"ITENS_SAVE: {itens_com_dados_invalidos} itens foram pulados devido a dados inválidos para lic_id {licitacao_id_local}.")
+
+    # 2. Executar a inserção em lote se houver itens válidos
+    if itens_para_inserir:
         try:
-            # Se precisar do debug da tupla, coloque-o AQUI:
-            # print(f"DEBUG ITENS_SAVE: Tentando inserir tupla: {item_db_tuple}")
-            
-            cursor.execute(sql_insert_item, item_db_tuple)
-            
-            if cursor.rowcount > 0: 
-                itens_salvos_count += 1
-            else:
-                print(f"AVISO (ITENS_SAVE): Insert do item {item_api.get('numeroItem')} (lic_id {licitacao_id_local}) não afetou linhas. Dados: {item_db_tuple}")
+            cursor.executemany(sql_insert_item, itens_para_inserir)
+            # conn.commit() # O commit principal geralmente é feito na função que chama esta (save_licitacao_to_db)
+            logger.info(f"ITENS_SAVE: {cursor.rowcount} itens inseridos em lote para licitação ID {licitacao_id_local}.")
+            if cursor.rowcount != len(itens_para_inserir):
+                 logger.warning(f"ITENS_SAVE: Esperava-se inserir {len(itens_para_inserir)} itens, mas {cursor.rowcount} foram afetados para lic_id {licitacao_id_local}.")
         except sqlite3.Error as e:
-            itens_com_erro_count += 1
-            print(f"ERRO (ITENS_SAVE): Ao salvar item {item_api.get('numeroItem')} da licitação ID {licitacao_id_local}: {e} - Dados: {item_db_tuple}")
-
-    print(f"INFO (ITENS_SAVE): Para licitação ID {licitacao_id_local}: {itens_salvos_count} itens salvos, {itens_com_erro_count} itens com erro.")
-
-# (Similarmente, você pode querer dividir fetch_all_arquivos_for_licitacao em busca e salvamento)
-
+            # Se um erro ocorrer durante executemany, pode ser mais difícil identificar o item exato
+            # A transação inteira do executemany pode ser revertida pelo SQLite dependendo do erro.
+            logger.exception(f"ITENS_SAVE: Erro SQLite durante executemany para licitação ID {licitacao_id_local}")
+            # Logar os primeiros N itens para ajudar na depuração, se necessário
+            logger.debug(f"ITENS_SAVE: Primeiros itens na tentativa de lote (max 5): {itens_para_inserir[:5]}")
+    elif not itens_com_dados_invalidos: # Se não há itens para inserir e nenhum foi invalidado
+        logger.info(f"ITENS_SAVE: Nenhum item válido encontrado na lista para inserir para lic_id {licitacao_id_local}.")
 
     
 def sync_licitacoes_ultima_janela_anual():
@@ -578,19 +845,19 @@ def sync_licitacoes_ultima_janela_anual():
     data_inicio_api_str = format_datetime_for_api(data_inicio_periodo_dt)
     data_fim_api_str = format_datetime_for_api(data_fim_periodo_dt)
 
-    print(f"SYNC ANUAL: Iniciando sincronização para licitações atualizadas entre {data_inicio_api_str} e {data_fim_api_str}")
+    logger.info(f"SYNC ANUAL: Iniciando sincronização para licitações atualizadas entre {data_inicio_api_str} e {data_fim_api_str}")
 
     licitacoes_processadas_total = 0
     
     for modalidade_id_sync in CODIGOS_MODALIDADE:
-        print(f"\n--- SYNC JANELA: Processando Modalidade {modalidade_id_sync} ---")
+        logger.info(f"\n--- SYNC JANELA: Processando Modalidade {modalidade_id_sync} ---")
         pagina_atual = 1
         paginas_processadas_modalidade = 0
         erros_api_modalidade = 0
 
         while True:
             if LIMITE_PAGINAS_TESTE_SYNC is not None and paginas_processadas_modalidade >= LIMITE_PAGINAS_TESTE_SYNC:
-                print(f"SYNC JANELA: Limite de {LIMITE_PAGINAS_TESTE_SYNC} páginas atingido para modalidade {modalidade_id_sync}.")
+                logger.info(f"SYNC JANELA: Limite de {LIMITE_PAGINAS_TESTE_SYNC} páginas atingido para modalidade {modalidade_id_sync}.")
                 break
 
             licitacoes_data, paginas_restantes = fetch_licitacoes_por_atualizacao(
@@ -599,56 +866,44 @@ def sync_licitacoes_ultima_janela_anual():
 
             if licitacoes_data is None: # Erro
                 erros_api_modalidade += 1
-                if erros_api_modalidade > 3:
-                    print(f"SYNC JANELA: Muitos erros de API para modalidade {modalidade_id_sync}. Abortando esta modalidade.")
+                if erros_api_modalidade > 4:
+                    logger.critical(f"SYNC JANELA: Muitos erros de API para modalidade {modalidade_id_sync}. Abortando esta modalidade.")
                     break 
                 if paginas_restantes == 0 : # Se API indicou erro e fim
+                    logger.critical(f"SYNC JANELA: Muitos erros de API para modalidade {modalidade_id_sync}.")
                     break
     
             if not licitacoes_data: # Fim dos dados
-                print(f"SYNC JANELA: Nenhuma licitação na API para modalidade {modalidade_id_sync}, página {pagina_atual}.")
+                logger.info(f"SYNC JANELA: Nenhuma licitação na API para modalidade {modalidade_id_sync}, página {pagina_atual}.")
                 # Verifique se paginas_restantes é 0 para confirmar o fim
                 if paginas_restantes == 0:
                     break
                 else: # Pode ser uma página vazia no meio, mas API indica mais páginas (raro)
-                    print(f"SYNC ANUAL: Página {pagina_atual} vazia, mas {paginas_restantes} páginas restantes. Tentando próxima.")
+                    logger.info(f"SYNC ANUAL: Página {pagina_atual} vazia, mas {paginas_restantes} páginas restantes. Tentando próxima.")
                     pagina_atual += 1
                     time.sleep(0.5)
                     continue
 
-            print(f"SYNC JANELA: Modalidade {modalidade_id_sync}, Página {pagina_atual}: Processando {len(licitacoes_data)} licitações.")
+            logger.info(f"SYNC JANELA: Modalidade {modalidade_id_sync}, Página {pagina_atual}: Processando {len(licitacoes_data)} licitações.")
             for lic_api in licitacoes_data:
                 save_licitacao_to_db(conn, lic_api) # Removido o set
                 licitacoes_processadas_total += 1
             
             conn.commit()
-            print(f"SYNC JANELA: Modalidade {modalidade_id_sync}, Página {pagina_atual} processada. {paginas_restantes} páginas restantes.")
+            logger.info(f"SYNC JANELA: Modalidade {modalidade_id_sync}, Página {pagina_atual} processada. {paginas_restantes} páginas restantes.")
             paginas_processadas_modalidade += 1
             
             if paginas_restantes == 0: break
             pagina_atual += 1
             time.sleep(0.5)
 
-    # Limpeza de licitações MUITO antigas (fora da janela de ~13 meses, por exemplo)
-    agora = datetime.now() # Recalcula 'agora' para a limpeza
-    data_limite_permanencia_dt = agora - timedelta(days=395) 
-    data_limite_permanencia_db_str = data_limite_permanencia_dt.strftime('%Y-%m-%d')
-    try:
-        cursor = conn.cursor()
-        print(f"SYNC JANELA: Limpando licitações com dataAtualizacao < {data_limite_permanencia_db_str}")
-        cursor.execute("DELETE FROM licitacoes WHERE dataAtualizacao < ?", (data_limite_permanencia_db_str,))
-        deleted_count = cursor.rowcount
-        conn.commit()
-        print(f"SYNC JANELA: Limpeza de {deleted_count} licitações antigas concluída.")
-    except sqlite3.Error as e:
-        print(f"SYNC JANELA: Erro na limpeza: {e}")
-
+    
     conn.close()
-    print(f"\n--- Sincronização da Janela Anual Concluída ---")
-    print(f"Total de licitações da API (na janela de atualização) processadas: {licitacoes_processadas_total}")
+    logger.info(f"\n--- Sincronização da Janela Anual Concluída ---")
+    logger.info(f"Total de licitações da API (na janela de atualização) processadas: {licitacoes_processadas_total}")
 
 
 if __name__ == '__main__':
-    print("Iniciando script de sincronização (janela de {DIAS_JANELA_SINCRONIZACAO} dias de atualizações)...")
+    logger.info(f"Iniciando script de sincronização (janela de {DIAS_JANELA_SINCRONIZACAO} dias de atualizações)...")
     sync_licitacoes_ultima_janela_anual()
-    print("Script de sincronização finalizado.")
+    logger.info("Script de sincronização finalizado.")
