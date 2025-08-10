@@ -10,6 +10,7 @@ from dotenv import load_dotenv  # Para carregar o arquivo .env
 import csv #Esse e os tres de baixo são para o upload de arquivos CSV
 import io
 from flask import Response
+import unicodedata  # Para normalizar strings (remover acentos, etc.)
 
 load_dotenv()  # Carrega as variáveis do arquivo .env para o ambiente
 
@@ -32,8 +33,9 @@ DATABASE_PATH = os.path.join(BASE_DIR, 'database.db')
 
 # --- Funções Auxiliares para o Banco de Dados ---
 def get_db_connection():
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
+    conn.create_function("remove_acentos", 1, remove_acentos)
     return conn
 
 # --- Filtro personalizado nl2br para quebra de linha ---
@@ -248,200 +250,196 @@ def processar_contato():
     return redirect(url_for('pagina_contato'))
 
  
-# ===========================================---- ROTAS BACKEND (API Principal) ----============================================
-@app.route('/licitacoes', methods=['GET'])
-def get_licitacoes():
-    filtros = {
-        'ufs': request.args.getlist('uf'),
-        'modalidadesId': request.args.getlist('modalidadeId', type=int),
-        'statusId': request.args.get('status', default=None, type=int),
-        'dataPubInicio': request.args.get('dataPubInicio', default=None, type=str),
-        'dataPubFim': request.args.get('dataPubFim', default=None, type=str),
-        'valorMin': request.args.get('valorMin', default=None, type=float),
-        'valorMax': request.args.get('valorMax', default=None, type=float),
-        'municipiosNome': request.args.getlist('municipioNome'),
-        'dataAtualizacaoInicio': request.args.get('dataAtualizacaoInicio', default=None, type=str),
-        'dataAtualizacaoFim': request.args.get('dataAtualizacaoFim', default=None, type=str),
-        'palavrasChave': request.args.getlist('palavraChave'),
-        'excluirPalavras': request.args.getlist('excluirPalavra'),
-        'anoCompra': request.args.get('anoCompra', type=int),
-        'cnpjOrgao': request.args.get('cnpjOrgao'),
-        'statusRadar': request.args.get('statusRadar', default=None, type=str)
-    }
+# ===========================================---- ROTAS BACKEND (API Principal) ----============================================ #
+def remove_acentos(texto):
+    if texto is None:
+        return None
+    return ''.join(
+        c for c in unicodedata.normalize('NFD', texto)
+        if unicodedata.category(c) != 'Mn'
+    )
 
-    pagina = request.args.get('pagina', default=1, type=int)
-    if pagina < 1:
-        pagina = 1
-    por_pagina = request.args.get('porPagina', default=20, type=int)
-    if por_pagina < 1:
-        por_pagina = 20
-    elif por_pagina > 100:
-        por_pagina = 100
-
-    offset = (pagina - 1) * por_pagina
-
-    orderBy_param = request.args.get('orderBy', default='dataPublicacaoPncp', type=str)
-    orderDir_param = request.args.get('orderDir', default='DESC', type=str).upper()
-
-    # Validação para evitar injeção de SQL
-    campos_validos_ordenacao = [
-        'dataPublicacaoPncp', 'dataAtualizacao', 'valorTotalEstimado',
-        'dataAberturaProposta', 'dataEncerramentoProposta', 'modalidadeNome',
-        'orgaoEntidadeRazaoSocial', 'unidadeOrgaoMunicipioNome',
-        'situacaoReal'
-    ]
-
-    if orderBy_param not in campos_validos_ordenacao:
-        return jsonify({
-            "erro": "Parâmetro de ordenação inválido",
-            "detalhes": f"O valor '{orderBy_param}' para 'orderBy' não é válido. Campos válidos: {', '.join(campos_validos_ordenacao)}."
-        }), 400
-
-    if orderDir_param not in ['ASC', 'DESC']:
-        return jsonify({
-            "erro": "Parâmetro de direção de ordenação inválido",
-            "detalhes": f"O valor '{orderDir_param}' para 'orderDir' não é válido. Use 'ASC' ou 'DESC'."
-        }), 400
-
+def _build_licitacoes_query(filtros, palavras_chave_inclusao=None, palavras_chave_exclusao=None):
+    """
+    Constrói a cláusula WHERE da query e os parâmetros com base nos filtros recebidos.
+    Suporta filtros de texto case-insensitive e acento-insensitive direto no SQL.
+    """
     condicoes_db = []
     parametros_db = []
 
-    if filtros['statusRadar']:
+    # --- Filtros já existentes ---
+    if filtros.get('statusRadar'):
         condicoes_db.append("situacaoReal = ?")
         parametros_db.append(filtros['statusRadar'])
-    elif filtros['statusId'] is not None:
+    elif filtros.get('statusId') is not None:
         condicoes_db.append("situacaoCompraId = ?")
         parametros_db.append(filtros['statusId'])
 
-    if filtros['ufs']:
+    if filtros.get('ufs'):
         placeholders = ', '.join(['?'] * len(filtros['ufs']))
         condicoes_db.append(f"unidadeOrgaoUfSigla IN ({placeholders})")
         parametros_db.extend([uf.upper() for uf in filtros['ufs']])
 
-    if filtros['modalidadesId']:
+    if filtros.get('modalidadesId'):
         placeholders = ', '.join(['?'] * len(filtros['modalidadesId']))
         condicoes_db.append(f"modalidadeId IN ({placeholders})")
         parametros_db.extend(filtros['modalidadesId'])
 
-    if filtros['excluirPalavras']:
-        campos_texto_busca = [
-            "objetoCompra", "orgaoEntidadeRazaoSocial", "unidadeOrgaoNome",
-            "numeroControlePNCP", "unidadeOrgaoMunicipioNome", "unidadeOrgaoUfNome",
-            "CAST(unidadeOrgaoCodigoIbge AS TEXT)", "orgaoEntidadeCnpj"
-        ]
-        for palavra_excluir in filtros['excluirPalavras']:
-            termo_excluir = f"%{palavra_excluir}%"
-            condicoes_palavra_excluir_and = []
-            for campo in campos_texto_busca:
-                condicoes_palavra_excluir_and.append(f"COALESCE({campo}, '') NOT LIKE ?")
-                parametros_db.append(termo_excluir)
-            if condicoes_palavra_excluir_and:
-                condicoes_db.append(f"({' AND '.join(condicoes_palavra_excluir_and)})")
-
-    if filtros['palavrasChave']:
-        campos_texto_busca = [
-            "objetoCompra", "orgaoEntidadeRazaoSocial", "unidadeOrgaoNome",
-            "numeroControlePNCP", "unidadeOrgaoMunicipioNome", "unidadeOrgaoUfNome",
-            "CAST(unidadeOrgaoCodigoIbge AS TEXT)", "orgaoEntidadeCnpj"
-        ]
-        sub_condicoes_palavras_or_geral = []
-        for palavra_chave in filtros['palavrasChave']:
-            termo_like = f"%{palavra_chave}%"
-            condicoes_campos_or_para_palavra = []
-            for campo in campos_texto_busca:
-                condicoes_campos_or_para_palavra.append(f"COALESCE({campo}, '') LIKE ?")
-                parametros_db.append(termo_like)
-            if condicoes_campos_or_para_palavra:
-                sub_condicoes_palavras_or_geral.append(f"({' OR '.join(condicoes_campos_or_para_palavra)})")
-        if sub_condicoes_palavras_or_geral:
-            condicoes_db.append(f"({' OR '.join(sub_condicoes_palavras_or_geral)})")
-
-    if filtros['dataPubInicio']:
+    if filtros.get('dataPubInicio'):
         condicoes_db.append("dataPublicacaoPncp >= ?")
         parametros_db.append(filtros['dataPubInicio'])
-    if filtros['dataPubFim']:
+    if filtros.get('dataPubFim'):
         condicoes_db.append("dataPublicacaoPncp <= ?")
         parametros_db.append(filtros['dataPubFim'])
 
-    if filtros['valorMin'] is not None:
+    if filtros.get('valorMin') is not None:
         condicoes_db.append("valorTotalEstimado >= ?")
         parametros_db.append(filtros['valorMin'])
-    if filtros['valorMax'] is not None:
+    if filtros.get('valorMax') is not None:
         condicoes_db.append("valorTotalEstimado <= ?")
         parametros_db.append(filtros['valorMax'])
 
-    if filtros['dataAtualizacaoInicio']:
+    if filtros.get('dataAtualizacaoInicio'):
         condicoes_db.append("dataAtualizacao >= ?")
         parametros_db.append(filtros['dataAtualizacaoInicio'])
-    if filtros['dataAtualizacaoFim']:
+    if filtros.get('dataAtualizacaoFim'):
         condicoes_db.append("dataAtualizacao <= ?")
         parametros_db.append(filtros['dataAtualizacaoFim'])
 
-    if filtros['anoCompra'] is not None:
+    if filtros.get('municipiosNome'):
+        placeholders = ', '.join(['?'] * len(filtros['municipiosNome']))
+        condicoes_db.append(f"unidadeOrgaoMunicipioNome IN ({placeholders})")
+        parametros_db.extend(filtros['municipiosNome'])
+
+    if filtros.get('anoCompra') is not None:
         condicoes_db.append("anoCompra = ?")
         parametros_db.append(filtros['anoCompra'])
-
-    if filtros['cnpjOrgao']:
+    if filtros.get('cnpjOrgao'):
         condicoes_db.append("orgaoEntidadeCnpj = ?")
         parametros_db.append(filtros['cnpjOrgao'])
 
-    if filtros['municipiosNome']:
-        sub_condicoes_municipio = []
-        for nome_mun in filtros['municipiosNome']:
-            termo_mun = f"%{nome_mun.upper()}%"
-            sub_condicoes_municipio.append("UPPER(unidadeOrgaoMunicipioNome) LIKE ?")
-            parametros_db.append(termo_mun)
-        if sub_condicoes_municipio:
-            condicoes_db.append(f"({ ' OR '.join(sub_condicoes_municipio) })")
+    # --- Filtro de palavras-chave (inclusão e exclusão) ---
+    campos_texto_busca = [
+        "objetoCompra", "orgaoEntidadeRazaoSocial", "unidadeOrgaoNome",
+        "numeroControlePNCP", "unidadeOrgaoMunicipioNome", "unidadeOrgaoUfNome",
+        "orgaoEntidadeCnpj"
+    ]
 
-    query_select_dados = "SELECT * FROM licitacoes"
-    query_select_contagem = "SELECT COUNT(id) FROM licitacoes"
+    # Inclusão → pelo menos uma palavra presente
+    if palavras_chave_inclusao:
+        subcondicoes_inclusao = []
+        for palavra in palavras_chave_inclusao:
+            like_exprs = [f"LOWER(remove_acentos({campo})) LIKE ?" for campo in campos_texto_busca]
+            subcondicoes_inclusao.append("(" + " OR ".join(like_exprs) + ")")
+            parametros_db.extend([f"%{remove_acentos(palavra).lower()}%"] * len(campos_texto_busca))
+        condicoes_db.append("(" + " OR ".join(subcondicoes_inclusao) + ")")
+
+    # Exclusão → nenhuma palavra presente
+    if palavras_chave_exclusao:
+        for palavra in palavras_chave_exclusao:
+            like_exprs = [f"LOWER(remove_acentos({campo})) LIKE ?" for campo in campos_texto_busca]
+            condicoes_db.append("NOT (" + " OR ".join(like_exprs) + ")")
+            parametros_db.extend([f"%{remove_acentos(palavra).lower()}%"] * len(campos_texto_busca))
+
+    # --- Monta WHERE ---
     query_where = ""
     if condicoes_db:
         query_where = " WHERE " + " AND ".join(condicoes_db)
 
-    query_order_limit_offset_dados = f" ORDER BY {orderBy_param} {orderDir_param} LIMIT ? OFFSET ?"
+    return query_where, parametros_db
 
-    sql_query_dados_final = query_select_dados + query_where + query_order_limit_offset_dados
-    parametros_dados_sql_final = parametros_db + [por_pagina, offset]
+@app.route('/licitacoes', methods=['GET'])
+def get_licitacoes():
+    # 1. Coleta e valida os parâmetros de paginação/ordenação
+    pagina = request.args.get('pagina', default=1, type=int)
+    por_pagina = request.args.get('porPagina', default=20, type=int)
+    orderBy_param = request.args.get('orderBy', default='dataAtualizacao', type=str)
+    orderDir_param = request.args.get('orderDir', default='DESC', type=str).upper()
 
-    sql_query_contagem_final = query_select_contagem + query_where
+    if pagina < 1:
+        pagina = 1
+    if por_pagina not in [10, 20, 50, 100]:
+        por_pagina = 20
+
+    campos_validos_ordenacao = [
+        'dataPublicacaoPncp', 'dataAtualizacao', 'valorTotalEstimado',
+        'dataAberturaProposta', 'dataEncerramentoProposta', 'modalidadeNome',
+        'orgaoEntidadeRazaoSocial', 'unidadeOrgaoMunicipioNome', 'situacaoReal'
+    ]
+    if orderBy_param not in campos_validos_ordenacao:
+        return jsonify({"erro": "Parâmetro de ordenação inválido."}), 400
+    if orderDir_param not in ['ASC', 'DESC']:
+        return jsonify({"erro": "Parâmetro de direção de ordenação inválido."}), 400
+
+    # 2. Coleta filtros SQL
+    filtros_sql = {
+        'ufs': request.args.getlist('uf'),
+        'modalidadesId': request.args.getlist('modalidadeId', type=int),
+        'statusRadar': request.args.get('statusRadar'),
+        'dataPubInicio': request.args.get('dataPubInicio'),
+        'dataPubFim': request.args.get('dataPubFim'),
+        'valorMin': request.args.get('valorMin', type=float),
+        'valorMax': request.args.get('valorMax', type=float),
+        'municipiosNome': request.args.getlist('municipioNome'),
+        'dataAtualizacaoInicio': request.args.get('dataAtualizacaoInicio'),
+        'dataAtualizacaoFim': request.args.get('dataAtualizacaoFim'),
+        'anoCompra': request.args.get('anoCompra', type=int),
+        'cnpjOrgao': request.args.get('cnpjOrgao'),
+        'statusId': request.args.get('statusId', type=int)
+    }
+    filtros_sql = {k: v for k, v in filtros_sql.items() if v is not None and v != '' and v != []}
+
+    # 3. Coleta filtros de texto (agora vão para o SQL)
+    palavras_chave_inclusao = request.args.getlist('palavraChave')
+    palavras_chave_exclusao = request.args.getlist('excluirPalavra')
+
+    # 4. Monta query SQL com todos os filtros
+    query_where_sql, parametros_db_sql = _build_licitacoes_query(
+        filtros_sql,
+        palavras_chave_inclusao=palavras_chave_inclusao,
+        palavras_chave_exclusao=palavras_chave_exclusao
+    )
+
+    # Adiciona ordenação e paginação direto no SQL
+    query_select_dados = f"""
+        SELECT * FROM licitacoes
+        {query_where_sql}
+        ORDER BY {orderBy_param} {orderDir_param}
+        LIMIT ? OFFSET ?
+    """
+    parametros_db_sql.extend([por_pagina, (pagina - 1) * por_pagina])
 
     conn = get_db_connection()
-    cursor = conn.cursor()
-    licitacoes_lista = []
-    total_registros = 0
     try:
-        cursor.execute(sql_query_dados_final, parametros_dados_sql_final)
-        licitacoes_rows = cursor.fetchall()
-        licitacoes_lista = [dict(row) for row in licitacoes_rows]
+        cursor = conn.cursor()
 
-        cursor.execute(sql_query_contagem_final, parametros_db)
-        total_registros_fetch = cursor.fetchone()
-        if total_registros_fetch:
-            total_registros = total_registros_fetch[0]
+        # Busca registros da página
+        cursor.execute(query_select_dados, parametros_db_sql)
+        licitacoes_paginadas = [dict(row) for row in cursor.fetchall()]
+
+        # Busca total de registros (sem LIMIT/OFFSET)
+        query_count = f"SELECT COUNT(*) FROM licitacoes {query_where_sql}"
+        cursor.execute(query_count, parametros_db_sql[:-2])  # sem os LIMIT/OFFSET
+        total_registros = cursor.fetchone()[0]
 
     except sqlite3.Error as e:
-        print(f"Erro ao buscar/contar no banco local: {e}")
-        if conn:
-            conn.close()
-        return jsonify({"erro": "Erro interno ao processar sua busca.", "detalhes": str(e)}), 500
+        print(f"Erro ao buscar dados do banco: {e}")
+        return jsonify({"erro": "Erro interno na busca.", "detalhes": str(e)}), 500
     finally:
         if conn:
             conn.close()
 
-    total_paginas_final = (total_registros + por_pagina - 1) // por_pagina if por_pagina > 0 and total_registros > 0 else 0
-    if total_registros == 0:
-        total_paginas_final = 0
+    total_paginas_final = (total_registros + por_pagina - 1) // por_pagina if por_pagina > 0 else 0
 
     return jsonify({
         "pagina_atual": pagina,
         "por_pagina": por_pagina,
         "total_registros": total_registros,
         "total_paginas": total_paginas_final,
-        "origem_dados": "banco_local_janela_anual",
-        "licitacoes": licitacoes_lista
+        "origem_dados": "banco_local_com_filtro_sql",
+        "licitacoes": licitacoes_paginadas
     })
+
 
 @app.route('/licitacao/<path:numero_controle_pncp>', methods=['GET'])
 def get_detalhe_licitacao(numero_controle_pncp):
@@ -555,135 +553,39 @@ def api_get_referencia_statuscompra():
            
 # EXPORTAR CSV - Mantendo separado de def get_licitacoes() sem refatorar posso enviar mais coisas ou menos. 
 @app.route('/api/exportar-csv')
-def exportar_csv():    
-    filtros = {
+def exportar_csv():
+    # 1. Coleta os filtros da URL
+    filtros_sql = {
         'ufs': request.args.getlist('uf'),
         'modalidadesId': request.args.getlist('modalidadeId', type=int),
-        'statusRadar': request.args.get('statusRadar', default=None, type=str),
-        'dataPubInicio': request.args.get('dataPubInicio', default=None, type=str),
-        'dataPubFim': request.args.get('dataPubFim', default=None, type=str),
-        'valorMin': request.args.get('valorMin', default=None, type=float),
-        'valorMax': request.args.get('valorMax', default=None, type=float),
+        'statusRadar': request.args.get('statusRadar'),
+        'dataPubInicio': request.args.get('dataPubInicio'),
+        'dataPubFim': request.args.get('dataPubFim'),
+        'valorMin': request.args.get('valorMin', type=float),
+        'valorMax': request.args.get('valorMax', type=float),
         'municipiosNome': request.args.getlist('municipioNome'),
-        'dataAtualizacaoInicio': request.args.get('dataAtualizacaoInicio', default=None, type=str),
-        'dataAtualizacaoFim': request.args.get('dataAtualizacaoFim', default=None, type=str),
-        'palavrasChave': request.args.getlist('palavraChave'),
-        'excluirPalavras': request.args.getlist('excluirPalavra'),
-        'statusId': request.args.get('status', default=None, type=int),
+        'dataAtualizacaoInicio': request.args.get('dataAtualizacaoInicio'),
+        'dataAtualizacaoFim': request.args.get('dataAtualizacaoFim'),
         'anoCompra': request.args.get('anoCompra', type=int),
         'cnpjOrgao': request.args.get('cnpjOrgao'),
+        'statusId': request.args.get('statusId', type=int)
     }
-    orderBy_param = request.args.get('orderBy', default='dataPublicacaoPncp', type=str)
-    orderDir_param = request.args.get('orderDir', default='DESC', type=str).upper()
-
-    condicoes_db = []
-    parametros_db = []
+    filtros_sql = {k: v for k, v in filtros_sql.items() if v is not None and v != '' and v != []}
     
-    if filtros['statusRadar']:
-        condicoes_db.append("situacaoReal = ?")
-        parametros_db.append(filtros['statusRadar'])
-    elif filtros['statusId'] is not None:
-        condicoes_db.append("situacaoCompraId = ?")
-        parametros_db.append(filtros['statusId'])
+    palavras_chave_inclusao = request.args.getlist('palavraChave')
+    palavras_chave_exclusao = request.args.getlist('excluirPalavra')
+    orderBy_param = request.args.get('orderBy', default='dataPublicacaoPncp')
+    orderDir_param = request.args.get('orderDir', default='DESC').upper()
 
-    if filtros['ufs']:
-        placeholders = ', '.join(['?'] * len(filtros['ufs']))
-        condicoes_db.append(f"unidadeOrgaoUfSigla IN ({placeholders})")
-        parametros_db.extend([uf.upper() for uf in filtros['ufs']])
-
-    if filtros['modalidadesId']:
-        placeholders = ', '.join(['?'] * len(filtros['modalidadesId']))
-        condicoes_db.append(f"modalidadeId IN ({placeholders})")
-        parametros_db.extend(filtros['modalidadesId'])
-
-    if filtros['excluirPalavras']:
-        campos_texto_busca = [
-            "objetoCompra", "orgaoEntidadeRazaoSocial", "unidadeOrgaoNome",
-            "numeroControlePNCP", "unidadeOrgaoMunicipioNome", "unidadeOrgaoUfNome",
-            "CAST(unidadeOrgaoCodigoIbge AS TEXT)", "orgaoEntidadeCnpj"
-        ]
-        for palavra_excluir in filtros['excluirPalavras']:
-            termo_excluir = f"%{palavra_excluir}%"
-            condicoes_palavra_excluir_and = []
-            for campo in campos_texto_busca:
-                condicoes_palavra_excluir_and.append(f"COALESCE({campo}, '') NOT LIKE ?")
-                parametros_db.append(termo_excluir)
-            if condicoes_palavra_excluir_and:
-                condicoes_db.append(f"({' AND '.join(condicoes_palavra_excluir_and)})")
-
-    if filtros['palavrasChave']:
-        campos_texto_busca = [
-            "objetoCompra", "orgaoEntidadeRazaoSocial", "unidadeOrgaoNome",
-            "numeroControlePNCP", "unidadeOrgaoMunicipioNome", "unidadeOrgaoUfNome",
-            "CAST(unidadeOrgaoCodigoIbge AS TEXT)", "orgaoEntidadeCnpj"
-        ]
-        sub_condicoes_palavras_or_geral = []
-        for palavra_chave in filtros['palavrasChave']:
-            termo_like = f"%{palavra_chave}%"
-            condicoes_campos_or_para_palavra = []
-            for campo in campos_texto_busca:
-                condicoes_campos_or_para_palavra.append(f"COALESCE({campo}, '') LIKE ?")
-                parametros_db.append(termo_like)
-            if condicoes_campos_or_para_palavra:
-                sub_condicoes_palavras_or_geral.append(f"({' OR '.join(condicoes_campos_or_para_palavra)})")
-        if sub_condicoes_palavras_or_geral:
-            condicoes_db.append(f"({' OR '.join(sub_condicoes_palavras_or_geral)})")
-
-    if filtros['dataPubInicio']:
-        condicoes_db.append("dataPublicacaoPncp >= ?")
-        parametros_db.append(filtros['dataPubInicio'])
-    if filtros['dataPubFim']:
-        condicoes_db.append("dataPublicacaoPncp <= ?")
-        parametros_db.append(filtros['dataPubFim'])
-
-    if filtros['valorMin'] is not None:
-        condicoes_db.append("valorTotalEstimado >= ?")
-        parametros_db.append(filtros['valorMin'])
-    if filtros['valorMax'] is not None:
-        condicoes_db.append("valorTotalEstimado <= ?")
-        parametros_db.append(filtros['valorMax'])
-
-    if filtros['dataAtualizacaoInicio']:
-        condicoes_db.append("dataAtualizacao >= ?")
-        parametros_db.append(filtros['dataAtualizacaoInicio'])
-    if filtros['dataAtualizacaoFim']:
-        condicoes_db.append("dataAtualizacao <= ?")
-        parametros_db.append(filtros['dataAtualizacaoFim'])
-
-    if filtros['anoCompra'] is not None:
-        condicoes_db.append("anoCompra = ?")
-        parametros_db.append(filtros['anoCompra'])
-
-    if filtros['cnpjOrgao']:
-        condicoes_db.append("orgaoEntidadeCnpj = ?")
-        parametros_db.append(filtros['cnpjOrgao'])
-
-    if filtros['municipiosNome']:
-        sub_condicoes_municipio = []
-        for nome_mun in filtros['municipiosNome']:
-            termo_mun = f"%{nome_mun.upper()}%"
-            sub_condicoes_municipio.append("UPPER(unidadeOrgaoMunicipioNome) LIKE ?")
-            parametros_db.append(termo_mun)
-        if sub_condicoes_municipio:
-            condicoes_db.append(f"({ ' OR '.join(sub_condicoes_municipio) })")
-
-    # 2. Conecte ao banco e faça a busca SEM paginação
+    # 2. Busca dados brutos no banco com filtros SQL
+    query_where_sql, parametros_db_sql = _build_licitacoes_query(filtros_sql)
+    query_select_dados = f"SELECT * FROM licitacoes {query_where_sql}"
+    
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    query_select = "SELECT * FROM licitacoes"
-    query_where = ""
-    if condicoes_db:
-        query_where = " WHERE " + " AND ".join(condicoes_db)
-    
-    # A ÚNICA DIFERENÇA: SEM LIMIT E OFFSET
-    query_order = f" ORDER BY {orderBy_param} {orderDir_param}"
-    sql_query_final = query_select + query_where + query_order
-
     try:
-        cursor.execute(sql_query_final, parametros_db)
-        licitacoes_rows = cursor.fetchall()
-        licitacoes = [dict(row) for row in licitacoes_rows]
+        cursor = conn.cursor()
+        cursor.execute(query_select_dados, parametros_db_sql)
+        licitacoes_rows_brutas = cursor.fetchall()
     except sqlite3.Error as e:
         print(f"Erro ao exportar CSV: {e}")
         return jsonify({"erro": "Erro ao buscar dados para exportação"}), 500
@@ -691,22 +593,57 @@ def exportar_csv():
         if conn:
             conn.close()
 
-    # 3. Gere o CSV em memória
+    # 3. Filtragem
+    licitacoes_filtradas = []
+    if not palavras_chave_inclusao and not palavras_chave_exclusao:
+        licitacoes_filtradas = [dict(row) for row in licitacoes_rows_brutas]
+    else:
+        campos_texto_busca = [
+            "objetoCompra", "orgaoEntidadeRazaoSocial", "unidadeOrgaoNome",
+            "numeroControlePNCP", "unidadeOrgaoMunicipioNome", "unidadeOrgaoUfNome",
+            "orgaoEntidadeCnpj"
+        ]        
+        palavras_inclusao_lower = [p.lower() for p in palavras_chave_inclusao]
+        palavras_exclusao_lower = [p.lower() for p in palavras_chave_exclusao]
+        for row in licitacoes_rows_brutas:
+            texto_completo_row = " ".join([str(row[campo] or '').lower() for campo in campos_texto_busca])
+            if palavras_inclusao_lower:
+                match_inclusao = any(p_incl in texto_completo_row for p_incl in palavras_inclusao_lower)
+            else:
+                match_inclusao = True  
+            if palavras_exclusao_lower:
+                match_exclusao = any(p_excl in texto_completo_row for p_excl in palavras_exclusao_lower)
+            else:
+                match_exclusao = False  
+            if match_inclusao and not match_exclusao:
+                licitacoes_filtradas.append(dict(row))
+
+
+    # 4. Ordenação em Python
+    campos_validos_ordenacao = [
+        'dataPublicacaoPncp', 'dataAtualizacao', 'valorTotalEstimado',
+        'dataAberturaProposta', 'dataEncerramentoProposta', 'modalidadeNome',
+        'orgaoEntidadeRazaoSocial', 'unidadeOrgaoMunicipioNome', 'situacaoReal'
+    ]
+    if orderBy_param in campos_validos_ordenacao:
+        licitacoes_filtradas.sort(
+            key=lambda x: (
+                x[orderBy_param] is None,
+                x[orderBy_param] if isinstance(x[orderBy_param], (int, float)) else str(x[orderBy_param] or '').lower()
+            ),
+            reverse=(orderDir_param == 'DESC')
+        )
+
+    # 5. Geração do CSV em memória
     output = io.StringIO()
-    # Usamos QUOTE_ALL para garantir que valores com ';' ou quebras de linha sejam tratados corretamente
     writer = csv.writer(output, delimiter=';', lineterminator='\n', quoting=csv.QUOTE_ALL)
-    
-    # Escreve o cabeçalho
     writer.writerow(['Data Atualizacao', 'Municipio/UF', 'Orgao', 'Modalidade', 'Status', 'Valor Estimado (R$)', 'Objeto da Compra', 'Link PNCP'])
 
-    # Escreve os dados
-    for lic in licitacoes:
+    for lic in licitacoes_filtradas:
         municipio_uf = f"{lic.get('unidadeOrgaoMunicipioNome', '')}/{lic.get('unidadeOrgaoUfSigla', '')}"
-        # Formata o valor para o padrão brasileiro (vírgula como decimal)
         valor_str = 'N/I'
         if lic.get('valorTotalEstimado') is not None:
             valor_str = f"{lic['valorTotalEstimado']:.2f}".replace('.', ',')
-
         writer.writerow([
             lic.get('dataAtualizacao', ''),
             municipio_uf,
@@ -718,10 +655,10 @@ def exportar_csv():
             lic.get('link_portal_pncp', '')
         ])
 
-    # 4. Prepara a resposta para download
+    # 6. Prepara a resposta para download
     output.seek(0)
     return Response(
-        output.getvalue().encode('utf-8-sig'), # 'utf-8-sig' é melhor para compatibilidade com Excel
+        output.getvalue().encode('utf-8-sig'),
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment;filename=radar_pncp_licitacoes.csv"}
     )

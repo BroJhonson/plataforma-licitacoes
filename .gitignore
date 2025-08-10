@@ -1,79 +1,25 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# C extensions
-*.so
-database.db
-.env
-*.db
-*.sqlite3
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib60/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-#  Usually these files are written by a PyInstaller script; adding them
-#  to your repository is not recommended!
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-
-# Environments
-.env
-.venv
-env/
+# Ambiente Virtual do Python
 venv/
-ENV/
-env.bak/
-venv.bak/
+__pycache__/
 
-# SQLite Databases (se não quiser versionar o conteúdo do banco, apenas o script de criação)
-# *.db
-# *.sqlite
-# *.sqlite3
+# Banco de Dados
+# O banco de dados pode ficar muito grande e não deve ser versionado.
+# A ideia é que cada ambiente (local, produção) tenha seu próprio banco
+# que é populado pelo script de sincronização.
+database.db
+sync_api.log
+failed_processing_data.jsonl
 
-# IDE / Editor specific files
+# Variáveis de Ambiente
+# NUNCA envie este arquivo para o GitHub! Ele contém senhas e chaves.
+.env
+
+# Dependências do Node.js
+# A pasta node_modules pode ter milhares de arquivos.
+# Eles são reinstalados usando 'npm install'.
+node_modules/
+
+# Arquivos de IDEs e do Sistema Operacional
 .vscode/
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.DS_Store
