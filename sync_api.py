@@ -1,4 +1,5 @@
 # python sync_api.py
+# Essa é a parte principal do backend que lida com a sincronização das licitações do PNCP com o banco de dados local. 
 
 import requests # (Para fazer requisições HTTP)
 import sqlite3 # (Para interagir com o banco de dados SQLite)
@@ -17,7 +18,7 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO) # Logs INFO e acima irão para o console
 # Cria um handler para escrever logs em um arquivo
 # O arquivo será 'sync_api.log' na mesma pasta do script.
-log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sync_api.log')
+log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sync_api.log') # isso garante que o log será salvo no mesmo diretório do script
 file_handler = logging.FileHandler(log_file_path, mode='a') # 'a' para append
 file_handler.setLevel(logging.ERROR) # Logs Error e acima irão para o arquivo
 # Cria um formatador para definir o formato das mensagens de log
@@ -67,6 +68,7 @@ api_retry_decorator = retry(
 )
 # --- Fim da Configuração de Retentativas ---
 
+# =========================================================================================== #
 # ======== Configurações do Processamento das Licitações ========
 # Define o caminho para a pasta backend
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -78,8 +80,7 @@ CODIGOS_MODALIDADE = [1, 2,  3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] #(OBRIGATORIO)
 DIAS_JANELA_SINCRONIZACAO = 365 #Periodo da busca
 API_BASE_URL = "https://pncp.gov.br/api/consulta" # (URL base da API do PNCP)      
 API_BASE_URL_PNCP_API = "https://pncp.gov.br/pncp-api"   # Para itens e arquivos    ## PARA TODOS OS LINKS DE ARQUIVOS E ITENS USAR PAGINAÇÃO SE NECESSARIO ##
-ENDPOINT_PROPOSTAS_ABERTAS = "/v1/contratacoes/proposta" # (Endpoint específico)
-# ======= Fim das Configurações do Processamento das Licitações ========
+# ======= Fim das Configurações do Processamento das Licitações ============================== #
 
 # ===== Validação de Dados da Licitação para decidir se continua a buscar a licitação especifca ou não ===== 
 def validar_dados_licitacao_api(licitacao_api_data):
@@ -164,7 +165,7 @@ def fetch_itens_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina=1, ta
         # Este bloco só será atingido se o HTTPError NÃO for um dos que acionam retentativa,
         # OU se todas as retentativas para um HTTPError retentável falharem.
         if http_err.response.status_code not in RETRYABLE_STATUS_CODES:
-            logger.error(f"ITENS_API: Erro HTTP NÃO RETENTÁVEL ao buscar itens para {cnpj_orgao}/{ano_compra}/{sequencial_compra} (Pag: {pagina}): {http_err}")
+            logger.error(f"ITENS_API: Erro, HTTP NÃO RETENTÁVEL ou falha em todas as retentativas ao buscar itens para {cnpj_orgao}/{ano_compra}/{sequencial_compra} (Pag: {pagina}): {http_err}")
         # Se foi retentável e falhou todas as vezes, o log de warning da retentativa já ocorreu.
         # Podemos logar um erro final aqui.
         # A tenacity já terá logado os warnings das tentativas.
@@ -181,6 +182,7 @@ def fetch_itens_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina=1, ta
 
 @api_retry_decorator # Decorador para retentativas    
 def fetch_arquivos_from_api(cnpj_orgao, ano_compra, sequencial_compra, pagina=1, tamanho_pagina=TAMANHO_PAGINA_SYNC ):
+    # """Busca uma página de arquivos de uma licitação específica da API."""
     url = f"{API_BASE_URL_PNCP_API}/v1/orgaos/{cnpj_orgao}/compras/{ano_compra}/{sequencial_compra}/arquivos"
 
     params = {'pagina': pagina, 'tamanhoPagina': tamanho_pagina}
