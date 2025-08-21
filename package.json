@@ -6,10 +6,14 @@
   "scripts": {
     "build:css": "sass src/scss:static/dist",
     "watch:css": "npm run build:css -- --watch",
-    "build:js": "esbuild src/js/main.js --bundle --outfile=static/dist/main.js --minify",
+    
+    "build:js": "esbuild src/js/main.js --bundle --outfile=static/dist/main.js",
     "watch:js": "npm run build:js -- --watch",
+    
     "start:flask": "nodemon app.py",
-    "dev": "concurrently \"npm:watch:*\" \"npm:start:flask\""
+    "dev": "concurrently \"npm:watch:*\" \"npm:start:flask\"",
+
+    "build:prod": "sass src/scss:static/dist --style=compressed && esbuild src/js/main.js --bundle --outfile=static/dist/main.js --minify"
 },
   "repository": {
     "type": "git",
