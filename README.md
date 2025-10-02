@@ -1,4 +1,5 @@
 # RADAR PNCP - Um Buscador Avançado para Licitações Públicas
+"Projeto Completo Junto. E com SQLite"
 
 ![RADAR PNCP Screenshot](caminho/para/sua/screenshot.png) 
 <!-- TODO: Substitua pelo caminho de uma boa screenshot da sua aplicação -->
